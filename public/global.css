@@ -1,0 +1,13 @@
+/* 在 Tailwind CSS 中，@config 规则需要放在 @import 'tailwindcss'; 之前 */
+@config '../tailwind.config.js';
+@import 'tailwindcss';
+
+:root {
+    font-size: 16px;
+    input {
+        @apply outline-none text-xl px-3;
+    }
+    button {
+        @apply px-3;
+    }
+}

@@ -1,0 +1,332 @@
+openapi: 3.0.0
+info:
+  title: 预约系统API
+  description: 预约系统的前后端接口规范
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+paths:
+  /appointments:
+    get:
+      summary: 获取当前用户的预约列表
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功获取预约列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+              examples:
+                default:
+                  value:
+                    - id: '1'
+                      userId: 'user1'
+                      serviceId: 'service1'
+                      date: '2023-05-01'
+                      startTime: '09:00'
+                      endTime: '10:00'
+                      status: 'CONFIRMED'
+                      createdAt: '2023-04-28T10:00:00Z'
+                      updatedAt: '2023-04-28T10:00:00Z'
+    post:
+      summary: 创建新的预约
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreateInput'
+      responses:
+        '201':
+          description: 成功创建预约
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+  /appointments/all:
+    get:
+      summary: 获取所有用户的预约列表（管理员）
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功获取预约列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+              examples:
+                default:
+                  value:
+                    - id: '1'
+                      userId: 'user1'
+                      serviceId: 'service1'
+                      date: '2023-05-01'
+                      startTime: '09:00'
+                      endTime: '10:00'
+                      status: 'CONFIRMED'
+                      createdAt: '2023-04-28T10:00:00Z'
+                      updatedAt: '2023-04-28T10:00:00Z'
+                    - id: '2'
+                      userId: 'user1'
+                      serviceId: 'service2'
+                      date: '2023-05-02'
+                      startTime: '14:00'
+                      endTime: '15:00'
+                      status: 'PENDING'
+                      createdAt: '2023-04-29T16:30:00Z'
+                      updatedAt: '2023-04-29T16:30:00Z'
+  /appointments/{bookingId}:
+    get:
+      summary: 获取预约详情
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功获取预约详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+  /appointments/{bookingId}/cancel:
+    patch:
+      summary: 取消预约
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: bookingId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 成功取消预约
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+              example:
+                success: true
+  /appointments/available-slots:
+    get:
+      summary: 获取可用时间段
+      tags: [预约管理]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 成功获取可用时间段
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeSlot'
+              examples:
+                default:
+                  value:
+                    - startTime: '09:00'
+                      endTime: '10:00'
+                      available: true
+                    - startTime: '10:00'
+                      endTime: '11:00'
+                      available: true
+                    - startTime: '11:00'
+                      endTime: '12:00'
+                      available: false
+  /auth/send-code:
+    post:
+      summary: 发送验证码
+      tags: [用户认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: 
+                  type: string
+              required: [phone]
+      responses:
+        '200':
+          description: 成功发送验证码
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: 
+                    type: boolean
+              example:
+                success: true
+  /auth/verify-code:
+    post:
+      summary: 验证验证码
+      tags: [用户认证]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: 
+                  type: string
+                code: 
+                  type: string
+              required: [phone, code]
+      responses:
+        '200':
+          description: 验证成功，返回用户信息和token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: 
+                    type: string
+                  user: 
+                    $ref: '#/components/schemas/User'
+              example:
+                token: 'jwt-token-string'
+                user: 
+                  id: 'user1'
+                  name: '测试用户'
+                  phone: '13800138000'
+  /auth/me:
+    get:
+      summary: 获取当前用户信息
+      tags: [用户认证]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功获取用户信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /auth/logout:
+    post:
+      summary: 用户登出
+      tags: [用户认证]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 成功登出
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: 
+                    type: boolean
+              example:
+                success: true
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Booking:
+      type: object
+      properties:
+        id: 
+          type: string
+        userId: 
+          type: string
+        serviceId: 
+          type: string
+        date: 
+          type: string
+          format: date
+        startTime: 
+          type: string
+        endTime: 
+          type: string
+        status: 
+          type: string
+          enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+        notes: 
+          type: string
+          nullable: true
+        createdAt: 
+          type: string
+          format: date-time
+        updatedAt: 
+          type: string
+          format: date-time
+    BookingCreateInput:
+      type: object
+      properties:
+        serviceId: 
+          type: string
+        date: 
+          type: string
+          format: date
+        startTime: 
+          type: string
+        endTime: 
+          type: string
+        notes: 
+          type: string
+          nullable: true
+      required: [serviceId, date, startTime, endTime]
+    TimeSlot:
+      type: object
+      properties:
+        startTime: 
+          type: string
+        endTime: 
+          type: string
+        available: 
+          type: boolean
+    User:
+      type: object
+      properties:
+        id: 
+          type: string
+        name: 
+          type: string
+        phone: 
+          type: string
+        createdAt: 
+          type: string
+          format: date-time
+        updatedAt: 
+          type: string
+          format: date-time
