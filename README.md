@@ -23,6 +23,16 @@ Main features include:
 
 ---
 
+# Features
+
+- JWT based authentication
+- Booking management dashboard
+- Form validation with React Hook Form and Zod
+- API integration with NestJS backend
+- State management using Redux Toolkit
+- Server data fetching using React Query
+- Responsive UI built with Ant Design
+
 # Tech Stack
 
 Framework
@@ -64,7 +74,10 @@ Next.js Frontend
 REST API (NestJS Backend)
    │
    ▼
-PostgreSQL + Redis
+PostgreSQL Database
+   │
+   ▼
+Redis Cache
 ```
 
 The frontend communicates with the backend through RESTful APIs.
@@ -83,6 +96,8 @@ src
 ├── utils            # Utility functions
 └── styles           # Global styles
 ```
+
+The project follows a modular structure to improve maintainability and scalability.
 
 ---
 
