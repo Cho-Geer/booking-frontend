@@ -39,6 +39,14 @@ const nextConfig: NextConfig = {
     // 用于小于视口宽度的图像
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/v1/:path*',
+        destination: 'http://localhost:3001/v1/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

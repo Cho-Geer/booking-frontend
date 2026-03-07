@@ -20,19 +20,19 @@ export const authService = {
    * @param phone - 手机号
    * @returns 发送结果
    */
-  async sendCode(phone: string) {
-    const response = await api.post('/auth/send-code', { phone });
+  async sendCode(phoneNumber: string) {
+    const response = await api.post('/auth/send-verification-code', { phoneNumber });
     return response.data;
   },
 
   /**
    * 验证验证码并登录
-   * @param phone - 手机号
+   * @param phoneNumber - 手机号
    * @param code - 验证码
    * @returns 登录结果，包含token和用户信息
    */
-  async verifyCode(phone: string, code: string) {
-    const response = await api.post('/auth/verify-code', { phone, code });
+  async verifyCode(phoneNumber: string, code: string) {
+    const response = await api.post('/auth/login', { phoneNumber, code });
     return response.data;
   },
 
