@@ -17,6 +17,17 @@ const api = axios.create({
   },
 });
 
+const getCookieValue = (name: string): string | null => {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const value = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith(`${name}=`))
+    ?.split('=')[1];
+  return value ? decodeURIComponent(value) : null;
+};
+
 // ===================== 核心：并发刷新控制变量 =====================
 let isRefreshing = false; // 刷新锁：是否正在刷新 Token
 let failedQueue: ((promise: Promise<any>) => void)[] = []; // 等待队列：存储待重试的请求
@@ -36,6 +47,17 @@ const processQueue = (error: any = null) => {
 
   failedQueue = [];
 };
+
+api.interceptors.request.use((config) => {
+  const method = config.method?.toUpperCase();
+  if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    const csrfToken = getCookieValue('csrf_token');
+    if (csrfToken) {
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
+  return config;
+});
 
 /**
  * 响应拦截器 - 处理认证错误
