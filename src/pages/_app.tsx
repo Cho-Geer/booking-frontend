@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useReportWebVitals } from 'next/web-vitals';
+import { useEffect } from 'react';
 import '../../public/global.css';
 import { Provider } from 'react-redux';
 import { store } from '../store';
@@ -9,6 +10,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '../services/reactQuery';
 import dynamic from 'next/dynamic';
+import { initializeAuth } from '@/store/userSlice';
 
 // 动态导入PageWrapper以避免SSR问题
 const PageWrapper = dynamic(
@@ -28,6 +30,13 @@ const PageWrapper = dynamic(
  * @returns {JSX.Element} 包装后的应用组件
  */
 export default function MyApp({ Component, pageProps, router }: AppProps) {
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    store.dispatch(initializeAuth());
+  }, []);
+
   // 性能监控配置 - 根据迁移文档阶段四的要求实现
   useReportWebVitals((metric) => {
     // 在控制台记录性能数据

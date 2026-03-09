@@ -42,7 +42,11 @@ export const authService = {
    * @returns 用户信息
    */
   async getCurrentUser() {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/auth/profile', {
+      headers: {
+        'X-Skip-Auth-Redirect': 'true',
+      },
+    });
     return response.data;
   },
 

@@ -36,7 +36,8 @@ api.interceptors.response.use(
     (customError as any).response = error.response;
     (customError as any).status = error.response?.status;
 
-    if ((customError as any)?.status === 401) {
+    const skipAuthRedirect = error?.config?.headers?.['X-Skip-Auth-Redirect'] === 'true';
+    if ((customError as any)?.status === 401 && !skipAuthRedirect) {
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }

@@ -12,6 +12,10 @@ interface NavLinkProps extends LinkProps {
    */
   children: React.ReactNode;
   /**
+   * 链接的自定义CSS类名
+   */
+  className?: string;
+  /**
    * 链接激活时的额外CSS类名
    */
   activeClassName?: string;

@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../services/authService';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
-import { AppDispatch } from '.';
 
 /**
  * 用户状态接口
@@ -30,6 +29,7 @@ interface UserState {
   /** 验证码发送状态 */
   codeSent: boolean;
   showCodeInput: boolean;
+  authInitialized: boolean;
 }
 
 /**
@@ -41,7 +41,8 @@ const initialState: UserState = {
   loading: false,
   error: null,
   codeSent: false,
-  showCodeInput: false
+  showCodeInput: false,
+  authInitialized: false
 };
 
 /**
@@ -77,6 +78,18 @@ export const verifyCode = createAsyncThunk(
   }
 );
 
+export const initializeAuth = createAsyncThunk(
+  'user/initializeAuth',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await authService.getCurrentUser();
+      return response.data;
+    } catch {
+      return rejectWithValue(null);
+    }
+  }
+);
+
 /**
  * 用户Slice
  */
@@ -96,6 +109,7 @@ const userSlice = createSlice({
     logout: (state) => {
       state.currentUser = null;
       state.isAuthenticated = false;
+      state.authInitialized = true;
     },
     /**
      * 清除错误信息
@@ -115,6 +129,7 @@ const userSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.currentUser = action.payload.data.user;
+        state.authInitialized = true;
         // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
@@ -149,12 +164,26 @@ const userSlice = createSlice({
         state.isAuthenticated = true;
         state.currentUser = action.payload.data.user;
         state.codeSent = false;
+        state.authInitialized = true;
         // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
       .addCase(verifyCode.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || '验证码错误';
+      })
+      .addCase(initializeAuth.pending, (state) => {
+        state.authInitialized = false;
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.currentUser = action.payload;
+        state.isAuthenticated = true;
+        state.authInitialized = true;
+      })
+      .addCase(initializeAuth.rejected, (state) => {
+        state.currentUser = null;
+        state.isAuthenticated = false;
+        state.authInitialized = true;
       });
   },
 });
