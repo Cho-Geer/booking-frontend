@@ -11,7 +11,12 @@ export const authService = {
    * @returns 注册结果，包含token和用户信息
    */
   async register(data: RegisterFormData) {
-    const response = await api.post('/auth/register', data);
+    const response = await api.post('/auth/register', {
+    name: data.name,
+    phoneNumber: data.phoneNumber,
+    verificationCode: data.verificationCode,
+    email: data.email,
+  });
     return response.data;
   },
 
@@ -55,7 +60,18 @@ export const authService = {
    * @returns 登出结果
    */
   async logout() {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    try {
+      const response = await api.post('/auth/logout');
+      // 清除本地存储的用户信息
+      localStorage.removeItem('user');
+      // 清除其他相关存储
+      sessionStorage.removeItem('user');
+      return response.data;
+    } catch (error) {
+      // 即使后端失败，也清除本地状态
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+      throw error;
+    }
   },
 };
