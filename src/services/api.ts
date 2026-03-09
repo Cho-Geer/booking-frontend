@@ -53,7 +53,14 @@ api.interceptors.request.use((config) => {
   if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     const csrfToken = getCookieValue('csrf_token');
     if (csrfToken) {
-      config.headers['X-CSRF-Token'] = csrfToken;
+      if (config.headers && typeof (config.headers as any).set === 'function') {
+        (config.headers as any).set('X-CSRF-Token', csrfToken);
+      } else {
+        config.headers = {
+          ...(config.headers || {}),
+          'X-CSRF-Token': csrfToken,
+        } as any;
+      }
     }
   }
   return config;
