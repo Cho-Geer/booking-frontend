@@ -92,6 +92,6 @@ export const config = {
      * - /my-bookings
      * 排除静态文件（_next）和API路由
      */
-    '/((?!_next/|api/|favicon.ico|public/).*)',
+    '/((?!_next/|api/|v1/|favicon.ico|public/).*)',
   ],
 };

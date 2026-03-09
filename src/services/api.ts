@@ -46,6 +46,9 @@ api.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
 
     // 1. 统一处理后端返回的错误信息
     // 优先使用后端返回的 error.response.data.message
@@ -71,7 +74,8 @@ api.interceptors.response.use(
     if (
       originalRequest.url?.includes('/auth/login') ||
       originalRequest.url?.includes('/auth/register') ||
-      originalRequest.url?.includes('/auth/send-verification-code')
+      originalRequest.url?.includes('/auth/send-verification-code') ||
+      originalRequest.url?.includes('/auth/logout')
     ) {
       return Promise.reject(customError);
     }
