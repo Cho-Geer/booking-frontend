@@ -61,6 +61,7 @@ const RegisterPage: React.FC = () => {
       onSendCode={handleSendCode}
       loading={loading}
       countdown={countdown}
+      showCodeInput={showCodeInput}
       error={error || undefined}
     />
   );

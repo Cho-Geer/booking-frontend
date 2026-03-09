@@ -12,11 +12,13 @@ export function middleware(request: NextRequest) {
   
   // 获取认证token
   // 在Next.js中间件中，我们使用cookies而不是localStorage
-  const token = request.cookies.get('auth_token')?.value;
+  // 修正：使用 access_token 或 refresh_token 判断认证状态
+  const accessToken = request.cookies.get('access_token')?.value;
+  const refreshToken = request.cookies.get('refresh_token')?.value;
+  const isAuthenticated = !!(accessToken || refreshToken);
 
   // 公开路径列表 - 不需要认证的路径
   const publicPaths = [
-    '/',
     '/login',
     '/register',
     '/demo-ui',
@@ -26,12 +28,13 @@ export function middleware(request: NextRequest) {
   ];
 
   // 检查当前路径是否为公开路径
-  const isPublicPath = publicPaths.some(path => 
+  // 修正：根路径 '/' 特殊处理，避免 startsWith('/') 匹配所有路径
+  const isPublicPath = pathname === '/' || publicPaths.some(path => 
     pathname === path || pathname.startsWith(`${path}/`)
   );
 
   // 保护管理后台路由
-  if (pathname.startsWith('/admin') && !token) {
+  if (pathname.startsWith('/admin') && !isAuthenticated) {
     // 重定向到登录页，并保留原始路径作为回调
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
@@ -39,16 +42,16 @@ export function middleware(request: NextRequest) {
   }
 
   // 保护需要认证的用户路由
-  if (!isPublicPath && !token) {
+  if (!isPublicPath && !isAuthenticated) {
     // 重定向到登录页，并保留原始路径作为回调
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 如果已登录用户访问登录/注册页面，重定向到首页
-  if ((pathname === '/login' || pathname === '/register') && token) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // 如果已登录用户访问登录/注册页面，重定向到预约页
+  if ((pathname === '/login' || pathname === '/register') && isAuthenticated) {
+    return NextResponse.redirect(new URL('/bookings', request.url));
   }
 
   // 添加安全头部

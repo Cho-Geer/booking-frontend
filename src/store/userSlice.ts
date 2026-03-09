@@ -78,6 +78,16 @@ export const verifyCode = createAsyncThunk(
   }
 );
 
+/**
+ * 用户登出异步操作
+ */
+export const logoutUser = createAsyncThunk(
+  'user/logout',
+  async () => {
+    await authService.logout();
+  }
+);
+
 export const initializeAuth = createAsyncThunk(
   'user/initializeAuth',
   async (_, { rejectWithValue }) => {
@@ -104,7 +114,7 @@ const userSlice = createSlice({
       state.showCodeInput = action.payload;
     },
     /**
-     * 登出
+     * 登出 (仅清除本地状态)
      */
     logout: (state) => {
       state.currentUser = null;
@@ -171,6 +181,12 @@ const userSlice = createSlice({
       .addCase(verifyCode.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || '验证码错误';
+      })
+      // 登出
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.currentUser = null;
+        state.isAuthenticated = false;
+        state.authInitialized = true;
       })
       .addCase(initializeAuth.pending, (state) => {
         state.authInitialized = false;

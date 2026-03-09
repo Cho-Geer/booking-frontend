@@ -11,6 +11,7 @@ interface RegisterFormProps {
   onSendCode: (phone: string) => void;
   loading?: boolean;
   countdown?: number;
+  showCodeInput?: boolean;
   error?: string;
 }
 
@@ -67,6 +68,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   onSendCode,
   loading = false,
   countdown = 0,
+  showCodeInput = false,
   error = ''
 }) => {
   const {
@@ -89,7 +91,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const phone = watch('phoneNumber');
   const name = watch('name');
   const verificationCode = watch('verificationCode');
-  const [showCodeInput, setShowCodeInput] = React.useState(false);
+  // const [showCodeInput, setShowCodeInput] = React.useState(false);
   const [codeError, setCodeError] = React.useState('');
   
   // 获取主题状态
@@ -105,7 +107,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
     
-    setShowCodeInput(true);
+    // setShowCodeInput(true);
     onSendCode(data.phoneNumber);
     setValue('verificationCode', '');
     setCodeError('');
@@ -127,7 +129,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   // 重置表单当错误发生时
   useEffect(() => {
     if (error) {
-      setShowCodeInput(false);
+      // setShowCodeInput(false);
       setValue('verificationCode', '');
       setCodeError('');
     }

@@ -8,6 +8,7 @@ interface RegisterPageProps {
   onSendCode: (phone: string) => void;
   loading: boolean;
   countdown?: number;
+  showCodeInput?: boolean;
   error?: string;
 }
 
@@ -29,6 +30,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
   onSendCode,
   loading = false,
   countdown = 0,
+  showCodeInput = false,
   error = ''
 }) => {
   const { uiState, setTheme } = useUI();
@@ -74,6 +76,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
             onSendCode={onSendCode}
             loading={loading}
             countdown={countdown}
+            showCodeInput={showCodeInput}
             error={error}
           />
         </div>
