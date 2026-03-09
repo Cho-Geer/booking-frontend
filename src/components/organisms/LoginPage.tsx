@@ -4,11 +4,12 @@ import { useUI } from '../../contexts/UIContext';
 import { motion } from 'framer-motion';
 
 interface LoginPageProps {
-  onSendCode: (phone: string) => void;
-  onVerifyCode: (phone: string, code: string) => void;
+  onSendCode: (phoneNumber: string, type: 'login') => void;
+  onVerifyCode: (phoneNumber: string, code: string) => void;
   loading: boolean;
   codeSent?: boolean;
   countdown?: number;
+  showCodeInput: boolean;
   error?: string;
 }
 
@@ -29,11 +30,11 @@ const LoginPage: React.FC<LoginPageProps> = ({
   onVerifyCode,
   loading = false,
   countdown = 0,
+  showCodeInput = false,
   error = ''
 }) => {
   const { uiState, setTheme } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
-
 
 
   return (
@@ -73,6 +74,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
             onSendCode={onSendCode}
             loading={loading}
             countdown={countdown}
+            showCodeInput={showCodeInput}
             error={error}
           />
         </div>

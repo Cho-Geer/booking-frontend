@@ -45,8 +45,10 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   // if (needsLayout) {
     return (
       <AppLayout
-        isLoggedIn={!!currentUser}
-        onLogout={handleLogout}>
+        isLoggedIn={!!currentUser && currentUser.status === 'ACTIVE'}
+        onLogout={handleLogout}
+        username={currentUser?.name}
+        userType={currentUser?.userType}>
         <Component {...pageProps} />
       </AppLayout>
     );

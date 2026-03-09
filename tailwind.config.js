@@ -70,6 +70,10 @@ module.exports = {
           'dark-100': '#1E293B',
           'dark-200': '#334155',
         },
+        'input-background': {
+          DEFAULT: '#ffffff',
+          dark: '#1E293B',
+        },
         // 文本颜色 - 在dark模式下保持原有的高对比度
         text: {
           primary: '#262626',

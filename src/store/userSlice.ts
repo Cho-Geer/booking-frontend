@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../services/authService';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
+import { AppDispatch } from '.';
 
 /**
  * 用户状态接口
@@ -15,7 +16,7 @@ interface UserState {
     wechat?: string;
     avatar?: string;
     userType: 'customer' | 'admin';
-    status: 'active' | 'inactive' | 'blocked';
+    status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
     isVerified: boolean;
     lastLoginAt?: string;
     loginCount: number;
@@ -28,8 +29,7 @@ interface UserState {
   error: string | null;
   /** 验证码发送状态 */
   codeSent: boolean;
-  /** 验证码倒计时 */
-  countdown: number;
+  showCodeInput: boolean;
 }
 
 /**
@@ -41,7 +41,7 @@ const initialState: UserState = {
   loading: false,
   error: null,
   codeSent: false,
-  countdown: 0,
+  showCodeInput: false
 };
 
 /**
@@ -60,8 +60,8 @@ export const registerUser = createAsyncThunk(
  */
 export const sendCode = createAsyncThunk(
   'user/sendCode',
-  async (phone: string) => {
-    const response = await authService.sendCode(phone);
+  async ({ phoneNumber, type }: { phoneNumber: string; type: 'login' | 'register' }) => {
+    const response = await authService.sendCode(phoneNumber, type);
     return response;
   }
 );
@@ -71,8 +71,8 @@ export const sendCode = createAsyncThunk(
  */
 export const verifyCode = createAsyncThunk(
   'user/verifyCode',
-  async ({ phone, code }: { phone: string; code: string }) => {
-    const response = await authService.verifyCode(phone, code);
+  async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
+    const response = await authService.verifyCode(phoneNumber, code);
     return response;
   }
 );
@@ -85,24 +85,10 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     /**
-     * 设置验证码发送状态
+     * 设置是否显示验证码输入框
      */
-    setCodeSent: (state, action: PayloadAction<boolean>) => {
-      state.codeSent = action.payload;
-    },
-    /**
-     * 设置倒计时
-     */
-    setCountdown: (state, action: PayloadAction<number>) => {
-      state.countdown = action.payload;
-    },
-    /**
-     * 递减倒计时
-     */
-    decrementCountdown: (state) => {
-      if (state.countdown > 0) {
-        state.countdown -= 1;
-      }
+    setShowCodeInput: (state, action: PayloadAction<boolean>) => {
+      state.showCodeInput = action.payload;
     },
     /**
      * 登出
@@ -110,7 +96,6 @@ const userSlice = createSlice({
     logout: (state) => {
       state.currentUser = null;
       state.isAuthenticated = false;
-      localStorage.removeItem('token');
     },
     /**
      * 清除错误信息
@@ -129,9 +114,9 @@ const userSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.user;
-        // 保存token
-        localStorage.setItem('token', action.payload.token);
+        state.currentUser = action.payload.data.user;
+        // 登录成功后，重置验证码输入框状态
+        state.showCodeInput = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -144,11 +129,14 @@ const userSlice = createSlice({
       })
       .addCase(sendCode.fulfilled, (state) => {
         state.loading = false;
+        state.showCodeInput = true;
         state.codeSent = true;
-        state.countdown = 60;
       })
       .addCase(sendCode.rejected, (state, action) => {
         state.loading = false;
+        state.showCodeInput = false;
+        // 现在 action.error.message 已经是具体的业务错误信息了（如"手机号未注册"）
+        // 不需要再在这里做判断
         state.error = action.error.message || '发送验证码失败';
       })
       // 验证验证码
@@ -159,11 +147,10 @@ const userSlice = createSlice({
       .addCase(verifyCode.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.user;
+        state.currentUser = action.payload.data.user;
         state.codeSent = false;
-        state.countdown = 0;
-        // 保存token
-        localStorage.setItem('token', action.payload.token);
+        // 登录成功后，重置验证码输入框状态
+        state.showCodeInput = false;
       })
       .addCase(verifyCode.rejected, (state, action) => {
         state.loading = false;
@@ -172,5 +159,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setCodeSent, setCountdown, decrementCountdown, logout, clearError } = userSlice.actions;
+export const { setShowCodeInput, logout, clearError } = userSlice.actions;
 export default userSlice.reducer;

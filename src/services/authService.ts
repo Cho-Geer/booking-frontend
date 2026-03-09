@@ -18,10 +18,11 @@ export const authService = {
   /**
    * 发送验证码
    * @param phone - 手机号
+   * @param type - 验证码类型
    * @returns 发送结果
    */
-  async sendCode(phoneNumber: string) {
-    const response = await api.post('/auth/send-verification-code', { phoneNumber });
+  async sendCode(phoneNumber: string, type: 'login' | 'register') {
+    const response = await api.post('/auth/send-verification-code', { phoneNumber, type });
     return response.data;
   },
 
@@ -32,7 +33,7 @@ export const authService = {
    * @returns 登录结果，包含token和用户信息
    */
   async verifyCode(phoneNumber: string, code: string) {
-    const response = await api.post('/auth/login', { phoneNumber, code });
+    const response = await api.post('/auth/login', { phoneNumber, verificationCode: code });
     return response.data;
   },
 
