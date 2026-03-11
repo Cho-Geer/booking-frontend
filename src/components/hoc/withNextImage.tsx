@@ -45,10 +45,19 @@ interface WithNextImageOptions {
  * <OptimizedCustomImage src="/image.jpg" alt="示例" />
  * ```
  */
-function withNextImage(
-  WrappedComponent: ComponentType<any> | keyof JSX.IntrinsicElements,
-  options: WithNextImageOptions = {}
-): ComponentType<any> {
+interface ImageProps {
+  src?: string;
+  alt?: string;
+  width?: number | string;
+  height?: number | string;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+function withNextImage<T extends ImageProps>(
+  WrappedComponent: ComponentType<T> | keyof JSX.IntrinsicElements,
+  options: WithNextImageOptions = {} 
+): ComponentType<T> {
   const {
     enableLazyLoad = true,
     enableBlurPlaceholder = true,
@@ -57,7 +66,7 @@ function withNextImage(
   } = options;
 
   // 创建包装组件
-  const NextImageWrapper: ComponentType<any> = (props) => {
+  const NextImageWrapper: ComponentType<T> = (props) => {
     // 从props中提取相关属性
     const { src, alt, width, height, className, style, ...restProps } = props;
 
@@ -65,7 +74,7 @@ function withNextImage(
     let imageWidth = width;
     let imageHeight = height;
 
-    if (!imageWidth || !imageHeight && src && typeof src === 'string') {
+    if ((!imageWidth || !imageHeight) && src && typeof src === 'string') {
       // 尝试从sizeMap中查找尺寸
       for (const [key, size] of Object.entries(sizeMap)) {
         if (src.includes(key)) {
@@ -87,10 +96,10 @@ function withNextImage(
 
     return (
       <Image
-        src={src}
+        src={src || ''}
         alt={alt || 'Image'}
-        width={imageWidth}
-        height={imageHeight}
+        width={typeof imageWidth === 'string' ? parseInt(imageWidth) : imageWidth}
+        height={typeof imageHeight === 'string' ? parseInt(imageHeight) : imageHeight}
         className={className}
         style={style}
         lazyLoad={enableLazyLoad}
@@ -110,7 +119,7 @@ function withNextImage(
 /**
  * 获取组件的displayName
  */
-function getDisplayName(component: ComponentType<any> | keyof JSX.IntrinsicElements): string {
+function getDisplayName<T extends object>(component: ComponentType<T> | keyof JSX.IntrinsicElements): string {
   if (typeof component === 'string') {
     return component;
   }

@@ -2,8 +2,8 @@ import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Button from '@/components/atoms/Button';
+import ThemeToggle from '@/components/atoms/ThemeToggle';
 import { useUI } from '@/contexts/UIContext';
-import { Sun, Moon } from 'lucide-react';
 
 
 interface AppLayoutProps {
@@ -95,19 +95,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
             
             <div id="nav-user-actions" className="flex items-center space-x-4">
               {/* 主题切换按钮 */}
-              <button
-                id="theme-toggle-button"
-                onClick={toggleTheme}
-                className={`p-2 rounded-full ${uiState.theme === 'dark' ? 'bg-background-dark text-text-dark-secondary hover:bg-gray-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                aria-label="切换主题模式"
-                title="切换主题模式"
-              >
-                {uiState.theme === 'dark' ? (
-                  <Sun className="h-5 w-5" />
-                ) : (
-                  <Moon className="h-5 w-5" />
-                )}
-              </button>
+              <ThemeToggle />
               
               {isLoggedIn ? (
                 <div id="user-info-container" className="flex items-center space-x-4">

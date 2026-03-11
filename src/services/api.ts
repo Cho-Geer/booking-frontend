@@ -30,13 +30,13 @@ const getCookieValue = (name: string): string | null => {
 
 // ===================== 核心：并发刷新控制变量 =====================
 let isRefreshing = false; // 刷新锁：是否正在刷新 Token
-let failedQueue: ((promise: Promise<any>) => void)[] = []; // 等待队列：存储待重试的请求
+let failedQueue: ((promise: Promise<unknown>) => void)[] = []; // 等待队列：存储待重试的请求
 
 /**
  * 处理等待队列
  * @param error 刷新失败时的错误对象，如果刷新成功则为 null
  */
-const processQueue = (error: any = null) => {
+const processQueue = (error: unknown = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom(Promise.reject(error));

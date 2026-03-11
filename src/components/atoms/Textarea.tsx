@@ -66,7 +66,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className={`block text-sm font-medium mb-1 ${uiState.theme === 'dark' ? 'text-text-dark-primary' : 'text-gray-700'}`}
+            className="block text-sm font-medium mb-1 text-text-secondary"
           >
             {label}
           </label>
@@ -74,7 +74,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         <textarea
           ref={ref}
           id={textareaId}
-          className={classes}
+          className={`${classes} px-3 py-2`}
           {...props}
         />
         {error && (

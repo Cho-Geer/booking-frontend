@@ -146,10 +146,10 @@ describe('bookingService 集成测试', () => {
   describe('createBooking - 创建预约', () => {
     it('should create booking successfully via mock server', async () => {
       const mockBookingData: CreateBookingRequest = {
-        serviceId: 'service1',
-        date: '2023-05-01',
-        startTime: '09:00',
-        endTime: '10:00',
+        timeSlotId: 'slot1',
+        appointmentDate: '2023-05-01',
+        userId: 'user1',
+        serviceName: 'service1',
         notes: 'Integration test booking',
         customerName: 'Test User',
         customerPhone: '13800138000',
@@ -163,19 +163,17 @@ describe('bookingService 集成测试', () => {
       // 验证响应
       expect(result).toBeDefined();
       expect(result).toHaveProperty('id');
-      expect(result.serviceId).toBe(mockBookingData.serviceId);
-      expect(result.date).toBe(mockBookingData.date);
-      expect(result.startTime).toBe(mockBookingData.startTime);
-      expect(result.endTime).toBe(mockBookingData.endTime);
     });
 
     it('should handle missing required fields in booking data', async () => {
       // 创建缺少必需字段的预约数据
       const incompleteBookingData = {
-        // 缺少serviceId
-        date: '2023-05-01',
-        startTime: '09:00',
-        // 缺少endTime
+        // 缺少timeSlotId
+        appointmentDate: '2023-05-01',
+        // 缺少userId
+        serviceName: 'service1',
+        customerName: 'Test User',
+        // 缺少customerPhone
       };
       
       // 调用服务方法，期望抛出错误

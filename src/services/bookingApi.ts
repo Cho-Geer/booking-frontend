@@ -5,122 +5,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from './api';
 import { AxiosError } from 'axios';
+import { BookingStatus, Booking, CreateBookingParams, UpdateBookingParams, GetAvailableSlotsParams, TimeSlot } from '../types';
 
 /**
  * 预约相关的API端点 - 标准化为appointments路径
  */
 const BOOKING_ENDPOINTS = {
-  GET_BOOKINGS: '/appointments',
-  GET_BOOKING: '/appointments/{id}',
-  CREATE_BOOKING: '/appointments',
-  UPDATE_BOOKING: '/appointments/{id}',
-  DELETE_BOOKING: '/appointments/{id}',
-  GET_AVAILABLE_SLOTS: '/appointments/available-slots',
+  GET_BOOKINGS: '/bookings',
+  GET_BOOKING: '/bookings/{id}',
+  CREATE_BOOKING: '/bookings',
+  UPDATE_BOOKING: '/bookings/{id}',
+  DELETE_BOOKING: '/bookings/{id}',
+  GET_AVAILABLE_SLOTS: '/bookings/available-slots',
 };
-
-/**
- * 预约状态枚举
- */
-export enum BookingStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-}
-
-/**
- * 预约数据类型
- */
-export interface Booking {
-  id: string;
-  /** 预约编号 (AP-yyyymmdd-0001格式) */
-  appointmentNumber: string;
-  /** 用户ID */
-  userId: string;
-  /** 服务ID */
-  serviceId: string;
-  /** 服务名称 */
-  serviceName: string;
-  /** 预约日期 */
-  date: string; // ISO日期格式
-  /** 开始时间 */
-  startTime: string;
-  /** 结束时间 */
-  endTime: string;
-  /** 状态 */
-  status: BookingStatus;
-  /** 备注 */
-  notes?: string;
-  
-  /** 用户信息快照（预约时的用户信息） */
-  customerName: string;          // 预约时姓名
-  customerPhone: string;        // 预约时手机号（加密）
-  customerEmail?: string;       // 预约时邮箱
-  customerWechat?: string;    // 预约时微信
-  
-  /** 系统信息 */
-  ipAddress?: string;           // 预约IP
-  userAgent?: string;           // 用户代理
-  confirmationSent: boolean;    // 是否发送确认通知
-  reminderSent: boolean;        // 是否发送提醒通知
-  
-  /** 时间记录 */
-  createdAt: string;
-  /** 更新时间 */
-  updatedAt: string;
-  /** 确认时间 */
-  confirmedAt?: string;
-  /** 取消时间 */
-  cancelledAt?: string;
-  /** 完成时间 */
-  completedAt?: string;
-}
-
-/**
- * 创建预约的参数类型
- */
-export interface CreateBookingParams {
-  serviceId: string;
-  date: string;
-  timeSlot: string;
-  notes?: string;
-  /** 预约人姓名 */
-  customerName: string;
-  /** 预约人手机号 */
-  customerPhone: string;
-  /** 预约人邮箱（选填） */
-  customerEmail?: string;
-  /** 预约人微信（选填） */
-  customerWechat?: string;
-}
-
-/**
- * 更新预约的参数类型
- */
-export interface UpdateBookingParams {
-  id: string;
-  date?: string;
-  timeSlot?: string;
-  status?: BookingStatus;
-  notes?: string;
-}
-
-/**
- * 获取可用时间段的参数类型
- */
-export interface GetAvailableSlotsParams {
-  serviceId: string;
-  date: string;
-}
-
-/**
- * 时间段类型
- */
-export interface TimeSlot {
-  startTime: string;
-  endTime: string;
-  available: boolean;
-}
 
 /**
  * 获取预约列表API调用
@@ -321,6 +218,8 @@ export const useAvailableSlots = (params: GetAvailableSlotsParams, options?: Par
 /**
  * 预约API工具函数
  */
+export { BookingStatus } from '../types';
+
 export const bookingApiUtils = {
   /**
    * 格式化预约日期

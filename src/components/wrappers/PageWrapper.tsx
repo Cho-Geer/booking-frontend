@@ -35,10 +35,14 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   // const needsLayout = !noLayoutPages.includes(router.pathname);
   
   // 处理登出逻辑
-  const handleLogout = () => {
+  const handleLogout = async () => {
     const dispatch = getDispatch();
-    dispatch({ type: 'user/logout' });
-    router.push('/');
+    // 导入logoutUser thunk
+    const { logoutUser } = await import('../../store/userSlice');
+    // 调用登出API
+    await dispatch(logoutUser());
+    // 重定向到注册页面
+    router.push('/register');
   };
   
   // 如果页面需要布局包装

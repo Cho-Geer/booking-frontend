@@ -179,7 +179,7 @@ const AdminBookingsPage: React.FC = () => {
                         {booking.userId}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${textColorClass}`}>
-                        {formatDate(booking.date)}
+                        {formatDate(booking.appointmentDate)}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap text-sm ${textColorClass}`}>
                         {formatTime(booking.startTime)} - {formatTime(booking.endTime)}

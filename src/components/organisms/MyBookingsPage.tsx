@@ -2,19 +2,7 @@ import React from 'react';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
 import { useUI } from '@/contexts/UIContext';
-
-interface Booking {
-  id: string;
-  userId: string;
-  serviceId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Booking } from '@/types';
 
 interface MyBookingsPageProps {
   bookings: Booking[];
@@ -150,7 +138,7 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
                   <div id={`booking-item-header-${booking.id}`} className="flex justify-between items-start">
                     <div id={`booking-item-details-${booking.id}`}>
                       <p className={`font-medium ${textColorClass}`}>
-                        {formatDate(booking.date)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                        {formatDate(booking.appointmentDate)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                       </p>
                       {booking.notes && (
                         <p className={`text-sm mt-1 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>备注: {booking.notes}</p>

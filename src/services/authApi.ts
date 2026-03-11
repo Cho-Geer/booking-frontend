@@ -5,6 +5,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from './api';
 import { AxiosError } from 'axios';
+import { SendCodeParams, VerifyCodeParams, UserInfo, VerifyResult, SendCodeResult, LogoutResult } from '@/types';
 
 /**
  * 认证相关的API端点
@@ -15,47 +16,6 @@ const AUTH_ENDPOINTS = {
   GET_CURRENT_USER: '/auth/me',
   LOGOUT: '/auth/logout',
 };
-
-/**
- * 发送验证码的参数类型
- */
-export interface SendCodeParams {
-  phone: string;
-}
-
-/**
- * 验证验证码的参数类型
- */
-export interface VerifyCodeParams {
-  phone: string;
-  code: string;
-}
-
-/**
- * 用户信息类型
- */
-export interface UserInfo {
-  id: string;
-  phone: string;
-  name?: string;
-  userType?: string;
-}
-
-/**
- * 验证结果类型
- */
-export interface VerifyResult {
-  user: UserInfo;
-  token: string;
-}
-
-/**
- * 发送验证码结果类型
- */
-export interface SendCodeResult {
-  success: boolean;
-  message: string;
-}
 
 /**
  * 发送验证码API调用
@@ -85,14 +45,6 @@ const getCurrentUserApi = async (): Promise<UserInfo> => {
   const response = await api.get(AUTH_ENDPOINTS.GET_CURRENT_USER);
   return response.data as UserInfo;
 };
-
-/**
- * 登出结果类型
- */
-export interface LogoutResult {
-  success: boolean;
-  message: string;
-}
 
 /**
  * 登出API调用

@@ -1,28 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { bookingService } from '../services/bookingService';
-import { BookingStatus, TimeSlot, Booking } from '../types';
-
-/**
- * 预约状态接口
- */
-interface BookingState {
-  /** 用户的预约列表 */
-  bookings: Booking[];
-  /** 可用时间段 */
-  availableSlots: TimeSlot[];
-  /** 当前选中的日期 */
-  selectedDate: string;
-  /** 当前选中的时间段 */
-  selectedSlot: TimeSlot | null;
-  /** 加载状态 */
-  loading: boolean;
-  /** 错误信息 */
-  error: string | null;
-  /** 创建预约的加载状态 */
-  creatingBooking: boolean;
-  /** 操作成功状态 */
-  success: boolean;
-}
+import { BookingStatus, TimeSlot, BookingState } from '../types';
 
 /**
  * 初始状态
@@ -66,15 +44,15 @@ export const getAvailableSlots = createAsyncThunk(
 export const createBooking = createAsyncThunk(
   'booking/createBooking',
   async (bookingData: {
-    serviceId: string;
-    date: string;
-    startTime: string;
-    endTime: string;
+    appointmentDate: string;
+    timeSlotId: string;
+    userId: string;
     notes?: string;
     customerName: string;
     customerPhone: string;
     customerEmail?: string;
     customerWechat?: string;
+    serviceName: string;
   }) => {
     const response = await bookingService.createBooking(bookingData);
     return response;
@@ -136,7 +114,7 @@ const bookingSlice = createSlice({
       })
       .addCase(getBookings.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = action.payload;
+        state.bookings = Array.isArray(action.payload) ? action.payload : [];
       })
       .addCase(getBookings.rejected, (state, action) => {
         state.loading = false;
