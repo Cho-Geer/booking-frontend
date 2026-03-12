@@ -10,6 +10,7 @@ interface TimeSlotForTable extends TimeSlot {
   isBooked: boolean;
   isMyBooking?: boolean;
   isOccupied?: boolean;
+  isPast?: boolean;
 }
 
 interface BookingPageProps {
@@ -136,7 +137,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
       // 查找当前日期的可用时间段作为替代方案
       // 实际项目中可能需要调用专门的API获取"推荐"的替代方案（如临近时间点）
       const alternatives = availableSlots
-        .filter(s => !s.isBooked && s.id !== slot.id)
+        .filter(s => !s.isBooked && s.id !== slot.id && !s.isPast)
         .slice(0, 3); // 取前3个可用时间段
       
       setConflictSlot(slot);
@@ -173,6 +174,15 @@ const BookingPage: React.FC<BookingPageProps> = ({
 
   const getTodayLocalDate = () => {
     const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, '0');
+    const day = `${now.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getMaxDate = () => {
+    const now = new Date();
+    now.setMonth(now.getMonth() + 2);
     const year = now.getFullYear();
     const month = `${now.getMonth() + 1}`.padStart(2, '0');
     const day = `${now.getDate()}`.padStart(2, '0');
@@ -249,6 +259,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 onPaste={(e) => e.preventDefault()}
                 onDrop={(e) => e.preventDefault()}
                 min={getTodayLocalDate()}
+                max={getMaxDate()}
                 lang="zh-CN"
                 className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${
                   uiState.theme === 'dark' 
@@ -296,7 +307,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
                     <Button
                       key={index}
                       onClick={() => handleSlotClick(slot as TimeSlotForTable)}
-                      disabled={slot.isBooked && !slot.isOccupied} // 只有"自己的预约"才完全禁用点击（因为已经预约了），"他人预约"可点击弹出替代方案
+                      disabled={(slot.isBooked && !slot.isOccupied) || (!slot.isBooked && slot.isPast)}
                       variant={
                         selectedSlot?.startTime === slot.startTime 
                           ? 'primary' 
@@ -307,7 +318,13 @@ const BookingPage: React.FC<BookingPageProps> = ({
                               : 'secondary'
                       }
                       fullWidth
-                      className="h-auto py-2 min-h-[64px]"
+                      className={`h-auto py-2 min-h-[64px] ${
+                        !slot.isBooked && slot.isPast 
+                          ? isDarkTheme 
+                            ? '!bg-gray-800 !text-gray-600' 
+                            : '!bg-gray-200 !text-gray-400' 
+                          : ''
+                      }`}
                     >
                       <div className="flex flex-col items-center justify-center h-full">
                         <span>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>

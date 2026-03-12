@@ -38,6 +38,7 @@ interface AvailableSlotsForTable extends TimeSlot {
   isBooked: boolean;
   isMyBooking: boolean;
   isOccupied?: boolean;
+  isPast?: boolean;
 }
 
 /**
@@ -113,13 +114,33 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         // 如果API返回available为false，且不是我的预约，那就是被别人预约了
         const isOccupied = !slot.available && !myBooking;
 
+        // 检查是否为过去的时间段
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = `${now.getMonth() + 1}`.padStart(2, '0');
+        const day = `${now.getDate()}`.padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
+        
+        let isPast = false;
+        // 只有当选中日期是今天时才检查具体时间
+        if (selectedDate === todayString) {
+          const [slotHours, slotMinutes] = slot.startTime.split(':').map(Number);
+          const slotTime = new Date();
+          slotTime.setHours(slotHours, slotMinutes, 0, 0);
+          
+          if (now > slotTime) {
+            isPast = true;
+          }
+        }
+
         return {
           ...slot,
           // 如果API返回available为false，或者当前用户有预约，则视为已预约
           // 注意：available字段来自后端getAvailability接口，已经包含了所有用户的预约情况
           isBooked: !slot.available || !!myBooking,
           isMyBooking: !!myBooking,
-          isOccupied
+          isOccupied,
+          isPast
         };
       }));
     }
