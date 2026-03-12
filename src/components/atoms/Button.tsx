@@ -6,7 +6,7 @@ import type { ReactElement } from 'react';
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'warning';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   fullWidth?: boolean;
@@ -56,6 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const variantClasses = {
       primary: 'bg-primary text-primary-foreground hover:bg-primary-600 focus:ring-ring',
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-ring',
+      warning: 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500',
       danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/80 focus:ring-ring',
       ghost: 'text-foreground hover:bg-secondary/50 focus:ring-ring'
     };
@@ -69,7 +70,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     // 禁用状态样式 - 使用CSS变量中的语义化变量
     const disabledClasses = (disabled || isLoading) 
-      ? 'opacity-50 cursor-not-allowed bg-muted text-muted-foreground'
+      ? 'opacity-90 cursor-not-allowed'
       : '';
     
     // 全宽样式

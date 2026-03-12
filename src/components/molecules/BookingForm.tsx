@@ -6,7 +6,6 @@ import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import Input from '../atoms/Input';
 import Textarea from '../atoms/Textarea';
-import Dropdown from '../atoms/Dropdown';
 import { useUI } from '../../contexts/UIContext';
 
 interface TimeSlot {
@@ -18,18 +17,17 @@ interface TimeSlot {
 interface BookingFormProps {
   selectedDate: string;
   selectedSlot: TimeSlot | null;
+  error?: string;
   notes: string;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   customerWechat?: string;
-  serviceName: string;
   onNotesChange: (notes: string) => void;
   onCustomerNameChange: (name: string) => void;
   onCustomerPhoneChange: (phone: string) => void;
   onCustomerEmailChange: (email: string) => void;
   onCustomerWechatChange: (wechat: string) => void;
-  onServiceNameChange: (serviceName: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
   creatingBooking: boolean;
@@ -37,7 +35,6 @@ interface BookingFormProps {
 
 // 使用Zod定义表单验证模式
 const formSchema = z.object({
-  serviceName: z.string().min(1, '请选择服务类型'),
   customerName: z.string().min(1, '请输入姓名').max(20, '姓名不能超过20个字符'),
   customerPhone: z.string().regex(/^1[3-9]\d{9}$/, '请输入正确的手机号'),
   customerEmail: z.string().email('请输入正确的邮箱').optional().or(z.literal('')),
@@ -64,18 +61,17 @@ const formSchema = z.object({
 const BookingForm: React.FC<BookingFormProps> = ({
   selectedDate,
   selectedSlot,
+  error,
   notes,
   customerName,
   customerPhone,
   customerEmail,
   customerWechat,
-  serviceName,
   onNotesChange,
   onCustomerNameChange,
   onCustomerPhoneChange,
   onCustomerEmailChange,
   onCustomerWechatChange,
-  onServiceNameChange,
   onSubmit,
   onCancel,
   creatingBooking
@@ -89,13 +85,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
     handleSubmit, 
     setValue, 
     register,
-    trigger,
     formState: { errors } 
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     mode: 'onBlur', // 失焦时验证
     defaultValues: {
-      serviceName: serviceName || '',
       customerName: customerName || '',
       customerPhone: customerPhone || '',
       customerEmail: customerEmail || '',
@@ -106,13 +100,12 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   // 当外部属性变化时，同步到表单
   React.useEffect(() => {
-    setValue('serviceName', serviceName || '', { shouldValidate: false });
     setValue('customerName', customerName || '', { shouldValidate: false });
     setValue('customerPhone', customerPhone || '', { shouldValidate: false });
     setValue('customerEmail', customerEmail || '', { shouldValidate: false });
     setValue('customerWechat', customerWechat || '', { shouldValidate: false });
     setValue('notes', notes || '', { shouldValidate: false });
-  }, [serviceName, customerName, customerPhone, customerEmail, customerWechat, notes, setValue]);
+  }, [customerName, customerPhone, customerEmail, customerWechat, notes, setValue]);
 
   /**
    * 格式化日期显示
@@ -137,7 +130,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   // 表单提交处理
   const handleFormSubmit = (data: z.infer<typeof formSchema>): void => {
-    onServiceNameChange(data.serviceName);
     onCustomerNameChange(data.customerName);
     onCustomerPhoneChange(data.customerPhone);
     onCustomerEmailChange(data.customerEmail || '');
@@ -149,6 +141,11 @@ const BookingForm: React.FC<BookingFormProps> = ({
   return (
     <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
       <h2 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>确认预约</h2>
+      {error && (
+        <div className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-3 mb-4`}>
+          <p className={`text-sm ${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
+        </div>
+      )}
       <div id="booking-time-info" className="mb-4">
         <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
           预约时间: {formatDate(selectedDate)} {selectedSlot ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}` : ''}
@@ -157,35 +154,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
       
       {/* 客户信息表单 */}
       <div id="customer-info-form" className="space-y-4 mb-6">
-        <div>
-          <label className={`block text-sm font-medium mb-1 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-700'}`}>
-            服务类型（必填）
-          </label>
-          <Dropdown
-            items={[
-              { label: "选择服务类型", value: "", disabled: true },
-              { label: "咨询服务", value: "consultation" },
-              { label: "培训服务", value: "training" },
-              { label: "技术支持", value: "support" },
-              { label: "其他服务", value: "other" }
-            ]}
-            value={serviceName}
-            onChange={(value) => {
-              onServiceNameChange(value);
-              setValue('serviceName', value);
-              // 触发验证以清除错误消息
-              trigger('serviceName');
-            }}
-            buttonText="选择服务类型"
-            className="w-full"
-          />
-          {errors.serviceName && (
-            <p className={`mt-1 text-sm text-red-600 ${isDarkTheme ? 'dark:text-red-400' : ''}`}>
-              {errors.serviceName.message}
-            </p>
-          )}
-        </div>
-        
         <Input
           id="customerName"
           type="text"

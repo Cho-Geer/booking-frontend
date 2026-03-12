@@ -1,10 +1,19 @@
 import api from './api';
-import { Booking, TimeSlot, CreateBookingRequest } from '../types';
+import { Booking, TimeSlot, CreateBookingRequest, Service } from '../types';
 
 /**
  * 预约服务
  */
 export const bookingService = {
+  /**
+   * 获取所有服务列表
+   * @returns 服务列表
+   */
+  async getServices(): Promise<Service[]> {
+    const response = await api.get('/services');
+    return response.data.data;
+  },
+
   /**
    * 获取当前用户的预约列表
    * @returns 预约列表

@@ -4,6 +4,7 @@ import {
   getBookings, 
   getAvailableSlots, 
   createBooking,
+  getServices,
   setSelectedDate,
   setSelectedSlot,
   resetBookingState,
@@ -35,6 +36,8 @@ interface BookingPageProps {
  */
 interface AvailableSlotsForTable extends TimeSlot {
   isBooked: boolean;
+  isMyBooking: boolean;
+  isOccupied?: boolean;
 }
 
 /**
@@ -48,6 +51,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const {
     bookings, 
     availableSlots, 
+    services,
     selectedDate, 
     selectedSlot, 
     loading, 
@@ -62,12 +66,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const [customerPhone, setCustomerPhone] = useState('18100000000'); // 设置默认值
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerWechat, setCustomerWechat] = useState('');
-  const [serviceName, setServiceName] = useState('');
+  const [serviceId, setServiceId] = useState('');
   const [slots, setSlots] = useState<AvailableSlotsForTable[]>([]);
 
     // 表单验证状态
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
   const [isFormValid, setIsFormValid] = useState(false);
+  const serviceError = formErrors.serviceId;
+  const displayError = serviceError || error || undefined;
 
   // 初始化状态，如果有服务端数据则使用它
   useEffect(() => {
@@ -87,17 +93,35 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     }
   }, [dispatch, isSSR, serverError]);
 
+  // 获取服务列表
+  useEffect(() => {
+    dispatch(getServices());
+  }, [dispatch]);
+
   // 预约状态更新时更新slots状态
   useEffect(() => {
     if(availableSlots.length > 0){
-      setSlots(availableSlots.map(slot => ({
-        ...slot,
-        isBooked: bookings.some(booking => 
+      setSlots(availableSlots.map(slot => {
+        // 检查当前用户是否有预约
+        const myBooking = bookings.find(booking => 
           booking.timeSlotId === slot.id 
           && ['CONFIRMED', 'PENDING'].includes(booking.status)
           && selectedDate === booking.appointmentDate.slice(0, 10)
-        )
-      })));
+        );
+
+        // 检查该时间段是否被占用（已被预约且不是当前用户的预约）
+        // 如果API返回available为false，且不是我的预约，那就是被别人预约了
+        const isOccupied = !slot.available && !myBooking;
+
+        return {
+          ...slot,
+          // 如果API返回available为false，或者当前用户有预约，则视为已预约
+          // 注意：available字段来自后端getAvailability接口，已经包含了所有用户的预约情况
+          isBooked: !slot.available || !!myBooking,
+          isMyBooking: !!myBooking,
+          isOccupied
+        };
+      }));
     }
   }, [bookings, availableSlots, selectedDate]);
 
@@ -135,8 +159,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const validateForm = () => {
     const errors: {[key: string]: string} = {};
     
-    if (!serviceName) {
-      errors.serviceName = '请选择服务类型';
+    if (!serviceId) {
+      errors.serviceId = '请选择服务类型';
     }
     
     if (!customerName.trim()) {
@@ -168,6 +192,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     if (!validateForm()) return;
     if (!selectedSlot || !customerName || !customerPhone) return;
 
+    // 查找选中的服务名称
+    const selectedService = services.find(s => s.id === serviceId);
+    const serviceName = selectedService ? selectedService.name : 'Unknown Service';
+
     const result = await dispatch(createBooking({
       timeSlotId: selectedSlot.id,
       userId: currentUser?.id || '',
@@ -177,6 +205,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       customerPhone,
       customerEmail: customerEmail || undefined,
       customerWechat: customerWechat || undefined,
+      serviceId,
       serviceName,
     }));
 
@@ -187,7 +216,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       setCustomerPhone('');
       setCustomerEmail('');
       setCustomerWechat('');
-      setServiceName('');
+      setServiceId('');
       setShowBookingForm(false);
       dispatch(setSelectedSlot(null));
       setFormErrors({});
@@ -199,6 +228,23 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       return;
     }
 
+    if (result.error.message === "时间段已满") {
+      showError(result.error.message || '请选择其他时间段');
+      setSlots((previousSlots) => previousSlots.map(slot => {
+        if (slot.id === selectedSlot.id) {
+          return {
+            ...slot,
+            isBooked: true,
+            isMyBooking: false,
+            isOccupied: true
+          };
+        } else {
+          return slot;
+        }
+      }));
+      dispatch(setSelectedSlot(null));
+      return;
+    }
     showError('预约创建失败', result.error.message || '请稍后重试');
   };
 
@@ -268,8 +314,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   /**
    * 处理服务类型变化
    */
-  const handleServiceNameChange = (serviceName: string) => {
-    setServiceName(serviceName);
+  const handleServiceIdChange = (serviceId: string) => {
+    setServiceId(serviceId);
+    setFormErrors((prev) => {
+      if (!prev.serviceId) return prev;
+      const { serviceId: _removed, ...rest } = prev;
+      return rest;
+    });
   }
 
   /**
@@ -277,13 +328,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
    */
   const handleCancelCreating = () => {
     setShowBookingForm(false);
-    setServiceName('');
+    setServiceId('');
     dispatch(resetBookingState());
   }
   
   return (<BookingPageOrganism 
       loading={loading}
-      error={error || undefined}
+      error={displayError}
       bookings={bookings || []}
       availableSlots={slots || []}
       selectedDate={selectedDate || ''}
@@ -294,7 +345,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       customerPhone={customerPhone || ''}
       customerEmail={customerEmail || ''}
       customerWechat={customerWechat || ''}
-      serviceName={serviceName || ''}
+      serviceId={serviceId || ''}
+      serviceError={serviceError}
+      services={services || []}
       notes={notes || ''}
       onDateChange={handleDateChange}
       onSlotSelect={handleSlotSelect}
@@ -303,7 +356,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       onCustomerPhoneChange={handlePhoneChange}
       onCustomerEmailChange={handleCustomerEmailChange}
       onCustomerWechatChange={handleCustomerWechatChange}
-      onServiceNameChange={handleServiceNameChange}
+      onServiceIdChange={handleServiceIdChange}
       onCancelCreating={handleCancelCreating}
       onCreateBooking={handleCreateBooking}
       onCancelBooking={handleCancelBooking}

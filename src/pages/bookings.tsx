@@ -3,6 +3,7 @@ import React from 'react';
 import BookingPage from '@/components/pages/BookingPage';
 // import { bookingService } from '../services/bookingService';
 import { Booking } from '../types';
+import withAuth from '@/components/hoc/withAuth';
 
 interface BookingsRouteProps {
   initialBookings: Booking[];
@@ -18,9 +19,11 @@ interface BookingsRouteProps {
  * @param error 错误信息（如果有）
  * @returns 预约页面组件
  */
-export default function BookingsRoute({ initialBookings, isServerRendered, error }: BookingsRouteProps) {
+function BookingsRoute({ initialBookings, isServerRendered, error }: BookingsRouteProps) {
   return <BookingPage initialData={initialBookings} isSSR={isServerRendered} error={error} />;
 }
+
+export default withAuth(BookingsRoute);
 
 // /**
 //  * 预约页面的服务端数据获取函数

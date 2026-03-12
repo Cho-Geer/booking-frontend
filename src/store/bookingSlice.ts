@@ -2,13 +2,22 @@ import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { bookingService } from '../services/bookingService';
 import { BookingStatus, TimeSlot, BookingState } from '../types';
 
+const getTodayLocalDate = (): string => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, '0');
+  const day = `${now.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 /**
  * 初始状态
  */
 const initialState: BookingState = {
   bookings: [],
   availableSlots: [],
-  selectedDate: new Date().toISOString().split('T')[0],
+  services: [],
+  selectedDate: getTodayLocalDate(),
   selectedSlot: null,
   loading: false,
   error: null,
@@ -39,6 +48,17 @@ export const getAvailableSlots = createAsyncThunk(
 );
 
 /**
+ * 获取服务列表异步操作
+ */
+export const getServices = createAsyncThunk(
+  'booking/getServices',
+  async () => {
+    const response = await bookingService.getServices();
+    return response;
+  }
+);
+
+/**
  * 创建预约异步操作
  */
 export const createBooking = createAsyncThunk(
@@ -52,6 +72,7 @@ export const createBooking = createAsyncThunk(
     customerPhone: string;
     customerEmail?: string;
     customerWechat?: string;
+    serviceId: string;
     serviceName: string;
   }) => {
     const response = await bookingService.createBooking(bookingData);
@@ -132,6 +153,16 @@ const bookingSlice = createSlice({
       .addCase(getAvailableSlots.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || '获取可用时间段失败';
+      })
+      // 获取服务列表
+      .addCase(getServices.pending, (state) => {
+        // state.loading = true; // 可选：是否需要全屏loading
+      })
+      .addCase(getServices.fulfilled, (state, action) => {
+        state.services = action.payload;
+      })
+      .addCase(getServices.rejected, (state, action) => {
+        state.error = action.error.message || '获取服务列表失败';
       })
       // 创建预约
       .addCase(createBooking.pending, (state) => {

@@ -33,8 +33,10 @@ export interface BookingState {
   error: string | null;
   /** 创建预约的加载状态 */
   creatingBooking: boolean;
-  /** 操作成功状态 */
+  /** 成功状态 */
   success: boolean;
+  /** 服务列表 */
+  services: Service[];
 }
 
 /**
@@ -160,11 +162,11 @@ export interface Service {
   /** 服务描述 */
   description?: string;
   /** 服务时长（分钟） */
-  duration: number;
+  durationMinutes: number;
   /** 价格 */
   price?: number;
   /** 是否可用 */
-  available: boolean;
+  isActive: boolean;
   /** 创建时间 */
   createdAt: string;
   /** 更新时间 */
@@ -197,6 +199,8 @@ export interface CreateBookingRequest {
   customerEmail?: string;
   /** 客户微信（选填） */
   customerWechat?: string;
+  /** 服务ID */
+  serviceId?: string;
   /** 服务类型 */
   serviceName: string;
   /** 备注 */

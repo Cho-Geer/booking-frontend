@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import Card from '@/components/atoms/Card';
 import BookingForm from '@/components/molecules/BookingForm';
 import Button from '@/components/atoms/Button';
+import Dropdown from '@/components/atoms/Dropdown';
 import { useUI } from '@/contexts/UIContext';
-import { Booking, TimeSlot } from '@/types';
+import { Booking, TimeSlot, Service } from '@/types';
 
 interface TimeSlotForTable extends TimeSlot {
   isBooked: boolean;
+  isMyBooking?: boolean;
+  isOccupied?: boolean;
 }
 
 interface BookingPageProps {
@@ -22,7 +25,9 @@ interface BookingPageProps {
   customerPhone: string;
   customerEmail?: string;
   customerWechat?: string;
-  serviceName: string;
+  serviceId: string;
+  serviceError?: string;
+  services: Service[];
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: TimeSlot) => void;
   onCreateBooking: () => void;
@@ -33,7 +38,7 @@ interface BookingPageProps {
   onCustomerPhoneChange: (phone: string) => void;
   onCustomerEmailChange: (email: string) => void;
   onCustomerWechatChange: (wechat: string) => void;
-  onServiceNameChange: (serviceName: string) => void;
+  onServiceIdChange: (serviceId: string) => void;
   notes: string;
   resetBookingState: () => void;
 }
@@ -73,7 +78,9 @@ const BookingPage: React.FC<BookingPageProps> = ({
   customerPhone,
   customerEmail,
   customerWechat,
-  serviceName,
+  serviceId,
+  serviceError,
+  services,
   notes,
   onDateChange,
   onSlotSelect,
@@ -83,7 +90,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   onCustomerPhoneChange,
   onCustomerEmailChange,
   onCustomerWechatChange,
-  onServiceNameChange,
+  onServiceIdChange,
   onCreateBooking,
   onCancelCreating,
   resetBookingState
@@ -91,6 +98,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
   const isMobile = uiState.isMobile;
+  const dateInputRef = React.useRef<HTMLInputElement | null>(null);
 
   /**
    * 处理日期选择
@@ -101,10 +109,46 @@ const BookingPage: React.FC<BookingPageProps> = ({
     resetBookingState();
   };
 
+  const handleDateInputClick = () => {
+    const input = dateInputRef.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+    input.focus();
+  };
+
   /**
    * 处理时间段选择
    */
   const handleSlotSelect = (slot: TimeSlot) => {
+    onSlotSelect(slot);
+  };
+  
+  const [showAlternativeModal, setShowAlternativeModal] = React.useState(false);
+  const [alternativeSlots, setAlternativeSlots] = React.useState<TimeSlot[]>([]);
+  const [conflictSlot, setConflictSlot] = React.useState<TimeSlot | null>(null);
+
+  // 监听时间段选择，如果是已占用（他人预约）的时间段，显示替代方案
+  const handleSlotClick = (slot: TimeSlotForTable) => {
+    if (slot.isOccupied) {
+      // 查找当前日期的可用时间段作为替代方案
+      // 实际项目中可能需要调用专门的API获取"推荐"的替代方案（如临近时间点）
+      const alternatives = availableSlots
+        .filter(s => !s.isBooked && s.id !== slot.id)
+        .slice(0, 3); // 取前3个可用时间段
+      
+      setConflictSlot(slot);
+      setAlternativeSlots(alternatives);
+      setShowAlternativeModal(true);
+    } else {
+      onSlotSelect(slot);
+    }
+  };
+
+  const handleAlternativeSelect = (slot: TimeSlot) => {
+    setShowAlternativeModal(false);
     onSlotSelect(slot);
   };
 
@@ -112,13 +156,27 @@ const BookingPage: React.FC<BookingPageProps> = ({
    * 格式化日期显示
    */
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
+    const normalized = dateString.includes('T') ? dateString.slice(0, 10) : dateString;
+    const [year, month, day] = normalized.split('-').map(Number);
+    const parsedDate = Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)
+      ? new Date(dateString)
+      : new Date(year, month - 1, day);
+    return parsedDate.toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       weekday: 'long'
     });
+  };
+
+  const formatDateShort = (dateString: string) => dateString.replace(/-/g, '/');
+
+  const getTodayLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = `${now.getMonth() + 1}`.padStart(2, '0');
+    const day = `${now.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   /**
@@ -179,13 +237,19 @@ const BookingPage: React.FC<BookingPageProps> = ({
           <div id="booking-left-panel" className="space-y-6">
 
             {/* 日期选择 */}
-            <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+            <Card className={`relative z-40 rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
               <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>选择日期</h2>
               <input
+                ref={dateInputRef}
                 type="date"
                 value={selectedDate}
                 onChange={handleDateChange}
-                min={new Date().toISOString().split('T')[0]}
+                onClick={handleDateInputClick}
+                onKeyDown={(e) => e.preventDefault()}
+                onPaste={(e) => e.preventDefault()}
+                onDrop={(e) => e.preventDefault()}
+                min={getTodayLocalDate()}
+                lang="zh-CN"
                 className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${
                   uiState.theme === 'dark' 
                     ? 'border-border-dark bg-background-dark text-text-dark-primary' 
@@ -194,10 +258,31 @@ const BookingPage: React.FC<BookingPageProps> = ({
               />
             </Card>
 
+            <Card className={`relative z-40 rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>
+                服务类型（必填）
+              </h2>
+              <Dropdown
+                items={[
+                  { label: "选择服务类型", value: "", disabled: true },
+                  ...services.map(s => ({ label: s.name, value: s.id }))
+                ]}
+                value={serviceId}
+                onChange={(value) => onServiceIdChange(value)}
+                buttonText="选择服务类型"
+                className="w-full"
+              />
+              {serviceError && (
+                <p className={`mt-1 text-sm ${isDarkTheme ? 'text-error-light' : 'text-red-600'}`}>
+                  {serviceError}
+                </p>
+              )}
+            </Card>
+
             {/* 可用时间段 */}
             <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
               <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>
-                {formatDate(selectedDate)} 可用时间段
+                {formatDateShort(selectedDate)} 可用时间段
               </h2>
               
               {loading ? (
@@ -210,12 +295,30 @@ const BookingPage: React.FC<BookingPageProps> = ({
                   { availableSlots.map((slot, index) => (
                     <Button
                       key={index}
-                      onClick={() => handleSlotSelect(slot)}
-                      disabled={slot.isBooked}
-                      variant={selectedSlot?.startTime === slot.startTime || slot.isBooked ? 'primary' : 'secondary'}
+                      onClick={() => handleSlotClick(slot as TimeSlotForTable)}
+                      disabled={slot.isBooked && !slot.isOccupied} // 只有"自己的预约"才完全禁用点击（因为已经预约了），"他人预约"可点击弹出替代方案
+                      variant={
+                        selectedSlot?.startTime === slot.startTime 
+                          ? 'primary' 
+                          : slot.isMyBooking 
+                            ? 'warning' 
+                            : slot.isBooked 
+                              ? 'primary' 
+                              : 'secondary'
+                      }
                       fullWidth
+                      className="h-auto py-2 min-h-[64px]"
                     >
-                      {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <span>{formatTime(slot.startTime)} - {formatTime(slot.endTime)}</span>
+                        {/* 状態がある場合のみ表示（空きの場合はプレースホルダーなし） */}
+                        {slot.isMyBooking && (
+                          <span className="text-xs mt-1">(已预约)</span>
+                        )}
+                        {slot.isOccupied && (
+                          <span className="text-xs mt-1">(已满)</span>
+                        )}
+                      </div>
                     </Button>
                   ))}
                 </div>
@@ -226,18 +329,17 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 <BookingForm
                   selectedDate={selectedDate}
                   selectedSlot={selectedSlot}
+                  error={error}
                   notes={notes}
                   customerName={customerName}
                   customerPhone={customerPhone}
                   customerEmail={customerEmail}
                   customerWechat={customerWechat}
-                  serviceName={serviceName}
                   onNotesChange={onNotesChange}
                   onCustomerNameChange={onCustomerNameChange}
                   onCustomerPhoneChange={onCustomerPhoneChange}
                   onCustomerEmailChange={onCustomerEmailChange}
                   onCustomerWechatChange={onCustomerWechatChange}
-                  onServiceNameChange={onServiceNameChange}
                   onSubmit={onCreateBooking}
                   onCancel={() => {onCancelCreating()}}
                   creatingBooking={creatingBooking}
@@ -292,6 +394,47 @@ const BookingPage: React.FC<BookingPageProps> = ({
               </Card>
             </div>
         </div>
+        {/* 替代方案模态框 */}
+        {showAlternativeModal && conflictSlot && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
+            <div className={`w-full max-w-md rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100' : 'bg-white'}`}>
+              <h3 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
+                该时间段 ({formatTime(conflictSlot.startTime)}) 已被预约
+              </h3>
+              <p className={`mb-6 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
+                为您推荐以下临近的可用时间段：
+              </p>
+              
+              <div className="space-y-3">
+                {alternativeSlots.length > 0 ? (
+                  alternativeSlots.map((slot, index) => (
+                    <Button
+                      key={index}
+                      onClick={() => handleAlternativeSelect(slot)}
+                      variant="secondary"
+                      fullWidth
+                    >
+                      {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
+                    </Button>
+                  ))
+                ) : (
+                  <p className={`text-center py-4 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>
+                    暂无其他可用时间段，请尝试选择其他日期。
+                  </p>
+                )}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowAlternativeModal(false)}
+                >
+                  关闭
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
