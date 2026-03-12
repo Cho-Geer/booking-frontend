@@ -49,7 +49,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
       {/* 内层容器 - 表单卡片，符合authFormLayoutStyles.innerContainer规范 */}
       <motion.div
         id="login-page-card"
-        className={`max-w-md w-full space-y-8 p-8 rounded-lg shadow-md ${isDarkTheme ? 'bg-gray-50 text-gray-900' : 'bg-background-dark text-text-dark-primary'}`}
+        className={`max-w-md w-full space-y-8 ${isDarkTheme ? 'text-gray-900' : 'text-text-dark-primary'}`}
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -64,8 +64,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
           <h1 className={`text-3xl font-extrabold mb-2 ${isDarkTheme ? 'text-primary' : 'text-primary'}`}>预约系统</h1>
           <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>登录您的账号以继续</p>
         </motion.div>
-
-
 
         {/* 表单容器，符合authFormLayoutStyles.formContainer规范 */}
         <div id="login-page-form-container" className="mt-8 space-y-6">

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
+import Card from '../atoms/Card';
 import { useUI } from '../../contexts/UIContext';
 
 interface LoginFormProps {
@@ -103,15 +104,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
   }, [error]);
 
   return (
-    <div id="login-form-container" className="space-y-6">
-      {/* 全局错误提示 */}
-      <div className="min-h-[20px]">
-        {error ? (
-          <p className={`text-sm ${isDarkTheme ? 'text-error-dark' : 'text-red-600'}`}>
-            {error}
-          </p>
-        ) : null}
-      </div>
+    <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+      <h2 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>登录账号</h2>
+      {error && (
+        <div className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-3 mb-4`}>
+          <p className={`text-sm ${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
+        </div>
+      )}
 
       {/* 手机号输入部分 */}
       {!showCodeInput ? (
@@ -143,7 +142,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <div id="code-input-container" className="space-y-4">
           {/* 显示已输入的手机号 */}
           <div id="phone-display-container" className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className={`block text-sm font-medium ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-700'}`}>
               手机号
             </label>
             <p className={`px-3 py-2 rounded-md ${isDarkTheme ? 'bg-background-dark border-border-dark text-text-dark-primary' : 'bg-gray-50 border border-gray-200'}`}>
@@ -203,7 +202,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           </Button>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 

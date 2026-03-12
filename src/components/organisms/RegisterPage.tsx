@@ -50,7 +50,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
       {/* 内层容器 - 表单卡片，符合authFormLayoutStyles.innerContainer规范 */}
       <motion.div
         id="register-form-card"
-        className={`max-w-md w-full space-y-8 p-8 rounded-lg shadow-md ${isDarkTheme ? 'bg-gray-50 text-gray-900' : 'bg-background-dark text-text-dark-primary'}`}
+        className={`max-w-md w-full space-y-8 ${isDarkTheme ? 'text-gray-900' : 'text-text-dark-primary'}`}
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -66,8 +66,6 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
           <h1 className={`text-3xl font-extrabold mb-2 text-primary`}>注册账号</h1>
           <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>创建您的预约系统账号</p>
         </motion.div>
-
-
 
         {/* 表单容器，符合authFormLayoutStyles.formContainer规范 */}
         <div id="register-form-container" className="mt-8 space-y-6">

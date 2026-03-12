@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
+import Card from '../atoms/Card';
 import { useUI } from '../../contexts/UIContext';
 
 interface RegisterFormProps {
@@ -136,124 +137,124 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   }, [error, setValue]);
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      {/* 全局错误提示 */}
-      <div className="min-h-[20px]">
-        {error ? (
-          <p className={`text-sm ${isDarkTheme ? 'text-error-dark' : 'text-red-600'}`}>
-            {error}
-          </p>
-        ) : null}
-      </div>
+    <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+      <h2 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>注册账号</h2>
+      {error && (
+        <div className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-3 mb-4`}>
+          <p className={`text-sm ${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
+        </div>
+      )}
 
-      {/* 姓名输入 */}
-      <div id="name-input-container" className="space-y-2">
-        <Input
-          label="姓名"
-          type="text"
-          placeholder="请输入您的姓名"
-          error={errors.name?.message}
-          fullWidth
-          disabled={loading}
-          {...register('name')}
-        />
-      </div>
+      <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+        {/* 姓名输入 */}
+        <div id="name-input-container" className="space-y-2">
+          <Input
+            label="姓名"
+            type="text"
+            placeholder="请输入您的姓名"
+            error={errors.name?.message}
+            fullWidth
+            disabled={loading}
+            {...register('name')}
+          />
+        </div>
 
-      {/* 手机号输入 */}
-      <div id="phone-input-container" className="space-y-2">
-        <Input
-          label="手机号"
-          type="tel"
-          placeholder="请输入手机号"
-          error={errors.phoneNumber?.message}
-          fullWidth
-          disabled={loading}
-          {...register('phoneNumber')}
-        />
-      </div>
+        {/* 手机号输入 */}
+        <div id="phone-input-container" className="space-y-2">
+          <Input
+            label="手机号"
+            type="tel"
+            placeholder="请输入手机号"
+            error={errors.phoneNumber?.message}
+            fullWidth
+            disabled={loading}
+            {...register('phoneNumber')}
+          />
+        </div>
 
-      {/* 邮箱输入（可选） */}
-      <div id="email-input-container" className="space-y-2">
-        <Input
-          label="邮箱（可选）"
-          type="email"
-          placeholder="请输入邮箱地址"
-          error={errors.email?.message}
-          fullWidth
-          disabled={loading}
-          {...register('email')}
-        />
-      </div>
+        {/* 邮箱输入（可选） */}
+        <div id="email-input-container" className="space-y-2">
+          <Input
+            label="邮箱（选填）"
+            type="email"
+            placeholder="请输入邮箱地址"
+            error={errors.email?.message}
+            fullWidth
+            disabled={loading}
+            {...register('email')}
+          />
+        </div>
 
-      {/* 验证码输入部分 */}
-      {showCodeInput ? (
-        <div id="verification-code-container" className="space-y-2">
-          <div id="code-input-with-button" className={`${isMobile ? 'flex flex-col items-start space-y-3' : 'flex flex-row items-end space-x-3'}`}>
-            <Input
-              label="验证码"
-              type="text"
-              placeholder="请输入验证码"
-              error={errors.verificationCode?.message || codeError}
-              fullWidth
-              disabled={loading}
-              {...register('verificationCode', {
-                onChange: (e) => {
-                  if (e.target.value) {
-                    validateCode(e.target.value);
-                  } else {
+        {/* 验证码输入部分 */}
+        {showCodeInput ? (
+          <div id="verification-code-container" className="space-y-2">
+            <div id="code-input-with-button" className={`${isMobile ? 'flex flex-col items-start space-y-3' : 'flex flex-row items-end space-x-3'}`}>
+              <Input
+                label="验证码"
+                type="text"
+                placeholder="请输入验证码"
+                error={errors.verificationCode?.message || codeError}
+                fullWidth
+                disabled={loading}
+                {...register('verificationCode', {
+                  onChange: (e) => {
+                    if (e.target.value) {
+                      validateCode(e.target.value);
+                    } else {
+                      setCodeError('');
+                    }
+                  }
+                })}
+              />
+              <Button
+                variant={countdown > 0 ? 'secondary' : 'primary'}
+                disabled={loading || countdown > 0 || !phone || !name}
+                onClick={() => {
+                  const validationResult = phoneNumberSchema.safeParse(phone);
+                  if (validationResult.success) {
+                    onSendCode(phone);
+                    setValue('verificationCode', '');
                     setCodeError('');
                   }
-                }
-              })}
-            />
-            <Button
-              variant={countdown > 0 ? 'secondary' : 'primary'}
-              disabled={loading || countdown > 0 || !phone || !name}
-              onClick={() => {
-                const validationResult = phoneNumberSchema.safeParse(phone);
-                if (validationResult.success) {
-                  onSendCode(phone);
-                  setValue('verificationCode', '');
-                  setCodeError('');
-                }
-              }}
-              size="md"
-              className="whitespace-nowrap"
-            >
-              {countdown > 0 ? `${countdown}秒后重发` : '发送验证码'}
-            </Button>
+                }}
+                size="md"
+                className="whitespace-nowrap"
+              >
+                {countdown > 0 ? `${countdown}秒后重发` : '发送验证码'}
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <Button
-          type="button"
-          variant="primary"
-          fullWidth
-          disabled={loading || !phone || !name || !!errors.phoneNumber || !!errors.name || !!errors.email}
-          onClick={() => {
-            const validationResult = phoneNumberSchema.safeParse(phone);
-            if (validationResult.success) {
-              handleSendCode({ phoneNumber: phone, name } as z.infer<typeof formSchema>);
-            }
-          }}
-        >
-          获取验证码
-        </Button>
-      )}
+        ) : (
+          <Button
+            type="button"
+            variant="primary"
+            fullWidth
+            disabled={loading || !phone || !name || !!errors.phoneNumber || !!errors.name || !!errors.email}
+            onClick={() => {
+              const validationResult = phoneNumberSchema.safeParse(phone);
+              if (validationResult.success) {
+                handleSendCode({ phoneNumber: phone, name } as z.infer<typeof formSchema>);
+              }
+            }}
+          >
+            获取验证码
+          </Button>
+        )}
 
-      {/* 注册按钮 */}
-      {showCodeInput && (
-        <Button
-          type="submit"
-          variant="primary"
-          fullWidth
-          isLoading={loading}
-          disabled={loading || !phone || !name || !verificationCode || !!codeError}
-        >
-          注册
-        </Button>
-      )}
-    </form>
+        {/* 注册按钮 */}
+        {showCodeInput && (
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
+            isLoading={loading}
+            disabled={loading || !phone || !name || !verificationCode || !!codeError}
+          >
+            注册
+          </Button>
+        )}
+      </form>
+    </Card>
   );
 };
 
