@@ -153,7 +153,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-1 min-h-0 flex-col gap-4">
+        <div className="flex flex-1 min-h-0 h-full flex-col gap-4">
           <Input
             label="姓名（必填）"
             placeholder="Alice"
@@ -202,7 +202,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
             }}
           />
 
-          <div className="flex-1 min-h-0 h-full">
+          <div className="md:h-[clamp(35rem,30vh,35rem)] flex flex-col min-h-0 overflow-hidden">
             <Controller
               name="notes"
               control={control}

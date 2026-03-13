@@ -366,7 +366,7 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
           />
         </div>
 
-        <div className="flex-1 min-h-0">
+        <div className="md:h-[clamp(20rem,30vh,25rem)] flex flex-col min-h-0 overflow-hidden">
           <Controller
             name="notes"
             control={control}

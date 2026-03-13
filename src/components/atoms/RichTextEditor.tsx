@@ -32,7 +32,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder,
   id: propId,
   fullWidth = false,
-  editorHeightClass = 'h-40 md:h-44',
+  editorHeightClass = 'h-52 md:h-56',
 }) => {
   const { uiState } = useUI();
   const [clientId, setClientId] = useState(propId);
@@ -92,14 +92,40 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     #${rteId} {
       display: flex;
       flex-direction: column;
+      height: 100%;
+      min-height: 120px;
+      max-height: 100%;
+      overflow: hidden;
     }
     #${rteId} .ql-container {
       flex: 1 1 auto;
       min-height: 0;
-      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      max-height: 100%;
+      overflow: hidden;
     }
     #${rteId} .ql-editor {
+      flex: 1 1 auto;
+      min-height: 0;
       height: 100%;
+      max-height: 100%;
+      overflow-y: scroll;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #4b5563 #111827;
+      padding-bottom: 16px;
+    }
+    #${rteId} .ql-editor::-webkit-scrollbar {
+      width: 8px;
+    }
+    #${rteId} .ql-editor::-webkit-scrollbar-track {
+      background: #111827;
+    }
+    #${rteId} .ql-editor::-webkit-scrollbar-thumb {
+      background: #4b5563;
+      border-radius: 9999px;
     }
   `;
 
@@ -114,7 +140,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           {label}
         </label>
       )}
-      <div className={`rich-text-editor-wrapper ${error ? 'border border-red-500 rounded-md' : ''} ${fillHeight ? 'h-full flex flex-col min-h-0' : ''}`}>
+      <div className={`rich-text-editor-wrapper ${error ? 'border border-red-500 rounded-md' : ''} flex-1 flex flex-col min-h-0 overflow-hidden`}>
         <ReactQuill
           id={rteId}
           theme="snow"
@@ -123,7 +149,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           placeholder={placeholder}
           modules={modules}
           formats={formats}
-          className={`bg-white text-gray-900 rounded-md mb-0 ${fillHeight ? 'min-h-0 h-full' : ''} ${editorHeightClass}`}
+          className={`bg-white text-gray-900 rounded-md mb-0 ${fillHeight ? 'min-h-0' : ''} ${editorHeightClass}`}
         />
       </div>
       {error && (

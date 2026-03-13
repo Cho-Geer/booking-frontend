@@ -64,7 +64,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 px-4 py-2">
-      <Card className={`w-full ${sizeClass} flex flex-col overflow-hidden rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow-xl'} ${cardClassName}`}>
+      <Card className={`w-full ${sizeClass} flex flex-col overflow-hidden rounded-lg p-6 max-h-[90vh] ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow-xl'} ${cardClassName}`}>
         <div className="flex items-start justify-between gap-4">
           <h3 className={`text-lg font-semibold ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
             {title}
@@ -80,7 +80,7 @@ const Modal: React.FC<ModalProps> = ({
             </div>
           )}
         </div>
-        <div className="mt-4 flex-1 min-h-0">
+        <div className="mt-4 flex-1 min-h-0 h-full">
           {children}
         </div>
         {footer && (

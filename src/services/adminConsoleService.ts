@@ -29,6 +29,26 @@ export interface AdminUsersQuery {
   status?: string;
 }
 
+export interface CreateAdminServicePayload {
+  name: string;
+  description?: string;
+  durationMinutes: number;
+  price?: number;
+  imageUrl: string;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface UpdateAdminServicePayload {
+  name?: string;
+  description?: string;
+  durationMinutes?: number;
+  price?: number;
+  imageUrl?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
 const resolvePayload = <T>(response: unknown): T => {
   if (typeof response !== 'object' || response === null) {
     return undefined as T;
@@ -69,8 +89,24 @@ export const adminConsoleService = {
   },
 
   async getServices(): Promise<Service[]> {
-    const response = await api.get('/services');
+    const response = await api.get('/services/admin/all');
     const payload = resolvePayload<unknown>(response);
     return Array.isArray(payload) ? payload : [];
+  },
+
+  async createService(payload: CreateAdminServicePayload): Promise<Service> {
+    const response = await api.post('/services/admin', payload);
+    return resolvePayload<Service>(response);
+  },
+
+  async updateService(id: string, payload: UpdateAdminServicePayload): Promise<Service> {
+    const response = await api.patch(`/services/admin/${id}`, payload);
+    return resolvePayload<Service>(response);
+  },
+
+  async toggleServiceStatus(id: string, isActive: boolean): Promise<Service> {
+    const response = await api.patch(`/services/admin/${id}/status`, { isActive });
+    const payload = resolvePayload<unknown>(response);
+    return payload as Service;
   },
 };
