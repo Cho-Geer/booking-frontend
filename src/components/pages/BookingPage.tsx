@@ -16,6 +16,7 @@ import {
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
+import ConfirmModal from '@/components/molecules/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
 import { bookingService } from '@/services/bookingService';
 
@@ -71,8 +72,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   // 本地状态
   const [notes, setNotes] = useState('');
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [customerName, setCustomerName] = useState('Alice'); // 设置默认值
-  const [customerPhone, setCustomerPhone] = useState('18100000000'); // 设置默认值
+  const [customerName, setCustomerName] = useState('Alice');
+  const [customerPhone, setCustomerPhone] = useState('18100000000');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerWechat, setCustomerWechat] = useState('');
   const [serviceId, setServiceId] = useState('');
@@ -80,6 +81,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const [slotReferenceBookings, setSlotReferenceBookings] = useState<Booking[]>([]);
   const [showCreateSuccessModal, setShowCreateSuccessModal] = useState(false);
   const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
+  const [updatingBooking, setUpdatingBooking] = useState(false);
+  const [bookingCreated, setBookingCreated] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [showGlobalSpinner, setShowGlobalSpinner] = useState(false);
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
 
     // 表单验证状态
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
@@ -211,6 +218,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
    * @param slot - 选中的时间段
    */
   const handleSlotSelect = (slot: TimeSlot) => {
+    if (!serviceId) {
+      const errors: {[key: string]: string} = {};
+      errors.serviceId = '请选择服务类型';
+      setFormErrors(errors);
+      setIsFormValid(false);
+      return;
+    }
     dispatch(setSelectedSlot(slot));
     setShowBookingForm(true);
   };
@@ -265,7 +279,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   /**
    * 处理创建预约
    */
-  const handleCreateBooking = async () => {
+  const handleConfirmBooking = async () => {
     // 先进行表单验证
     if (!validateForm()) return;
     if (!selectedSlot || !customerName || !customerPhone) return;
@@ -273,6 +287,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     // 查找选中的服务名称
     const selectedService = services.find(s => s.id === serviceId);
     const serviceName = selectedService ? selectedService.name : 'Unknown Service';
+
+    setBookingCreated(false);
+    setEmailSent(false);
+    setShowGlobalSpinner(true);
 
     const result = await dispatch(createBooking({
       timeSlotId: selectedSlot.id,
@@ -289,6 +307,14 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
 
     if (createBooking.fulfilled.match(result)) {
       // 创建成功，重置表单
+      setBookingCreated(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setEmailSent(true);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       setNotes('');
       setCustomerName('');
       setCustomerPhone('');
@@ -299,6 +325,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       dispatch(setSelectedSlot(null));
       setFormErrors({});
       setIsFormValid(false);
+      setBookingCreated(false);
+      setEmailSent(false);
+      setShowGlobalSpinner(false);
       // 重新获取预约列表和可用时间段
       await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
@@ -322,9 +351,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         }
       }));
       dispatch(setSelectedSlot(null));
+      setBookingCreated(false);
+      setEmailSent(false);
+      setShowGlobalSpinner(false);
       return;
     }
     showError('预约创建失败', result.error.message || '请稍后重试');
+    setBookingCreated(false);
+    setEmailSent(false);
+    setShowGlobalSpinner(false);
   };
 
   /**
@@ -335,12 +370,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   };
 
   /**
-   * 处理取消预约
+   * 处理取消预约确认
    */
-  const handleCancelBooking = async (id: string) => {
-    // if (!selectedSlot || !customerName || !customerPhone) return;
+  const handleCancelBookingConfirm = async () => {
+    if (!cancelBookingId) return;
 
-    const result = await dispatch(cancelBooking(id));
+    setShowGlobalSpinner(true);
+    setShowCancelConfirmModal(false);
+
+    const result = await dispatch(cancelBooking(cancelBookingId));
     if (cancelBooking.fulfilled.match(result)) {
       // 取消成功，重置表单
       setNotes('');
@@ -356,11 +394,23 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
       loadSlotReferenceBookings(selectedDate);
+      setShowGlobalSpinner(false);
       setShowCancelSuccessModal(true);
+      setCancelBookingId(null);
       return;
     }
 
     showError('预约取消失败', result.error.message || '请稍后重试');
+    setShowGlobalSpinner(false);
+    setCancelBookingId(null);
+  };
+
+  /**
+   * 处理取消预约
+   */
+  const handleCancelBooking = (id: string) => {
+    setCancelBookingId(id);
+    setShowCancelConfirmModal(true);
   };
 
   const handleUpdateBooking = async (payload: {
@@ -374,15 +424,22 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     customerWechat?: string;
     notes?: string;
   }) => {
+    setUpdatingBooking(true);
+    setShowGlobalSpinner(true);
+    
     const result = await dispatch(updateBooking(payload));
     if (updateBooking.fulfilled.match(result)) {
       await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
       loadSlotReferenceBookings(selectedDate);
-      showSuccess('预约更新成功');
+      
+      setUpdatingBooking(false);
+      setShowGlobalSpinner(false);
       return;
     }
     showError('预约更新失败', result.error.message || '请稍后重试');
+    setUpdatingBooking(false);
+    setShowGlobalSpinner(false);
     throw new Error(result.error.message || '预约更新失败');
   };
 
@@ -421,7 +478,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     setServiceId(serviceId);
     setFormErrors((prev) => {
       if (!prev.serviceId) return prev;
-      const { serviceId: _removed, ...rest } = prev;
+      const { serviceId, ...rest } = prev;
+      if (Object.keys(rest).length === 0) {
+        setIsFormValid(true);
+      }
       return rest;
     });
   }
@@ -435,45 +495,76 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     dispatch(resetBookingState());
   }
   
-  return (<BookingPageOrganism 
-      loading={slotsLoading} // 左側パネル用には slotsLoading を渡す
-      bookingsLoading={bookingsLoading} // 右側パネル用には bookingsLoading を渡す（Organism側で対応必要）
-      error={displayError}
-      bookings={bookings || []}
-      availableSlots={slots || []}
-      selectedDate={selectedDate || ''}
-      selectedSlot={selectedSlot || null}
-      showBookingForm={showBookingForm}
-      creatingBooking={creatingBooking}
-      customerName={customerName || ''}
-      customerPhone={customerPhone || ''}
-      customerEmail={customerEmail || ''}
-      customerWechat={customerWechat || ''}
-      serviceId={serviceId || ''}
-      serviceError={serviceError}
-      services={services || []}
-      notes={notes || ''}
-      onDateChange={handleDateChange}
-      onSlotSelect={handleSlotSelect}
-      onNotesChange={handleNotesChange}
-      onCustomerNameChange={handleCustomerNameChange}
-      onCustomerPhoneChange={handlePhoneChange}
-      onCustomerEmailChange={handleCustomerEmailChange}
-      onCustomerWechatChange={handleCustomerWechatChange}
-      onServiceIdChange={handleServiceIdChange}
-      onCancelCreating={handleCancelCreating}
-      onCreateBooking={handleCreateBooking}
-      onCancelBooking={handleCancelBooking}
-      onUpdateBooking={handleUpdateBooking}
-      resetBookingState={handleResetBookingState}
-      pagination={pagination}
-      onPageChange={handlePageChange}
-      onSearch={handleSearch}
-      showCreateSuccessModal={showCreateSuccessModal}
-      setShowCreateSuccessModal={setShowCreateSuccessModal}
-      showCancelSuccessModal={showCancelSuccessModal}
-      setShowCancelSuccessModal={setShowCancelSuccessModal}
-  />);
+  return (
+    <>
+      <BookingPageOrganism 
+        loading={slotsLoading}
+        bookingsLoading={bookingsLoading}
+        error={displayError}
+        bookings={bookings || []}
+        availableSlots={slots || []}
+        selectedDate={selectedDate || ''}
+        selectedSlot={selectedSlot || null}
+        showBookingForm={showBookingForm}
+        creatingBooking={creatingBooking}
+        customerName={customerName || ''}
+        customerPhone={customerPhone || ''}
+        customerEmail={customerEmail || ''}
+        customerWechat={customerWechat || ''}
+        serviceId={serviceId || ''}
+        serviceError={serviceError}
+        services={services || []}
+        notes={notes || ''}
+        onDateChange={handleDateChange}
+        onSlotSelect={handleSlotSelect}
+        onNotesChange={handleNotesChange}
+        onCustomerNameChange={handleCustomerNameChange}
+        onCustomerPhoneChange={handlePhoneChange}
+        onCustomerEmailChange={handleCustomerEmailChange}
+        onCustomerWechatChange={handleCustomerWechatChange}
+        onServiceIdChange={handleServiceIdChange}
+        onCancelCreating={handleCancelCreating}
+        onCreateBooking={handleConfirmBooking}
+        onCancelBooking={handleCancelBooking}
+        onUpdateBooking={handleUpdateBooking}
+        resetBookingState={handleResetBookingState}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        onSearch={handleSearch}
+        showCreateSuccessModal={showCreateSuccessModal}
+        setShowCreateSuccessModal={setShowCreateSuccessModal}
+        showCancelSuccessModal={showCancelSuccessModal}
+        setShowCancelSuccessModal={setShowCancelSuccessModal}
+        bookingCreated={bookingCreated}
+        setBookingCreated={setBookingCreated}
+        emailSent={emailSent}
+        setEmailSent={setEmailSent}
+        onConfirmBooking={handleConfirmBooking}
+      />
+      
+      {showGlobalSpinner && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white"></div>
+            <p className="text-white text-lg font-medium">正在处理，请稍候...</p>
+          </div>
+        </div>
+      )}
+      
+      <ConfirmModal
+        open={showCancelConfirmModal}
+        title="取消预约"
+        message="请确认是否要取消此预约？"
+        confirmText="确认"
+        cancelText="取消"
+        onConfirm={handleCancelBookingConfirm}
+        onCancel={() => {
+          setShowCancelConfirmModal(false);
+          setCancelBookingId(null);
+        }}
+      />
+    </>
+  );
 };
 
 export default BookingPage;

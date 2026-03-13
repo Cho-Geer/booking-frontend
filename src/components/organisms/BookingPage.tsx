@@ -26,7 +26,7 @@ interface BookingPageProps {
   selectedSlot: TimeSlot | null;
   showBookingForm: boolean;
   loading: boolean;
-  bookingsLoading?: boolean; // 追加
+  bookingsLoading?: boolean;
   error?: string;
   creatingBooking: boolean;
   customerName: string;
@@ -62,6 +62,11 @@ interface BookingPageProps {
   setShowCreateSuccessModal: (value: boolean) => void;
   showCancelSuccessModal: boolean;
   setShowCancelSuccessModal: (value: boolean) => void;
+  bookingCreated: boolean;
+  setBookingCreated: (value: boolean) => void;
+  emailSent: boolean;
+  setEmailSent: (value: boolean) => void;
+  onConfirmBooking: () => void;
 }
 
 /**
@@ -123,7 +128,12 @@ const BookingPage: React.FC<BookingPageProps> = ({
   showCreateSuccessModal,
   setShowCreateSuccessModal,
   showCancelSuccessModal,
-  setShowCancelSuccessModal
+  setShowCancelSuccessModal,
+  bookingCreated,
+  setBookingCreated,
+  emailSent,
+  setEmailSent,
+  onConfirmBooking
 }) => {
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
@@ -138,6 +148,10 @@ const BookingPage: React.FC<BookingPageProps> = ({
     !!dateRange.startDate &&
     !!dateRange.endDate &&
     dateRange.endDate < dateRange.startDate;
+
+  const handleConfirmBooking = () => {
+    onConfirmBooking();
+  };
 
   // 搜索防抖
   React.useEffect(() => {
@@ -727,6 +741,9 @@ const BookingPage: React.FC<BookingPageProps> = ({
           onSubmit={onCreateBooking}
           onClose={onCancelCreating}
           creatingBooking={creatingBooking}
+          bookingCreated={bookingCreated}
+          emailSent={emailSent}
+          onConfirmBooking={handleConfirmBooking}
         />
         <BookingUpdateModal
           open={showUpdateModal}
@@ -738,6 +755,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
           }}
           onConfirm={handleConfirmUpdate}
           submitting={updatingBooking}
+          updatingBooking={updatingBooking}
         />
         <Modal
           open={showUpdateSuccessModal}
@@ -752,7 +770,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
           )}
         >
           <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约更新成功，已为您保存最新预约信息。
+            预约更新成功，已为您保存最新预约信息。<br />
+            已发送邮件请确认。
           </p>
         </Modal>
         <Modal
@@ -768,7 +787,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
           )}
         >
           <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约创建成功，已为您保存最新预约信息。
+            预约创建成功，已为您保存最新预约信息。<br />
+            已发送邮件请确认。
           </p>
         </Modal>
         <Modal
@@ -784,7 +804,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
           )}
         >
           <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约取消成功，已为您更新预约状态。
+            预约取消成功，已为您更新预约状态。<br />
+            已发送邮件请确认。
           </p>
         </Modal>
       </div>

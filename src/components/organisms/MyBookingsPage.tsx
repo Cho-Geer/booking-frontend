@@ -245,6 +245,7 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
         }}
         onConfirm={handleConfirmUpdate}
         submitting={updatingBooking}
+        updatingBooking={updatingBooking}
       />
       <Modal
         open={showUpdateSuccessModal}

@@ -4,6 +4,7 @@ import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
 import RichTextEditor from '@/components/atoms/RichTextEditor';
 import Dropdown from '@/components/atoms/Dropdown';
+import ConfirmModal from './ConfirmModal';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,6 +38,7 @@ interface BookingUpdateModalProps {
   onClose: () => void;
   onConfirm: (payload: BookingUpdatePayload) => Promise<void>;
   submitting?: boolean;
+  updatingBooking: boolean;
 }
 
 const formSchema = z.object({
@@ -54,6 +56,7 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
   onClose,
   onConfirm,
   submitting = false,
+  updatingBooking = false,
 }) => {
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
@@ -65,12 +68,15 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [slotLoading, setSlotLoading] = React.useState(false);
   const [slotError, setSlotError] = React.useState('');
+  const [showConfirmModal, setShowConfirmModal] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement | null>(null);
   const {
     register,
     handleSubmit,
     reset,
     control,
+    trigger,
+    getValues,
     formState: { errors: formErrors },
   } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -211,8 +217,17 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
 
   const handleConfirm = async (data: z.infer<typeof formSchema>) => {
     if (!validateBasicFields()) return;
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmUpdate = async () => {
+    const isValid = await trigger();
+    if (!isValid || !validateBasicFields()) return;
+    
+    setShowConfirmModal(false);
+    const data = getValues();
     await onConfirm({
-      id: booking.id,
+      id: booking!.id,
       appointmentDate: selectedDate,
       timeSlotId: selectedTimeSlotId,
       serviceId,
@@ -224,21 +239,32 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
     });
   };
 
+  const handleCancelUpdate = () => {
+    setShowConfirmModal(false);
+  };
+
   return (
-    <Modal
-      open={open}
-      title="更新预约"
-      onClose={onClose}
-      size={isMobile ? "md" : "lg"}
-      cardClassName={`${isMobile ? 'min-h-[70vh]' : 'min-h-[78vh]'} flex flex-col`}
-      closeButtonVariant="secondary"
-      closeButtonText="取消"
-      headerActions={(
-        <Button variant="warning" size="sm" onClick={handleSubmit(handleConfirm)} isLoading={submitting}>
-          确认
-        </Button>
-      )}
-    >
+    <>
+      <Modal
+        open={open}
+        title="更新预约"
+        onClose={onClose}
+        size={isMobile ? "md" : "lg"}
+        cardClassName={`${isMobile ? 'min-h-[70vh]' : 'min-h-[78vh]'} flex flex-col`}
+        closeButtonVariant="secondary"
+        closeButtonText="取消"
+        headerActions={(
+          <Button 
+            variant="warning" 
+            size="sm" 
+            onClick={handleSubmit(handleConfirm)} 
+            isLoading={submitting}
+            disabled={submitting || updatingBooking}
+          >
+            {updatingBooking ? '更新中...' : '确认'}
+          </Button>
+        )}
+      >
       <div className="flex h-full flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
@@ -385,6 +411,18 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
         </div>
       </div>
     </Modal>
+    
+    <ConfirmModal
+      open={showConfirmModal}
+      title="更新预约"
+      message="请确认是否要更新此预约？"
+      confirmText="确认"
+      cancelText="取消"
+      onConfirm={handleConfirmUpdate}
+      onCancel={handleCancelUpdate}
+      isLoading={updatingBooking}
+    />
+    </>
   );
 };
 
