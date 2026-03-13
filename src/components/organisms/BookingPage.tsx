@@ -358,7 +358,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   };
 
   return (
-    <div id="booking-page-container" className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
+    <div id="booking-page-container" className={`h-[scal(100vh-16px)] py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scorllbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
       <div id="booking-content-container" className="max-w-7xl mx-auto">
         <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-2xl' : ''}`}>预约服务</h1>
         
@@ -470,8 +470,8 @@ const BookingPage: React.FC<BookingPageProps> = ({
             </Card>
           </div>
           {/* 右侧：我的预约 */}
-          <div id="booking-right-panel" className="w-full">
-            <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+          <div id="booking-right-panel" className={`w-full lg:block`}>
+            <Card className={`rounded-lg p-6 h-full overflow-hidden flex flex-col ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
                 <div className={`mb-4 ${isMobile ? 'space-y-3' : 'flex justify-between items-center gap-3'}`}>
                   <h2 className={`text-lg font-medium whitespace-nowrap ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-base' : ''}`}>我的预约</h2>
                   <div className={`${isMobile ? 'w-full' : 'w-1/3 min-w-[112px]'} text-sm`}>
@@ -618,7 +618,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 ) : bookings.length === 0 ? (
                   <p className={`text-center py-8 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>暂无预约记录</p>
                 ) : (
-                  <div className="space-y-4">
+                  <div id="booked-item" className="space-y-4 flex flex-col h-[46vh] overflow-y-auto scrollbar-hide">
                     {bookings.map((booking) => (
                       <div id={`booking-item-${booking.id}`} key={booking.id} className={`rounded-md p-4 ${isDarkTheme ? 'bg-background-dark-200 border border-border-dark' : 'border border-gray-200'}`}>
                         <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start gap-4'}`}>

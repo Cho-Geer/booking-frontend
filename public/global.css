@@ -12,6 +12,16 @@
     }
 }
 
+/* 隐藏滚动条但保留滚动功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
+
 /* 修复浏览器自动填充样式的背景色问题 */
 input:-webkit-autofill,
 input:-webkit-autofill:hover, 

@@ -63,9 +63,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const userNavItems = userType === 'admin' ? adminNavItems : navItems;
 
   return (
-    <div id="app-layout-container" className={`min-h-screen ${bgColorClass}`}>
+    <div id="app-layout-container" className={`h-screen ${bgColorClass}`}>
       {/* 顶部导航栏 */}
-      <nav className={`shadow-sm border-b ${uiState.theme === 'dark' ? 'bg-background-dark text-text-dark-primary border-border-dark' : 'bg-white'}`}>
+      <nav className={`fixed z-[9999] w-full shadow-sm border-b ${uiState.theme === 'dark' ? 'bg-background-dark text-text-dark-primary border-border-dark' : 'bg-white'}`}>
         <div id="nav-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div id="nav-content" className="flex justify-between h-16">
             <div className="flex">
@@ -121,7 +121,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* 主要内容区域 */}
       <main>
-        <div id="main-content-wrapper" className="py-6">
+        <div id="main-content-wrapper" className="py-6 pt-16">
           <div id="main-content-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
           </div>
