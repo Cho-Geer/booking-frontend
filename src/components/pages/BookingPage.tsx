@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   getBookings, 
@@ -8,12 +8,16 @@ import {
   setSelectedDate,
   setSelectedSlot,
   resetBookingState,
-  cancelBooking
+  cancelBooking,
+  updateBooking,
+  setPage,
+  setFilters
 } from '@/store/bookingSlice';
 import { AppDispatch, RootState } from '@/store';
-import { TimeSlot, Booking } from '@/types';
+import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import { useUI } from '@/contexts/UIContext';
+import { bookingService } from '@/services/bookingService';
 
 /**
  * 页面组件：预约页面
@@ -55,9 +59,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     services,
     selectedDate, 
     selectedSlot, 
-    loading, 
+    loading,
+    slotsLoading,
+    bookingsLoading,
     error, 
-    creatingBooking 
+    creatingBooking,
+    pagination,
+    filters
   } = useSelector((state: RootState) => state.booking);
 
   // 本地状态
@@ -69,6 +77,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const [customerWechat, setCustomerWechat] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [slots, setSlots] = useState<AvailableSlotsForTable[]>([]);
+  const [slotReferenceBookings, setSlotReferenceBookings] = useState<Booking[]>([]);
+  const [showCreateSuccessModal, setShowCreateSuccessModal] = useState(false);
+  const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
 
     // 表单验证状态
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
@@ -80,12 +91,22 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   useEffect(() => {
     // 如果是服务端渲染且有初始数据，直接设置到store中
     if (isSSR && initialData && Array.isArray(initialData) && initialData.length > 0) {
-      dispatch({ type: 'booking/getBookings/fulfilled', payload: initialData });
+      dispatch({ type: 'booking/getBookings/fulfilled', payload: { items: initialData, total: initialData.length, page: 1, limit: initialData.length, totalPages: 1 } });
     } else if (!isSSR) {
       // 客户端渲染时获取数据
-      dispatch(getBookings());
+      dispatch(getBookings({ ...filters, page: pagination.page, limit: pagination.limit }));
     }
-  }, [dispatch, isSSR]);
+  }, [dispatch, isSSR, pagination.page, pagination.limit, filters]);
+
+  // 处理分页变化
+  const handlePageChange = useCallback((page: number) => {
+    dispatch(setPage(page));
+  }, [dispatch]);
+
+  // 处理搜索
+  const handleSearch = useCallback((query: AppointmentQuery) => {
+    dispatch(setFilters(query));
+  }, [dispatch]);
 
   // 如果有服务端错误，设置到store中
   useEffect(() => {
@@ -99,12 +120,30 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     dispatch(getServices());
   }, [dispatch]);
 
+  const loadSlotReferenceBookings = useCallback(async (date: string) => {
+    try {
+      const response = await bookingService.getBookings({
+        page: 1,
+        limit: 200,
+        startDate: date,
+        endDate: date
+      });
+      setSlotReferenceBookings(response.items);
+    } catch {
+      setSlotReferenceBookings([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSlotReferenceBookings(selectedDate);
+  }, [loadSlotReferenceBookings, selectedDate]);
+
   // 预约状态更新时更新slots状态
   useEffect(() => {
     if(availableSlots.length > 0){
       setSlots(availableSlots.map(slot => {
         // 检查当前用户是否有预约
-        const myBooking = bookings.find(booking => 
+        const myBooking = slotReferenceBookings.find(booking => 
           booking.timeSlotId === slot.id 
           && ['CONFIRMED', 'PENDING'].includes(booking.status)
           && selectedDate === booking.appointmentDate.slice(0, 10)
@@ -144,7 +183,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         };
       }));
     }
-  }, [bookings, availableSlots, selectedDate]);
+  }, [slotReferenceBookings, availableSlots, selectedDate]);
 
   // 日期改变时获取可用时间段
   useEffect(() => {
@@ -205,6 +244,24 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     return Object.keys(errors).length === 0;
   };
 
+  const refreshBookingsAfterMutation = async () => {
+    const currentPage = Math.max(1, pagination.page);
+    const result = await dispatch(
+      getBookings({ ...filters, page: currentPage, limit: pagination.limit })
+    ).unwrap();
+
+    if (result.totalPages === 0 && result.page !== 1) {
+      dispatch(setPage(1));
+      await dispatch(getBookings({ ...filters, page: 1, limit: pagination.limit }));
+      return;
+    }
+
+    if (result.totalPages > 0 && result.page > result.totalPages) {
+      dispatch(setPage(result.totalPages));
+      await dispatch(getBookings({ ...filters, page: result.totalPages, limit: pagination.limit }));
+    }
+  };
+
   /**
    * 处理创建预约
    */
@@ -243,9 +300,10 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       setFormErrors({});
       setIsFormValid(false);
       // 重新获取预约列表和可用时间段
-      dispatch(getBookings());
+      await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
-      showSuccess('预约创建成功');
+      loadSlotReferenceBookings(selectedDate);
+      setShowCreateSuccessModal(true);
       return;
     }
 
@@ -295,13 +353,37 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       setFormErrors({});
       setIsFormValid(false);
       // 重新获取预约列表和可用时间段
-      dispatch(getBookings());
+      await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
-      showSuccess('预约取消成功');
+      loadSlotReferenceBookings(selectedDate);
+      setShowCancelSuccessModal(true);
       return;
     }
 
     showError('预约取消失败', result.error.message || '请稍后重试');
+  };
+
+  const handleUpdateBooking = async (payload: {
+    id: string;
+    appointmentDate: string;
+    timeSlotId: string;
+    serviceId: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    customerWechat?: string;
+    notes?: string;
+  }) => {
+    const result = await dispatch(updateBooking(payload));
+    if (updateBooking.fulfilled.match(result)) {
+      await refreshBookingsAfterMutation();
+      dispatch(getAvailableSlots(selectedDate));
+      loadSlotReferenceBookings(selectedDate);
+      showSuccess('预约更新成功');
+      return;
+    }
+    showError('预约更新失败', result.error.message || '请稍后重试');
+    throw new Error(result.error.message || '预约更新失败');
   };
 
   /**
@@ -354,7 +436,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   }
   
   return (<BookingPageOrganism 
-      loading={loading}
+      loading={slotsLoading} // 左側パネル用には slotsLoading を渡す
+      bookingsLoading={bookingsLoading} // 右側パネル用には bookingsLoading を渡す（Organism側で対応必要）
       error={displayError}
       bookings={bookings || []}
       availableSlots={slots || []}
@@ -381,7 +464,15 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       onCancelCreating={handleCancelCreating}
       onCreateBooking={handleCreateBooking}
       onCancelBooking={handleCancelBooking}
+      onUpdateBooking={handleUpdateBooking}
       resetBookingState={handleResetBookingState}
+      pagination={pagination}
+      onPageChange={handlePageChange}
+      onSearch={handleSearch}
+      showCreateSuccessModal={showCreateSuccessModal}
+      setShowCreateSuccessModal={setShowCreateSuccessModal}
+      showCancelSuccessModal={showCancelSuccessModal}
+      setShowCancelSuccessModal={setShowCancelSuccessModal}
   />);
 };
 

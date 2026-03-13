@@ -1,5 +1,5 @@
 import api from './api';
-import { Booking, TimeSlot, CreateBookingRequest, Service } from '../types';
+import { Booking, TimeSlot, CreateBookingRequest, Service, AppointmentQuery, AppointmentListResponse } from '../types';
 
 /**
  * 预约服务
@@ -25,15 +25,38 @@ export const bookingService = {
 
   /**
    * 获取所有用户的预约列表（管理员）
-   * @returns 预约列表
+   * @param query - 查询参数
+   * @returns 预约列表响应
    */
-  async getBookings(): Promise<Booking[]> {
-    const response = await api.get('/bookings/all');
-    return response.data.data.items.map((item: { timeSlot: { slotTime: string; durationMinutes: number } }) => ({
-      ...item,
-      startTime: item.timeSlot.slotTime.split(':').slice(0, 2).join(':'), // 转换为 HH:MM 格式
-      endTime: this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes),
-    }));
+  async getBookings(query: AppointmentQuery = {}): Promise<AppointmentListResponse> {
+    const response = await api.get('/bookings/all', { params: query });
+    const data = response.data.data || response.data;
+    
+    // 如果返回的是旧格式（数组），则转换为新格式
+    if (Array.isArray(data)) {
+      const items = data.map((item: any) => ({
+        ...item,
+        startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
+        endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',
+      }));
+      return {
+        items,
+        total: items.length,
+        page: 1,
+        limit: items.length,
+        totalPages: 1
+      };
+    }
+
+    // 新格式处理
+    return {
+      ...data,
+      items: data.items.map((item: any) => ({
+        ...item,
+        startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
+        endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',
+      }))
+    };
   },
 
   /**
@@ -92,6 +115,31 @@ export const bookingService = {
     return response.data;
   },
 
+  async updateBooking(
+    bookingId: string,
+    bookingData: {
+      appointmentDate: string;
+      timeSlotId: string;
+      serviceId: string;
+      customerName: string;
+      customerPhone: string;
+      customerEmail?: string;
+      customerWechat?: string;
+      notes?: string;
+    }
+  ): Promise<Booking> {
+    const response = await api.patch(`/bookings/${bookingId}`, bookingData);
+    const payload = response.data?.data ?? response.data;
+    return {
+      ...payload,
+      serviceName: payload.service?.name || payload.serviceName,
+      startTime: payload.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || payload.startTime,
+      endTime: payload.timeSlot?.slotTime
+        ? this.calculateEndTime(payload.timeSlot.slotTime, payload.timeSlot.durationMinutes)
+        : payload.endTime,
+    };
+  },
+
   /**
    * 获取预约详情
    * @param bookingId - 预约ID
@@ -99,6 +147,6 @@ export const bookingService = {
    */
   async getBookingById(bookingId: string): Promise<Booking> {
     const response = await api.get(`/bookings/${bookingId}`);
-    return response.data;
+    return response.data?.data || response.data;
   },
 };

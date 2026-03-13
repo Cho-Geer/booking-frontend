@@ -7,7 +7,7 @@ import type { ReactElement } from 'react';
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
   children: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'warning';
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   fullWidth?: boolean;
   icon?: LucideIcon | ReactElement;
@@ -56,13 +56,17 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const variantClasses = {
       primary: 'bg-primary text-primary-foreground hover:bg-primary-600 focus:ring-ring',
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-ring',
-      warning: 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500',
+      warning: isDarkTheme
+        ? 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500'
+        : 'bg-yellow-500 text-black hover:bg-yellow-600 focus:ring-yellow-500',
       danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/80 focus:ring-ring',
       ghost: 'text-foreground hover:bg-secondary/50 focus:ring-ring'
     };
     
     // 尺寸样式 - 使用CSS变量中定义的间距和字体大小
     const sizeClasses = {
+      xxs: 'px-1.5 py-0 text-[10px] h-6',
+      xs: 'px-2 py-0.5 text-xs h-7',
       sm: 'px-spacing-md py-spacing-sm text-text-sm h-9',
       md: 'px-spacing-lg py-spacing-sm text-text-base h-10',
       lg: 'px-6 py-spacing-md text-text-lg h-12'

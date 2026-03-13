@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import MyBookingsPageOrganism from '@/components/organisms/MyBookingsPage';
-import { getBookings, cancelBooking } from '@/store/bookingSlice';
+import { getBookings, cancelBooking, getServices, updateBooking } from '@/store/bookingSlice';
 import { withAuth } from '@/components/hoc/withAuth';
 
 /**
@@ -12,11 +12,12 @@ import { withAuth } from '@/components/hoc/withAuth';
  */
 const MyBookingsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { bookings, loading, error } = useSelector((state: RootState) => state.booking);
+  const { bookings, services, loading, error } = useSelector((state: RootState) => state.booking);
   
   // 获取预约列表（withAuth已确保用户已登录）
   useEffect(() => {
     dispatch(getBookings());
+    dispatch(getServices());
   }, [dispatch]);
 
   /**
@@ -26,12 +27,33 @@ const MyBookingsPage: React.FC = () => {
     dispatch(cancelBooking(bookingId));
   };
 
+  const handleUpdateBooking = async (payload: {
+    id: string;
+    appointmentDate: string;
+    timeSlotId: string;
+    serviceId: string;
+    customerName: string;
+    customerPhone: string;
+    customerEmail?: string;
+    customerWechat?: string;
+    notes?: string;
+  }) => {
+    const result = await dispatch(updateBooking(payload));
+    if (updateBooking.fulfilled.match(result)) {
+      dispatch(getBookings());
+      return;
+    }
+    throw new Error(result.error.message || '更新预约失败');
+  };
+
   return (
     <MyBookingsPageOrganism
       bookings={bookings}
+      services={services}
       loading={loading}
       error={error || undefined}
       onCancelBooking={handleCancelBooking}
+      onUpdateBooking={handleUpdateBooking}
     />
   );
 };

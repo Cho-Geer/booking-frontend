@@ -1,14 +1,20 @@
 import React from 'react';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
+import Modal from '@/components/atoms/Modal';
 import { useUI } from '@/contexts/UIContext';
-import { Booking } from '@/types';
+import { Booking, Service } from '@/types';
+import BookingDetailModal from '@/components/molecules/BookingDetailModal';
+import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
+import { stripHtml } from '@/utils/htmlUtils';
 
 interface MyBookingsPageProps {
   bookings: Booking[];
+  services: Service[];
   loading: boolean;
   error?: string;
   onCancelBooking: (bookingId: string) => void;
+  onUpdateBooking: (payload: BookingUpdatePayload) => Promise<void>;
 }
 
 /**
@@ -25,12 +31,20 @@ interface MyBookingsPageProps {
  */
 const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
   bookings,
+  services,
   loading,
   error,
-  onCancelBooking
+  onCancelBooking,
+  onUpdateBooking
 }) => {
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
+  const [showDetailModal, setShowDetailModal] = React.useState(false);
+  const [showUpdateModal, setShowUpdateModal] = React.useState(false);
+  const [detailBooking, setDetailBooking] = React.useState<Booking | null>(null);
+  const [updateBookingTarget, setUpdateBookingTarget] = React.useState<Booking | null>(null);
+  const [updatingBooking, setUpdatingBooking] = React.useState(false);
+  const [showUpdateSuccessModal, setShowUpdateSuccessModal] = React.useState(false);
 
   /**
    * 格式化日期显示
@@ -110,6 +124,32 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
   const borderColorClass = isDarkTheme ? 'border-border-dark' : 'border-gray-200';
   const cardBgClass = isDarkTheme ? 'bg-background-dark-200' : 'bg-white';
 
+  const canShowUpdate = (status: string) => status === 'PENDING';
+
+  const handleOpenDetail = (booking: Booking) => {
+    setDetailBooking(booking);
+    setShowDetailModal(true);
+  };
+
+  const handleOpenUpdate = (booking: Booking) => {
+    setUpdateBookingTarget(booking);
+    setShowUpdateModal(true);
+    setShowDetailModal(false);
+  };
+
+  const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
+    setUpdatingBooking(true);
+    try {
+      await onUpdateBooking(payload);
+      setShowUpdateModal(false);
+      setUpdateBookingTarget(null);
+      setDetailBooking(null);
+      setShowUpdateSuccessModal(true);
+    } finally {
+      setUpdatingBooking(false);
+    }
+  };
+
   return (
     <div id="my-bookings-page-container" className={`min-h-screen ${bgColorClass} py-8`}>
       <div id="my-bookings-content-wrapper" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -136,20 +176,41 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
               {bookings.map((booking) => (
                 <div id={`booking-item-${booking.id}`} key={booking.id} className={`${borderColorClass} rounded-md p-4 ${uiState.theme === 'dark' ? 'dark:border' : 'border'}`}>
                   <div id={`booking-item-header-${booking.id}`} className="flex justify-between items-start">
-                    <div id={`booking-item-details-${booking.id}`}>
+                    <div id={`booking-item-details-${booking.id}`} className="min-w-0">
                       <p className={`font-medium ${textColorClass}`}>
                         {formatDate(booking.appointmentDate)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
                       </p>
                       {booking.notes && (
-                        <p className={`text-sm mt-1 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>备注: {booking.notes}</p>
+                        <p
+                          title={`备注: ${stripHtml(booking.notes)}`}
+                          className={`text-sm mt-1 truncate ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}
+                        >
+                          备注: {stripHtml(booking.notes)}
+                        </p>
                       )}
                     </div>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
+                    <span className={`inline-flex items-center whitespace-nowrap shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
                       {getStatusName(booking.status)}
                     </span>
                   </div>
-                  {booking.status === 'CONFIRMED' && (
-                    <div id={`booking-item-actions-${booking.id}`} className="mt-3">
+                  <div id={`booking-item-actions-${booking.id}`} className="mt-3 flex flex-wrap gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenDetail(booking)}
+                    >
+                      详细
+                    </Button>
+                    {canShowUpdate(booking.status) && (
+                      <Button
+                        variant="warning"
+                        size="sm"
+                        onClick={() => handleOpenUpdate(booking)}
+                      >
+                        更新
+                      </Button>
+                    )}
+                    {['CONFIRMED', 'PENDING'].includes(booking.status) && (
                       <Button
                         variant="danger"
                         size="sm"
@@ -157,14 +218,50 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
                       >
                         取消预约
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </Card>
       </div>
+      <BookingDetailModal
+        open={showDetailModal}
+        booking={detailBooking}
+        onClose={() => {
+          setShowDetailModal(false);
+          setDetailBooking(null);
+        }}
+        onUpdate={handleOpenUpdate}
+      />
+      <BookingUpdateModal
+        open={showUpdateModal}
+        booking={updateBookingTarget}
+        services={services}
+        onClose={() => {
+          setShowUpdateModal(false);
+          setUpdateBookingTarget(null);
+        }}
+        onConfirm={handleConfirmUpdate}
+        submitting={updatingBooking}
+      />
+      <Modal
+        open={showUpdateSuccessModal}
+        title="更新成功"
+        onClose={() => setShowUpdateSuccessModal(false)}
+        showCloseButton={false}
+        size="sm"
+        footer={(
+          <Button size="sm" variant="secondary" onClick={() => setShowUpdateSuccessModal(false)}>
+            关闭
+          </Button>
+        )}
+      >
+        <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
+          预约更新成功，已为您保存最新预约信息。
+        </p>
+      </Modal>
     </div>
   );
 };

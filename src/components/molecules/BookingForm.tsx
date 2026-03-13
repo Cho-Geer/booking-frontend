@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import Input from '../atoms/Input';
-import Textarea from '../atoms/Textarea';
+import RichTextEditor from '../atoms/RichTextEditor';
 import { useUI } from '../../contexts/UIContext';
 
 interface TimeSlot {
@@ -39,7 +39,7 @@ const formSchema = z.object({
   customerPhone: z.string().regex(/^1[3-9]\d{9}$/, '请输入正确的手机号'),
   customerEmail: z.string().email('请输入正确的邮箱').optional().or(z.literal('')),
   customerWechat: z.string().max(50, '微信号不能超过50个字符').optional(),
-  notes: z.string().max(200, '备注信息不能超过200个字符').optional(),
+  notes: z.string().max(2000, '备注信息不能超过2000个字符').optional(),
 });
 
 /**
@@ -211,17 +211,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
         />
       </div>
       
-      <Textarea
+      <RichTextEditor
         id="notes"
         label="备注（可选）"
-        rows={3}
         placeholder="请输入特殊需求或备注信息"
         error={errors.notes?.message}
         fullWidth
         value={notes}
-        onChange={(e) => {
-          onNotesChange(e.target.value);
-          setValue('notes', e.target.value);
+        onChange={(content) => {
+          onNotesChange(content);
+          setValue('notes', content);
         }}
       />
       <div id="form-spacing" className="mt-4" />

@@ -29,6 +29,10 @@ export interface BookingState {
   selectedSlot: TimeSlot | null;
   /** 加载状态 */
   loading: boolean;
+  /** 可用时间段加载状态 */
+  slotsLoading: boolean;
+  /** 预约列表加载状态 */
+  bookingsLoading: boolean;
   /** 错误信息 */
   error: string | null;
   /** 创建预约的加载状态 */
@@ -37,6 +41,40 @@ export interface BookingState {
   success: boolean;
   /** 服务列表 */
   services: Service[];
+  /** 列表分页信息 */
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  /** 列表筛选条件 */
+  filters: AppointmentQuery;
+}
+
+/**
+ * 预约查询参数接口
+ */
+export interface AppointmentQuery {
+  page?: number;
+  limit?: number;
+  status?: BookingStatus;
+  userId?: string;
+  timeSlotId?: string;
+  startDate?: string;
+  endDate?: string;
+  keyword?: string;
+}
+
+/**
+ * 预约列表响应接口
+ */
+export interface AppointmentListResponse {
+  items: Booking[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 /**
@@ -91,7 +129,13 @@ export interface Booking {
   customerEmail?: string;       // 预约时邮箱/** 客户微信（选填） */
   customerWechat?: string;    // 预约时微信
   /** 服务类型 */
+  serviceId?: string;          // 服务ID
   serviceName?: string;        // 服务类型
+  service?: {
+    id: string;
+    name: string;
+    durationMinutes: number;
+  };
   
   /** 系统信息 */
   ipAddress?: string;           // 预约IP

@@ -53,7 +53,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
     { name: '首页', path: '/' },
     { name: '预约', path: '/bookings' },
     { name: '我的预约', path: '/my-bookings' },
-    { name: '管理', path: '/admin/bookings' },
+    { name: '管理控制台', path: '/admin/bookings' },
   ];
 
   // 根据主题设置背景色类名

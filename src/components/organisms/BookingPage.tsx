@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import Card from '@/components/atoms/Card';
-import BookingForm from '@/components/molecules/BookingForm';
 import Button from '@/components/atoms/Button';
+import Modal from '@/components/atoms/Modal';
 import Dropdown from '@/components/atoms/Dropdown';
+import BookingDetailModal from '@/components/molecules/BookingDetailModal';
+import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
+import BookingCreateModal from '@/components/molecules/BookingCreateModal';
+import Input from '@/components/atoms/Input';
+import Pagination from '@/components/molecules/Pagination';
 import { useUI } from '@/contexts/UIContext';
-import { Booking, TimeSlot, Service } from '@/types';
+import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus } from '@/types';
+import { stripHtml } from '@/utils/htmlUtils';
 
 interface TimeSlotForTable extends TimeSlot {
   isBooked: boolean;
@@ -20,6 +26,7 @@ interface BookingPageProps {
   selectedSlot: TimeSlot | null;
   showBookingForm: boolean;
   loading: boolean;
+  bookingsLoading?: boolean; // 追加
   error?: string;
   creatingBooking: boolean;
   customerName: string;
@@ -29,19 +36,32 @@ interface BookingPageProps {
   serviceId: string;
   serviceError?: string;
   services: Service[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: TimeSlot) => void;
   onCreateBooking: () => void;
   onCancelCreating: () => void;
   onCancelBooking: (bookingId: string) => void;
+  onUpdateBooking: (payload: BookingUpdatePayload) => Promise<void>;
   onNotesChange: (notes: string) => void;
   onCustomerNameChange: (name: string) => void;
   onCustomerPhoneChange: (phone: string) => void;
   onCustomerEmailChange: (email: string) => void;
   onCustomerWechatChange: (wechat: string) => void;
   onServiceIdChange: (serviceId: string) => void;
+  onPageChange: (page: number) => void;
+  onSearch: (query: AppointmentQuery) => void;
   notes: string;
   resetBookingState: () => void;
+  showCreateSuccessModal: boolean;
+  setShowCreateSuccessModal: (value: boolean) => void;
+  showCancelSuccessModal: boolean;
+  setShowCancelSuccessModal: (value: boolean) => void;
 }
 
 /**
@@ -73,6 +93,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   selectedSlot,
   showBookingForm,
   loading,
+  bookingsLoading,
   error,
   creatingBooking,
   customerName,
@@ -86,6 +107,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   onDateChange,
   onSlotSelect,
   onCancelBooking,
+  onUpdateBooking,
   onNotesChange,
   onCustomerNameChange,
   onCustomerPhoneChange,
@@ -94,12 +116,43 @@ const BookingPage: React.FC<BookingPageProps> = ({
   onServiceIdChange,
   onCreateBooking,
   onCancelCreating,
-  resetBookingState
+  resetBookingState,
+  pagination,
+  onPageChange,
+  onSearch,
+  showCreateSuccessModal,
+  setShowCreateSuccessModal,
+  showCancelSuccessModal,
+  setShowCancelSuccessModal
 }) => {
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
   const isMobile = uiState.isMobile;
   const dateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const startDateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const endDateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<BookingStatus | ''>('');
+  const [dateRange, setDateRange] = React.useState<{ startDate: string; endDate: string }>({ startDate: '', endDate: '' });
+  const isEndDateInvalid =
+    !!dateRange.startDate &&
+    !!dateRange.endDate &&
+    dateRange.endDate < dateRange.startDate;
+
+  // 搜索防抖
+  React.useEffect(() => {
+    if (isEndDateInvalid) return;
+    const timer = setTimeout(() => {
+      onSearch({ 
+        keyword: searchTerm,
+        status: statusFilter || undefined,
+        startDate: dateRange.startDate || undefined,
+        endDate: dateRange.endDate || undefined
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, dateRange, isEndDateInvalid]);
 
   /**
    * 处理日期选择
@@ -120,6 +173,34 @@ const BookingPage: React.FC<BookingPageProps> = ({
     input.focus();
   };
 
+  const handleStartDateInputClick = () => {
+    const input = startDateInputRef.current;
+    if (!input) return;
+    if (input.disabled || input.readOnly) return;
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+      }
+    }
+    input.focus();
+  };
+
+  const handleEndDateInputClick = () => {
+    const input = endDateInputRef.current;
+    if (!input) return;
+    if (input.disabled || input.readOnly) return;
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+      }
+    }
+    input.focus();
+  };
+
   /**
    * 处理时间段选择
    */
@@ -130,6 +211,12 @@ const BookingPage: React.FC<BookingPageProps> = ({
   const [showAlternativeModal, setShowAlternativeModal] = React.useState(false);
   const [alternativeSlots, setAlternativeSlots] = React.useState<TimeSlot[]>([]);
   const [conflictSlot, setConflictSlot] = React.useState<TimeSlot | null>(null);
+  const [showDetailModal, setShowDetailModal] = React.useState(false);
+  const [showUpdateModal, setShowUpdateModal] = React.useState(false);
+  const [detailBooking, setDetailBooking] = React.useState<Booking | null>(null);
+  const [updateBookingTarget, setUpdateBookingTarget] = React.useState<Booking | null>(null);
+  const [updatingBooking, setUpdatingBooking] = React.useState(false);
+  const [showUpdateSuccessModal, setShowUpdateSuccessModal] = React.useState(false);
 
   // 监听时间段选择，如果是已占用（他人预约）的时间段，显示替代方案
   const handleSlotClick = (slot: TimeSlotForTable) => {
@@ -151,6 +238,32 @@ const BookingPage: React.FC<BookingPageProps> = ({
   const handleAlternativeSelect = (slot: TimeSlot) => {
     setShowAlternativeModal(false);
     onSlotSelect(slot);
+  };
+
+  const canShowUpdate = (status: string) => status === 'PENDING';
+
+  const handleOpenDetail = (booking: Booking) => {
+    setDetailBooking(booking);
+    setShowDetailModal(true);
+  };
+
+  const handleOpenUpdate = (booking: Booking) => {
+    setUpdateBookingTarget(booking);
+    setShowUpdateModal(true);
+    setShowDetailModal(false);
+  };
+
+  const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
+    setUpdatingBooking(true);
+    try {
+      await onUpdateBooking(payload);
+      setShowUpdateModal(false);
+      setUpdateBookingTarget(null);
+      setDetailBooking(null);
+      setShowUpdateSuccessModal(true);
+    } finally {
+      setUpdatingBooking(false);
+    }
   };
 
   /**
@@ -233,7 +346,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   return (
     <div id="booking-page-container" className={`min-h-screen py-8 px-4 sm:px-6 lg:px-8 ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
       <div id="booking-content-container" className="max-w-7xl mx-auto">
-        <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-3xl' : ''}`}>预约服务</h1>
+        <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-2xl' : ''}`}>预约服务</h1>
         
         {error && (
           <div id="booking-page-error" className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-4 mb-6`}>
@@ -248,7 +361,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
 
             {/* 日期选择 */}
             <Card className={`relative z-40 rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
-              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>选择日期</h2>
+              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4 ${isMobile ? 'text-base' : ''}`}>选择日期</h2>
               <input
                 ref={dateInputRef}
                 type="date"
@@ -270,7 +383,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
             </Card>
 
             <Card className={`relative z-40 rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
-              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>
+              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4 ${isMobile ? 'text-base' : ''}`}>
                 服务类型（必填）
               </h2>
               <Dropdown
@@ -292,7 +405,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
 
             {/* 可用时间段 */}
             <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
-              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>
+              <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4 ${isMobile ? 'text-base' : ''}`}>
                 {formatDateShort(selectedDate)} 可用时间段
               </h2>
               
@@ -341,69 +454,208 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 </div>
               )}
             </Card>
-              {/* 预约表单 */}
-              {showBookingForm && selectedSlot ? (
-                <BookingForm
-                  selectedDate={selectedDate}
-                  selectedSlot={selectedSlot}
-                  error={error}
-                  notes={notes}
-                  customerName={customerName}
-                  customerPhone={customerPhone}
-                  customerEmail={customerEmail}
-                  customerWechat={customerWechat}
-                  onNotesChange={onNotesChange}
-                  onCustomerNameChange={onCustomerNameChange}
-                  onCustomerPhoneChange={onCustomerPhoneChange}
-                  onCustomerEmailChange={onCustomerEmailChange}
-                  onCustomerWechatChange={onCustomerWechatChange}
-                  onSubmit={onCreateBooking}
-                  onCancel={() => {onCancelCreating()}}
-                  creatingBooking={creatingBooking}
-                />
-              ) : (
-                <div id="booking-placeholder" className={`rounded-lg p-6 flex items-center justify-center h-64 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
-                  <p className={`text-center ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
-                    请先选择日期和时间段
-                  </p>
-                </div>
-              )}
           </div>
-          {/* 右侧：预约表单 */}
-          {/* 我的预约 */}
+          {/* 右侧：我的预约 */}
           <div id="booking-right-panel" className="w-full">
             <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
-                <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4`}>我的预约</h2>
-                
-                {bookings.length === 0 ? (
+                <div className={`mb-4 ${isMobile ? 'space-y-3' : 'flex justify-between items-center gap-3'}`}>
+                  <h2 className={`text-lg font-medium whitespace-nowrap ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-base' : ''}`}>我的预约</h2>
+                  <div className={`${isMobile ? 'w-full' : 'w-1/3 min-w-[112px]'} text-sm`}>
+                    <Dropdown
+                      items={[
+                        { label: '全部状态', value: '' },
+                        { label: '待确认', value: BookingStatus.PENDING },
+                        { label: '已确认', value: BookingStatus.CONFIRMED },
+                        { label: '已取消', value: BookingStatus.CANCELLED },
+                        { label: '已完成', value: BookingStatus.COMPLETED },
+                      ]}
+                      value={statusFilter}
+                      onChange={(value) => setStatusFilter(value as BookingStatus | '')}
+                      buttonText="状态筛选"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                <div className="mb-4 space-y-3">
+                  <Input
+                    placeholder="搜索预约（姓名、手机号、备注...）"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-11 text-xs"
+                    fullWidth
+                  />
+                  {isMobile ? (
+                    <div className="space-y-2">
+                      <div>
+                        <input
+                          ref={startDateInputRef}
+                          type="date"
+                          value={dateRange.startDate}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                          onClick={handleStartDateInputClick}
+                          onFocus={handleStartDateInputClick}
+                          onKeyDown={(e) => e.preventDefault()}
+                          onPaste={(e) => e.preventDefault()}
+                          onDrop={(e) => e.preventDefault()}
+                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
+                            isDarkTheme
+                              ? 'border-border-dark bg-background-dark text-text-dark-primary'
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder="开始日期"
+                        />
+                      </div>
+                      <span className={`self-center ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>-</span>
+                      <div>
+                        <input
+                          ref={endDateInputRef}
+                          type="date"
+                          value={dateRange.endDate}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                          onClick={handleEndDateInputClick}
+                          onFocus={handleEndDateInputClick}
+                          onKeyDown={(e) => e.preventDefault()}
+                          onPaste={(e) => e.preventDefault()}
+                          onDrop={(e) => e.preventDefault()}
+                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
+                            isEndDateInvalid
+                              ? 'border-red-500 text-red-500'
+                              : isDarkTheme
+                                ? 'border-border-dark bg-background-dark text-text-dark-primary'
+                                : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder="结束日期"
+                        />
+                        {isEndDateInvalid && (
+                          <p className="mt-1 text-xs text-red-500">结束日期不能早于开始日期</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <input
+                          ref={startDateInputRef}
+                          type="date"
+                          value={dateRange.startDate}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                          onClick={handleStartDateInputClick}
+                          onFocus={handleStartDateInputClick}
+                          onKeyDown={(e) => e.preventDefault()}
+                          onPaste={(e) => e.preventDefault()}
+                          onDrop={(e) => e.preventDefault()}
+                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
+                            isDarkTheme
+                              ? 'border-border-dark bg-background-dark text-text-dark-primary'
+                              : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder="开始日期"
+                        />
+                      </div>
+                      <span className={`self-center ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>-</span>
+                      <div className="flex-1">
+                        <input
+                          ref={endDateInputRef}
+                          type="date"
+                          value={dateRange.endDate}
+                          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                          onClick={handleEndDateInputClick}
+                          onFocus={handleEndDateInputClick}
+                          onKeyDown={(e) => e.preventDefault()}
+                          onPaste={(e) => e.preventDefault()}
+                          onDrop={(e) => e.preventDefault()}
+                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
+                            isEndDateInvalid
+                              ? 'border-red-500 text-red-500'
+                              : isDarkTheme
+                                ? 'border-border-dark bg-background-dark text-text-dark-primary'
+                                : 'border-gray-300 bg-white text-gray-900'
+                          }`}
+                          placeholder="结束日期"
+                        />
+                        {isEndDateInvalid && (
+                          <p className="mt-1 text-xs text-red-500">结束日期不能早于开始日期</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className={`mb-4 pb-4 border-b ${isDarkTheme ? 'border-border-dark' : 'border-gray-200'}`}>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
+                      共找到 {pagination.total} 条预约记录
+                    </p>
+                    {pagination.totalPages > 1 && (
+                      <Pagination
+                        currentPage={pagination.page}
+                        totalPages={pagination.totalPages}
+                        onPageChange={onPageChange}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {bookingsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className={`${isDarkTheme ? 'text-text-dark-disabled' : 'text-gray-500'}`}>加载中...</p>
+                  </div>
+                ) : bookings.length === 0 ? (
                   <p className={`text-center py-8 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>暂无预约记录</p>
                 ) : (
                   <div className="space-y-4">
                     {bookings.map((booking) => (
                       <div id={`booking-item-${booking.id}`} key={booking.id} className={`rounded-md p-4 ${isDarkTheme ? 'bg-background-dark-200 border border-border-dark' : 'border border-gray-200'}`}>
-                        <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'justify-between items-start'}`}>
-                        <div>
-                        <p className={`font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-                          {formatDate(booking.appointmentDate)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                        </p>
-                        {booking.notes && (
-                        <p className={`text-sm mt-1 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>备注: {booking.notes}</p>
-                        )}
-                        </div>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
-                            {getStatusName(booking.status)}
-                          </span>
-                        </div>
-                        { ['CONFIRMED', 'PENDING'].includes(booking.status) && (
-                          <div className="mt-3">
-                            <Button
-                              size="sm"
-                              onClick={() => onCancelBooking(booking.id)}
+                        <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start gap-4'}`}>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              title={`${formatDate(booking.appointmentDate)} ${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}`}
+                              className={`font-medium truncate whitespace-nowrap ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}
                             >
-                              取消预约
-                            </Button>
+                              {formatDate(booking.appointmentDate)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
+                            </p>
+                            {booking.notes && (
+                              <p
+                                title={`备注: ${stripHtml(booking.notes)}`}
+                                className={`text-sm mt-1 truncate ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}
+                              >
+                                备注: {stripHtml(booking.notes)}
+                              </p>
+                            )}
                           </div>
-                        )}
+                          <div className={`${isMobile ? 'w-full' : 'shrink-0 min-w-[180px]'} flex flex-col items-end gap-3`}>
+                            <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
+                              {getStatusName(booking.status)}
+                            </span>
+                            <div className={`flex flex-wrap gap-2 ${isMobile ? 'justify-start w-full' : 'justify-end'}`}>
+                              <Button
+                                size="xs"
+                                variant="secondary"
+                                onClick={() => handleOpenDetail(booking)}
+                              >
+                                详细
+                              </Button>
+                              {canShowUpdate(booking.status) && (
+                                <Button
+                                  size="xs"
+                                  variant="warning"
+                                  onClick={() => handleOpenUpdate(booking)}
+                                >
+                                  更新
+                                </Button>
+                              )}
+                              {['CONFIRMED', 'PENDING'].includes(booking.status) && (
+                                <Button
+                                  size="xs"
+                                  onClick={() => onCancelBooking(booking.id)}
+                                >
+                                  取消预约
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -412,46 +664,129 @@ const BookingPage: React.FC<BookingPageProps> = ({
             </div>
         </div>
         {/* 替代方案模态框 */}
-        {showAlternativeModal && conflictSlot && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
-            <div className={`w-full max-w-md rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100' : 'bg-white'}`}>
-              <h3 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-                该时间段 ({formatTime(conflictSlot.startTime)}) 已被预约
-              </h3>
-              <p className={`mb-6 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
-                为您推荐以下临近的可用时间段：
-              </p>
-              
-              <div className="space-y-3">
-                {alternativeSlots.length > 0 ? (
-                  alternativeSlots.map((slot, index) => (
-                    <Button
-                      key={index}
-                      onClick={() => handleAlternativeSelect(slot)}
-                      variant="secondary"
-                      fullWidth
-                    >
-                      {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                    </Button>
-                  ))
-                ) : (
-                  <p className={`text-center py-4 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>
-                    暂无其他可用时间段，请尝试选择其他日期。
-                  </p>
-                )}
-              </div>
-              
-              <div className="mt-6 flex justify-end">
+        <Modal
+          open={showAlternativeModal}
+          title={conflictSlot ? `该时间段 (${formatTime(conflictSlot.startTime)}) 已被预约` : ''}
+          onClose={() => setShowAlternativeModal(false)}
+          footer={(
+            <Button
+              variant="ghost"
+              onClick={() => setShowAlternativeModal(false)}
+            >
+              关闭
+            </Button>
+          )}
+        >
+          <p className={`mb-6 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
+            为您推荐以下临近的可用时间段：
+          </p>
+          
+          <div className="space-y-3">
+            {alternativeSlots.length > 0 ? (
+              alternativeSlots.map((slot, index) => (
                 <Button
-                  variant="ghost"
-                  onClick={() => setShowAlternativeModal(false)}
+                  key={index}
+                  onClick={() => handleAlternativeSelect(slot)}
+                  variant="secondary"
+                  fullWidth
                 >
-                  关闭
+                  {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
                 </Button>
-              </div>
-            </div>
+              ))
+            ) : (
+              <p className={`text-center py-4 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>
+                暂无其他可用时间段，请尝试选择其他日期。
+              </p>
+            )}
           </div>
-        )}
+        </Modal>
+        <BookingDetailModal
+          open={showDetailModal}
+          booking={detailBooking}
+          onClose={() => {
+            setShowDetailModal(false);
+            setDetailBooking(null);
+          }}
+          onUpdate={handleOpenUpdate}
+        />
+        <BookingCreateModal
+          open={showBookingForm && !!selectedSlot}
+          selectedDate={selectedDate}
+          selectedSlot={selectedSlot}
+          error={error}
+          notes={notes}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerEmail={customerEmail}
+          customerWechat={customerWechat}
+          onNotesChange={onNotesChange}
+          onCustomerNameChange={onCustomerNameChange}
+          onCustomerPhoneChange={onCustomerPhoneChange}
+          onCustomerEmailChange={onCustomerEmailChange}
+          onCustomerWechatChange={onCustomerWechatChange}
+          onSubmit={onCreateBooking}
+          onClose={onCancelCreating}
+          creatingBooking={creatingBooking}
+        />
+        <BookingUpdateModal
+          open={showUpdateModal}
+          booking={updateBookingTarget}
+          services={services}
+          onClose={() => {
+            setShowUpdateModal(false);
+            setUpdateBookingTarget(null);
+          }}
+          onConfirm={handleConfirmUpdate}
+          submitting={updatingBooking}
+        />
+        <Modal
+          open={showUpdateSuccessModal}
+          title="更新成功"
+          onClose={() => setShowUpdateSuccessModal(false)}
+          showCloseButton={false}
+          size="sm"
+          footer={(          
+            <Button size="sm" variant="secondary" onClick={() => setShowUpdateSuccessModal(false)}>
+              关闭
+            </Button>
+          )}
+        >
+          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
+            预约更新成功，已为您保存最新预约信息。
+          </p>
+        </Modal>
+        <Modal
+          open={showCreateSuccessModal}
+          title="创建成功"
+          onClose={() => setShowCreateSuccessModal(false)}
+          showCloseButton={false}
+          size="sm"
+          footer={(          
+            <Button size="sm" variant="secondary" onClick={() => setShowCreateSuccessModal(false)}>
+              关闭
+            </Button>
+          )}
+        >
+          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
+            预约创建成功，已为您保存最新预约信息。
+          </p>
+        </Modal>
+        <Modal
+          open={showCancelSuccessModal}
+          title="取消成功"
+          onClose={() => setShowCancelSuccessModal(false)}
+          showCloseButton={false}
+          size="sm"
+          footer={(          
+            <Button size="sm" variant="secondary" onClick={() => setShowCancelSuccessModal(false)}>
+              关闭
+            </Button>
+          )}
+        >
+          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
+            预约取消成功，已为您更新预约状态。
+          </p>
+        </Modal>
       </div>
     </div>
   );

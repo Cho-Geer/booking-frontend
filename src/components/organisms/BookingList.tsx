@@ -15,65 +15,98 @@ import { Booking } from '../../types';
  * @param props 组件属性
  * @param props.onViewBooking 查看预约详情回调
  */
-const BookingList: React.FC<{
+type BookingListProps = {
+  bookings?: Booking[];
+  isLoading?: boolean;
+  isDeleting?: boolean;
+  title?: string;
+  onRefresh?: () => void;
+  onDeleteBooking?: (id: string) => Promise<void> | void;
   onViewBooking?: (id: string) => void;
-}> = ({ onViewBooking }) => {
-  // 使用UI上下文获取状态管理和通知方法
+  showDeleteAction?: boolean;
+};
+
+const BookingList: React.FC<BookingListProps> = ({
+  bookings: externalBookings,
+  isLoading: externalLoading,
+  isDeleting: externalDeleting,
+  title = '我的预约',
+  onRefresh,
+  onDeleteBooking,
+  onViewBooking,
+  showDeleteAction = true,
+}) => {
   const { uiState, setLoading, showSuccess, showError, showInfo } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
-  
-  // 使用TanStack Query Hook获取预约列表
+  const useExternalData = Array.isArray(externalBookings);
+
   const { 
-    data: bookings, 
+    data: queryBookings, 
     isLoading: isLoadingBookings, 
     refetch: refetchBookings,
     isError: isBookingsError,
     error: bookingsError
-  } = useBookings();
-  
-  // 使用TanStack Query Hook进行删除预约操作 - useMutation返回的是isPending而不是isLoading
+  } = useBookings({
+    enabled: !useExternalData,
+  });
+
   const {
     mutate: deleteBooking,
     isPending: isDeletingBooking
   } = useDeleteBooking();
 
-  // 监听预约列表加载状态并更新全局加载状态
+  const isLoading = externalLoading ?? isLoadingBookings;
+  const isDeleting = externalDeleting ?? isDeletingBooking;
+
   React.useEffect(() => {
-    setLoading(isLoadingBookings || isDeletingBooking);
-  }, [isLoadingBookings, isDeletingBooking, setLoading]);
+    setLoading(isLoading || isDeleting);
+  }, [isLoading, isDeleting, setLoading]);
 
-  // 确保bookings类型安全的辅助函数
-  const getSafeBookings = () => {
-    if (!bookings || !Array.isArray(bookings)) return [];
-    return bookings;
-  };
+  const tableBookings = React.useMemo(() => {
+    if (useExternalData) {
+      return externalBookings || [];
+    }
+    if (!queryBookings || !Array.isArray(queryBookings)) {
+      return [];
+    }
+    return queryBookings;
+  }, [useExternalData, externalBookings, queryBookings]);
 
-  // 监听预约列表错误并显示错误通知
   React.useEffect(() => {
     if (isBookingsError && bookingsError) {
       showError('获取预约列表失败', bookingsError instanceof Error ? bookingsError.message : '未知错误');
     }
   }, [isBookingsError, bookingsError, showError]);
 
-  /**
-   * 处理删除预约
-   * @param id 预约ID
-   */
-  const handleDeleteBooking = (id: string) => {
+  const refreshBookings = () => {
+    if (onRefresh) {
+      onRefresh();
+      return;
+    }
+    refetchBookings();
+  };
+
+  const handleDeleteBooking = async (id: string) => {
+    if (onDeleteBooking) {
+      try {
+        await Promise.resolve(onDeleteBooking(id));
+        showSuccess('预约删除成功');
+      } catch (error) {
+        showError('预约删除失败', error instanceof Error ? error.message : '未知错误');
+      }
+      return;
+    }
+
     deleteBooking(id, {
       onSuccess: () => {
         showSuccess('预约删除成功');
       },
       onError: (error) => {
         showError('预约删除失败', error instanceof Error ? error.message : '未知错误');
-      }
+      },
     });
   };
 
-  /**
-   * 处理查看预约详情
-   * @param id 预约ID
-   */
   const handleViewBooking = (id: string) => {
     if (onViewBooking) {
       onViewBooking(id);
@@ -82,7 +115,6 @@ const BookingList: React.FC<{
     }
   };
 
-  // 表格列定义 - 使用Booking类型
   const columns: ColumnsType<Booking> = [
     {
       title: '预约编号',
@@ -115,14 +147,23 @@ const BookingList: React.FC<{
     },
     {
       title: '预约日期',
-      dataIndex: 'date',
-      key: 'date',
+      dataIndex: 'appointmentDate',
+      key: 'appointmentDate',
       render: (text: string) => bookingApiUtils.formatBookingDate(text),
     },
     {
       title: '时间段',
       dataIndex: 'timeSlot',
       key: 'timeSlot',
+      render: (_: unknown, record: Booking) => {
+        if (record.startTime && record.endTime) {
+          return `${record.startTime} - ${record.endTime}`;
+        }
+        if (record.timeSlot?.slotTime) {
+          return record.timeSlot.slotTime.slice(0, 5);
+        }
+        return '-';
+      },
     },
     {
       title: '状态',
@@ -180,23 +221,25 @@ const BookingList: React.FC<{
           >
             查看
           </Button>
-          <Popconfirm
-            title="确定要删除这个预约吗？"
-            description="删除后将无法恢复"
-            onConfirm={() => handleDeleteBooking(record.id)}
-            okText="确定"
-            cancelText="取消"
-            disabled={isDeletingBooking}
-          >
-            <Button 
-              type="link" 
-              danger 
-              icon={<DeleteOutlined />}
-              loading={isDeletingBooking}
+          {showDeleteAction && (
+            <Popconfirm
+              title="确定要删除这个预约吗？"
+              description="删除后将无法恢复"
+              onConfirm={() => handleDeleteBooking(record.id)}
+              okText="确定"
+              cancelText="取消"
+              disabled={isDeleting}
             >
-              删除
-            </Button>
-          </Popconfirm>
+              <Button 
+                type="link" 
+                danger 
+                icon={<DeleteOutlined />}
+                loading={isDeleting}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -205,11 +248,11 @@ const BookingList: React.FC<{
   return (
     <div id="booking-list-container" className={`booking-list-container p-4 rounded-lg shadow-sm ${isDarkTheme ? 'bg-background-dark' : 'bg-white'}`}>
       <div id="booking-list-header" className="flex justify-between items-center mb-4">
-        <h2 className={`text-xl font-bold ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-800'}`}>我的预约</h2>
+        <h2 className={`text-xl font-bold ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-800'}`}>{title}</h2>
         <Button 
           type="primary"
-          onClick={() => refetchBookings()}
-          loading={isLoadingBookings}
+          onClick={refreshBookings}
+          loading={isLoading}
           className="bg-primary hover:bg-primary/90"
         >
           刷新列表
@@ -218,9 +261,9 @@ const BookingList: React.FC<{
       
       <Table
         columns={columns}
-        dataSource={getSafeBookings()}
+        dataSource={tableBookings}
         rowKey="id"
-        loading={isLoadingBookings}
+        loading={isLoading}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
@@ -228,10 +271,9 @@ const BookingList: React.FC<{
         }}
         className={`booking-table ${isDarkTheme ? 'bg-background-dark-200' : ''}`}
         locale={{
-          emptyText: isLoadingBookings ? '加载中...' : '暂无预约记录',
+          emptyText: isLoading ? '加载中...' : '暂无预约记录',
           filterConfirm: '确定',
           filterReset: '重置',
-          // 移除不支持的emptyFilterText属性
         }}
       />
     </div>
