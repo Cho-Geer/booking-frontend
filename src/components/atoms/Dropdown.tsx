@@ -2,7 +2,7 @@ import React from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { Fragment } from 'react';
 import { createPortal } from 'react-dom';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 interface DropdownItem {
   /** 选项文本 */
@@ -44,7 +44,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   buttonText = "选择选项",
   className = ''
 }) => {
-  const { uiState } = useUI();
+  const { theme } = useTheme();
   const buttonRef = React.useRef<HTMLButtonElement | null>(null);
   const [menuRect, setMenuRect] = React.useState<{ top: number; left: number; width: number } | null>(null);
   // 查找选中项的标签
@@ -83,7 +83,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                 ref={buttonRef}
                 onClick={() => requestAnimationFrame(updateMenuRect)}
                 className={`inline-flex items-center justify-between w-full rounded-md border shadow-sm px-3 py-2 text-left focus:outline-none focus:ring-primary focus:border-primary ${
-                  uiState.theme === 'dark'
+                  theme === 'dark'
                     ? 'border-border-dark bg-background-dark text-text-dark-primary'
                     : 'border-gray-300 bg-white text-gray-700'
                 }`}
@@ -116,7 +116,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                     zIndex: 2147483647,
                   }}
                   className={`origin-top rounded-md shadow-lg ring-1 ring-black focus:outline-none ${
-                    uiState.theme === 'dark'
+                    theme === 'dark'
                       ? 'bg-background-dark ring-opacity-10'
                       : 'bg-white ring-opacity-5'
                   }`}
@@ -129,11 +129,11 @@ const Dropdown: React.FC<DropdownProps> = ({
                             onClick={() => onChange && onChange(item.value)}
                             className={`${
                               active
-                                ? (uiState.theme === 'dark' ? 'bg-background-dark-200 text-text-dark-primary' : 'bg-gray-100 text-gray-900')
-                                : (uiState.theme === 'dark' ? 'text-text-dark-primary' : 'text-gray-700')
+                                ? (theme === 'dark' ? 'bg-background-dark-200 text-text-dark-primary' : 'bg-gray-100 text-gray-900')
+                                : (theme === 'dark' ? 'text-text-dark-primary' : 'text-gray-700')
                             } ${
                               item.disabled
-                                ? (uiState.theme === 'dark' ? 'opacity-50 text-text-dark-disabled cursor-not-allowed' : 'opacity-50 cursor-not-allowed')
+                                ? (theme === 'dark' ? 'opacity-50 text-text-dark-disabled cursor-not-allowed' : 'opacity-50 cursor-not-allowed')
                                 : ''
                             } block px-4 py-2 text-sm w-full text-left`}
                             disabled={item.disabled}

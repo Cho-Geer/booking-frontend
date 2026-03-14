@@ -5,6 +5,7 @@
 import React from 'react';
 import { useBookings, useDeleteBooking, bookingApiUtils, BookingStatus } from '../../services/bookingApi';
 import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { Button, Table, Tag, Space, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { DeleteOutlined, EyeOutlined } from '@ant-design/icons';
@@ -37,7 +38,7 @@ const BookingList: React.FC<BookingListProps> = ({
   showDeleteAction = true,
 }) => {
   const { uiState, setLoading, showSuccess, showError, showInfo } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme } = useTheme();
   const useExternalData = Array.isArray(externalBookings);
 
   const { 

@@ -2,7 +2,7 @@ import React from 'react';
 import Modal from '@/components/atoms/Modal';
 import Button from '@/components/atoms/Button';
 import { Booking } from '@/types';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { sanitizeHtml } from '@/utils/htmlUtils';
 
 interface BookingDetailModalProps {
@@ -18,9 +18,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onClose,
   onUpdate,
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.isMobile;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
 
   if (!booking) return null;
 

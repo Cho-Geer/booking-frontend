@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import Card from '../atoms/Card';
-import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 interface LoginFormProps {
   onSubmit: (phoneNumber: string, code: string) => void;
@@ -63,9 +63,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [codeError, setCodeError] = React.useState('');
   
   // 获取主题状态
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.viewportWidth < 768;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
 
   // 处理发送验证码
   const handleSendCode = (data: z.infer<typeof formSchema>) => {

@@ -4,13 +4,14 @@ import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
 import RichTextEditor from '@/components/atoms/RichTextEditor';
 import Dropdown from '@/components/atoms/Dropdown';
-import ConfirmModal from './ConfirmModal';
+import ConfirmModal from '@/components/atoms/ConfirmModal';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Booking, Service, TimeSlot } from '@/types';
 import { bookingService } from '@/services/bookingService';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
+import { getTodayLocalDate, getMaxDate } from '@/utils/dateUtils';
 
 interface BookingUpdatePayload {
   id: string;
@@ -58,9 +59,7 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
   submitting = false,
   updatingBooking = false,
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.isMobile;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
   const [selectedDate, setSelectedDate] = React.useState('');
   const [serviceId, setServiceId] = React.useState('');
   const [selectedTimeSlotId, setSelectedTimeSlotId] = React.useState('');
@@ -89,23 +88,6 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
       notes: '',
     },
   });
-
-  const getTodayLocalDate = React.useCallback(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    const day = `${now.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }, []);
-
-  const getMaxDate = React.useCallback(() => {
-    const now = new Date();
-    now.setMonth(now.getMonth() + 2);
-    const year = now.getFullYear();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    const day = `${now.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }, []);
 
   const normalizeDate = React.useCallback((dateValue: string) => {
     return dateValue.includes('T') ? dateValue.slice(0, 10) : dateValue;

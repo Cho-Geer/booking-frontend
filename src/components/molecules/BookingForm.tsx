@@ -6,7 +6,8 @@ import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import Input from '../atoms/Input';
 import RichTextEditor from '../atoms/RichTextEditor';
-import { useUI } from '../../contexts/UIContext';
+import { formatDate, formatTime } from '@/utils/dateUtils';
+import { useTheme } from '@/hooks/useTheme';
 
 interface TimeSlot {
   startTime: string;
@@ -77,8 +78,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   creatingBooking
 }) => {
   // 获取主题状态
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme } = useTheme();
 
   // 表单初始化
   const { 
@@ -106,27 +106,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setValue('customerWechat', customerWechat || '', { shouldValidate: false });
     setValue('notes', notes || '', { shouldValidate: false });
   }, [customerName, customerPhone, customerEmail, customerWechat, notes, setValue]);
-
-  /**
-   * 格式化日期显示
-   */
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
-  };
-
-  /**
-   * 格式化时间显示
-   */
-  const formatTime = (timeString: string): string => {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  };
 
   // 表单提交处理
   const handleFormSubmit = (data: z.infer<typeof formSchema>): void => {

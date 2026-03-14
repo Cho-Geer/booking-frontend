@@ -1,14 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { bookingService } from '../services/bookingService';
 import { BookingStatus, TimeSlot, BookingState, AppointmentQuery, AppointmentListResponse } from '../types';
-
-const getTodayLocalDate = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = `${now.getMonth() + 1}`.padStart(2, '0');
-  const day = `${now.getDate()}`.padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+import { getTodayLocalDate } from '../utils/dateUtils';
 
 /**
  * 初始状态

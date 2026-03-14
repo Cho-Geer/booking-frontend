@@ -2,7 +2,7 @@ import React from 'react';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { Booking, Service } from '@/types';
 import BookingDetailModal from '@/components/molecules/BookingDetailModal';
 import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
@@ -37,8 +37,7 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
   onCancelBooking,
   onUpdateBooking
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme } = useTheme();
   const [showDetailModal, setShowDetailModal] = React.useState(false);
   const [showUpdateModal, setShowUpdateModal] = React.useState(false);
   const [detailBooking, setDetailBooking] = React.useState<Booking | null>(null);
@@ -174,7 +173,7 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
           ) : (
             <div id="bookings-list-container" className="space-y-4">
               {bookings.map((booking) => (
-                <div id={`booking-item-${booking.id}`} key={booking.id} className={`${borderColorClass} rounded-md p-4 ${uiState.theme === 'dark' ? 'dark:border' : 'border'}`}>
+                <div id={`booking-item-${booking.id}`} key={booking.id} className={`${borderColorClass} rounded-md p-4 ${isDarkTheme ? 'dark:border' : 'border'}`}>
                   <div id={`booking-item-header-${booking.id}`} className="flex justify-between items-start">
                     <div id={`booking-item-details-${booking.id}`} className="min-w-0">
                       <p className={`font-medium ${textColorClass}`}>

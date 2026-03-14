@@ -9,8 +9,10 @@ import BookingCreateModal from '@/components/molecules/BookingCreateModal';
 import Input from '@/components/atoms/Input';
 import Pagination from '@/components/molecules/Pagination';
 import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus } from '@/types';
 import { stripHtml } from '@/utils/htmlUtils';
+import { formatDate, formatDateShort, formatTime, getTodayLocalDate, getMaxDate } from '@/utils/dateUtils';
 
 interface TimeSlotForTable extends TimeSlot {
   isBooked: boolean;
@@ -135,9 +137,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   setEmailSent,
   onConfirmBooking
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.isMobile;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
   const dateInputRef = React.useRef<HTMLInputElement | null>(null);
   const startDateInputRef = React.useRef<HTMLInputElement | null>(null);
   const endDateInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -280,50 +280,6 @@ const BookingPage: React.FC<BookingPageProps> = ({
     }
   };
 
-  /**
-   * 格式化日期显示
-   */
-  const formatDate = (dateString: string) => {
-    const normalized = dateString.includes('T') ? dateString.slice(0, 10) : dateString;
-    const [year, month, day] = normalized.split('-').map(Number);
-    const parsedDate = Number.isNaN(year) || Number.isNaN(month) || Number.isNaN(day)
-      ? new Date(dateString)
-      : new Date(year, month - 1, day);
-    return parsedDate.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
-  };
-
-  const formatDateShort = (dateString: string) => dateString.replace(/-/g, '/');
-
-  const getTodayLocalDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    const day = `${now.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const getMaxDate = () => {
-    const now = new Date();
-    now.setMonth(now.getMonth() + 2);
-    const year = now.getFullYear();
-    const month = `${now.getMonth() + 1}`.padStart(2, '0');
-    const day = `${now.getDate()}`.padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  /**
-   * 格式化时间显示
-   */
-  const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  };
-
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'CONFIRMED':
@@ -389,7 +345,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 max={getMaxDate()}
                 lang="zh-CN"
                 className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${
-                  uiState.theme === 'dark' 
+                  isDarkTheme 
                     ? 'border-border-dark bg-background-dark text-text-dark-primary' 
                     : 'border-gray-300'
                 }`}

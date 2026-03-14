@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
 import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { withAuth } from '@/components/hoc/withAuth';
 import { withAdmin } from '@/components/hoc/withAdmin';
 import BookingList from '@/components/organisms/BookingList';
@@ -29,6 +30,7 @@ const AdminBookingsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { uiState } = useUI();
+  const { isDark } = useTheme();
 
   const { bookings, loading, error } = useSelector((state: RootState) => state.booking);
   const { currentUser } = useSelector((state: RootState) => state.user);
@@ -190,11 +192,11 @@ const AdminBookingsPage: React.FC = () => {
     return '普通用户';
   };
 
-  const bgColorClass = uiState.theme === 'dark' ? 'dark:bg-gray-900' : 'bg-gray-50';
-  const textColorClass = uiState.theme === 'dark' ? 'dark:text-white' : 'text-gray-900';
-  const cardBgClass = uiState.theme === 'dark' ? 'dark:bg-gray-800' : 'bg-white';
-  const mutedTextColorClass = uiState.theme === 'dark' ? 'dark:text-gray-400' : 'text-gray-500';
-  const errorBoxClass = uiState.theme === 'dark' ? 'dark:bg-red-900 dark:border-red-700' : 'bg-red-50 border-red-200';
+  const bgColorClass = isDark ? 'dark:bg-gray-900' : 'bg-gray-50';
+  const textColorClass = isDark ? 'dark:text-white' : 'text-gray-900';
+  const cardBgClass = isDark ? 'dark:bg-gray-800' : 'bg-white';
+  const mutedTextColorClass = isDark ? 'dark:text-gray-400' : 'text-gray-500';
+  const errorBoxClass = isDark ? 'dark:bg-red-900 dark:border-red-700' : 'bg-red-50 border-red-200';
 
   const tabItems = useMemo(
     () => [
@@ -263,9 +265,9 @@ const AdminBookingsPage: React.FC = () => {
 
         {(error || usersError || servicesError) && (
           <div id="admin-console-error" className={`${errorBoxClass} border rounded-md p-4 mb-6`}>
-            {error && <p className={uiState.theme === 'dark' ? 'dark:text-red-200' : 'text-red-800'}>{error}</p>}
-            {usersError && <p className={uiState.theme === 'dark' ? 'dark:text-red-200' : 'text-red-800'}>{usersError}</p>}
-            {servicesError && <p className={uiState.theme === 'dark' ? 'dark:text-red-200' : 'text-red-800'}>{servicesError}</p>}
+            {error && <p className={isDark ? 'dark:text-red-200' : 'text-red-800'}>{error}</p>}
+            {usersError && <p className={isDark ? 'dark:text-red-200' : 'text-red-800'}>{usersError}</p>}
+            {servicesError && <p className={isDark ? 'dark:text-red-200' : 'text-red-800'}>{servicesError}</p>}
           </div>
         )}
 
@@ -287,34 +289,34 @@ const AdminBookingsPage: React.FC = () => {
                 value={serviceForm.name}
                 onChange={(event) => handleServiceFormChange('name', event.target.value)}
                 placeholder="服务名称"
-                className={`px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <input
                 value={serviceForm.imageUrl}
                 onChange={(event) => handleServiceFormChange('imageUrl', event.target.value)}
                 placeholder="图片地址"
-                className={`px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <input
                 type="number"
                 value={serviceForm.durationMinutes}
                 onChange={(event) => handleServiceFormChange('durationMinutes', Number(event.target.value))}
                 placeholder="时长(分钟)"
-                className={`px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <input
                 type="number"
                 value={serviceForm.price}
                 onChange={(event) => handleServiceFormChange('price', Number(event.target.value))}
                 placeholder="价格"
-                className={`px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <input
                 type="number"
                 value={serviceForm.displayOrder}
                 onChange={(event) => handleServiceFormChange('displayOrder', Number(event.target.value))}
                 placeholder="显示顺序"
-                className={`px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <div className="flex items-center gap-2">
                 <label className={textColorClass}>启用</label>
@@ -328,7 +330,7 @@ const AdminBookingsPage: React.FC = () => {
                 value={serviceForm.description}
                 onChange={(event) => handleServiceFormChange('description', event.target.value)}
                 placeholder="服务描述"
-                className={`md:col-span-2 px-3 py-2 rounded border ${uiState.theme === 'dark' ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
+                className={`md:col-span-2 px-3 py-2 rounded border ${isDark ? 'bg-gray-900 border-gray-700 text-white' : 'bg-white border-gray-300 text-gray-900'}`}
               />
               <div className="md:col-span-2 flex gap-2">
                 <Button variant="primary" onClick={submitService} isLoading={serviceMutationLoading}>
@@ -347,7 +349,7 @@ const AdminBookingsPage: React.FC = () => {
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className={uiState.theme === 'dark' ? 'dark:bg-gray-700' : 'bg-gray-50'}>
+                  <thead className={isDark ? 'dark:bg-gray-700' : 'bg-gray-50'}>
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">服务名称</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">时长(分钟)</th>
@@ -356,7 +358,7 @@ const AdminBookingsPage: React.FC = () => {
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">操作</th>
                     </tr>
                   </thead>
-                  <tbody className={`divide-y divide-gray-200 dark:divide-gray-700 ${uiState.theme === 'dark' ? 'dark:bg-gray-800' : 'bg-white'}`}>
+                  <tbody className={`divide-y divide-gray-200 dark:divide-gray-700 ${isDark ? 'dark:bg-gray-800' : 'bg-white'}`}>
                     {services.map((serviceItem) => (
                       <tr key={serviceItem.id}>
                         <td className={`px-4 py-3 text-sm ${textColorClass}`}>{serviceItem.name}</td>
@@ -396,7 +398,7 @@ const AdminBookingsPage: React.FC = () => {
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className={uiState.theme === 'dark' ? 'dark:bg-gray-700' : 'bg-gray-50'}>
+                  <thead className={isDark ? 'dark:bg-gray-700' : 'bg-gray-50'}>
                     <tr>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">姓名</th>
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">手机号</th>
@@ -406,7 +408,7 @@ const AdminBookingsPage: React.FC = () => {
                       <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">创建时间</th>
                     </tr>
                   </thead>
-                  <tbody className={`divide-y divide-gray-200 dark:divide-gray-700 ${uiState.theme === 'dark' ? 'dark:bg-gray-800' : 'bg-white'}`}>
+                  <tbody className={`divide-y divide-gray-200 dark:divide-gray-700 ${isDark ? 'dark:bg-gray-800' : 'bg-white'}`}>
                     {users.map((userItem) => (
                       <tr key={userItem.id}>
                         <td className={`px-4 py-3 text-sm ${textColorClass}`}>{userItem.name}</td>

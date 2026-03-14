@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
-import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
 
@@ -46,21 +46,28 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       iconPosition = 'left',
       ...restProps
     } = props;
-    const { uiState } = useUI();
-    const isDarkTheme = uiState.theme === 'dark';
+    const { isDark: isDarkTheme } = useTheme();
     
     // 基础样式 - 遵循设计系统规范
     const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2';
     
-    // 变体样式 - 充分利用global.css中定义的CSS变量
+    // 变体样式 - 使用Tailwind配置中定义的颜色
     const variantClasses = {
-      primary: 'bg-primary text-primary-foreground hover:bg-primary-600 focus:ring-ring',
-      secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-ring',
+      primary: isDarkTheme
+        ? 'bg-primary text-white hover:bg-primary/80 focus:ring-primary'
+        : 'bg-primary text-white hover:bg-primary/90 focus:ring-primary',
+      secondary: isDarkTheme
+        ? 'bg-secondary text-white hover:bg-secondary/80 focus:ring-secondary'
+        : 'bg-secondary text-white hover:bg-secondary/90 focus:ring-secondary',
       warning: isDarkTheme
         ? 'bg-yellow-500 text-white hover:bg-yellow-600 focus:ring-yellow-500'
         : 'bg-yellow-500 text-black hover:bg-yellow-600 focus:ring-yellow-500',
-      danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/80 focus:ring-ring',
-      ghost: 'text-foreground hover:bg-secondary/50 focus:ring-ring'
+      danger: isDarkTheme
+        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
+        : 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+      ghost: isDarkTheme
+        ? 'text-text-dark-primary hover:bg-background-dark-200 focus:ring-primary'
+        : 'text-gray-700 hover:bg-gray-100 focus:ring-primary'
     };
     
     // 尺寸样式 - 使用CSS变量中定义的间距和字体大小

@@ -1,7 +1,7 @@
 import React from 'react';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 interface ModalProps {
   open: boolean;
@@ -30,8 +30,7 @@ const Modal: React.FC<ModalProps> = ({
   closeButtonText = '关闭',
   showCloseButton = true,
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme } = useTheme();
 
   React.useEffect(() => {
     if (!open) return;

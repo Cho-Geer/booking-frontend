@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
-import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 /**
  * Dynamically import ReactQuill to avoid SSR issues
@@ -34,7 +34,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   fullWidth = false,
   editorHeightClass = 'h-52 md:h-56',
 }) => {
-  const { uiState } = useUI();
+  const { theme } = useTheme();
   const [clientId, setClientId] = useState(propId);
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   ], []);
 
   // Custom styles for dark mode support
-  const darkThemeStyles = uiState.theme === 'dark' ? `
+  const darkThemeStyles = theme === 'dark' ? `
     .ql-toolbar.ql-snow {
       border-color: #374151;
       background-color: #1f2937;
@@ -153,7 +153,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         />
       </div>
       {error && (
-        <p className={`mt-1 text-sm ${uiState.theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} id={`${rteId}-error`}>
+        <p className={`mt-1 text-sm ${theme === 'dark' ? 'text-red-400' : 'text-red-600'}`} id={`${rteId}-error`}>
           {error}
         </p>
       )}

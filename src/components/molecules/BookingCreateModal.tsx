@@ -6,8 +6,9 @@ import RichTextEditor from '../atoms/RichTextEditor';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useUI } from '../../contexts/UIContext';
 import { TimeSlot } from '../../types';
+import { formatDate, formatTime } from '@/utils/dateUtils';
+import { useTheme } from '@/hooks/useTheme';
 
 interface BookingCreateModalProps {
   open: boolean;
@@ -67,9 +68,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
   emailSent,
   onConfirmBooking
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.isMobile;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
 
   const {
@@ -99,21 +98,6 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
       setValue('notes', notes || '', { shouldValidate: false });
     }
   }, [open, customerName, customerPhone, customerEmail, customerWechat, notes, setValue]);
-
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
-  };
-
-  const formatTime = (timeString: string): string => {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  };
 
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
     onCustomerNameChange(data.customerName);

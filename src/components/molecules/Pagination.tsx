@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '../atoms/Button';
-import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 interface PaginationProps {
   currentPage: number;
@@ -13,9 +13,7 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange
 }) => {
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const isMobile = uiState.isMobile;
+  const { isDark: isDarkTheme, isMobile } = useTheme();
 
   if (totalPages <= 1) return null;
 

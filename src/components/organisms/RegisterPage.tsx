@@ -1,6 +1,7 @@
 import React from 'react';
 import RegisterForm, { RegisterFormData } from '../molecules/RegisterForm';
 import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
 
 interface RegisterPageProps {
@@ -33,8 +34,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({
   showCodeInput = false,
   error = ''
 }) => {
-  const { uiState, setTheme } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { setTheme } = useUI();
+  const { isDark: isDarkTheme } = useTheme();
 
 
 

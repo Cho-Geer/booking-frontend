@@ -1,6 +1,7 @@
 import React from 'react';
 import LoginForm from '../molecules/LoginForm';
 import { useUI } from '../../contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { motion } from 'framer-motion';
 
 interface LoginPageProps {
@@ -33,8 +34,8 @@ const LoginPage: React.FC<LoginPageProps> = ({
   showCodeInput = false,
   error = ''
 }) => {
-  const { uiState, setTheme } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { setTheme } = useUI();
+  const { isDark: isDarkTheme } = useTheme();
 
 
   return (

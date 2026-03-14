@@ -16,7 +16,7 @@ import {
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
-import ConfirmModal from '@/components/molecules/ConfirmModal';
+import ConfirmModal from '@/components/atoms/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
 import { bookingService } from '@/services/bookingService';
 
