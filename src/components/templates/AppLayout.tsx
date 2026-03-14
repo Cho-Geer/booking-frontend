@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
+import Spinner from '@/components/atoms/Spinner';
 import ThemeToggle from '@/components/atoms/ThemeToggle';
 import { useUI } from '@/contexts/UIContext';
 
@@ -137,6 +138,11 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       >
         {uiState.modal.content}
       </Modal>
+
+      {/* 全局加载指示器 */}
+      {uiState.loading && (
+        <Spinner text="正在处理，请稍候..." global size="lg" />
+      )}
     </div>
   );
 };

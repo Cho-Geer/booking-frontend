@@ -5,6 +5,7 @@ import RegisterPageOrganism from '@/components/organisms/RegisterPage';
 import { registerUser, sendCode, clearError, setShowCodeInput } from '@/store/userSlice';
 import { AppDispatch, RootState } from '@/store';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
+import { useUI } from '@/contexts/UIContext';
 
 /**
  * 页面组件：注册页面
@@ -12,6 +13,7 @@ import { RegisterFormData } from '@/components/molecules/RegisterForm';
 const RegisterPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const { setLoading } = useUI();
   
   // 清除错误信息当组件卸载或跳转时
   useEffect(() => {
@@ -22,7 +24,7 @@ const RegisterPage: React.FC = () => {
   }, [dispatch]);
 
   const { loading, error, currentUser, showCodeInput } = useSelector((state: RootState) => state.user);
-    const [countdown, setCountdown] = useState(0);
+  const [countdown, setCountdown] = useState(0);
   
     // 倒计时效果
     useEffect(() => {
@@ -44,7 +46,10 @@ const RegisterPage: React.FC = () => {
    * 处理用户注册
    */
   const handleRegister = (data: RegisterFormData) => {
-    dispatch(registerUser(data));
+    setLoading(true);
+    dispatch(registerUser(data)).finally(() => {
+      setLoading(false);
+    });
   };
 
   /**

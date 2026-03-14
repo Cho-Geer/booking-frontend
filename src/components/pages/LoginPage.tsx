@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import LoginPageOrganism from '@/components/organisms/LoginPage';
 import { sendCode, verifyCode, clearError, setShowCodeInput } from '@/store/userSlice';
 import { AppDispatch, RootState } from '@/store';
+import { useUI } from '@/contexts/UIContext';
 
 /**
  * 页面组件：登录页面
@@ -15,6 +16,7 @@ const LoginPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error, currentUser, showCodeInput } = useSelector((state: RootState) => state.user);
+  const { setLoading } = useUI();
   
   const [countdown, setCountdown] = useState(0);
 
@@ -54,7 +56,10 @@ const LoginPage: React.FC = () => {
    * 验证验证码
    */
   const handleVerifyCode = (phoneNumber: string, code: string) => {
-    dispatch(verifyCode({ phoneNumber, code }));
+    setLoading(true);
+    dispatch(verifyCode({ phoneNumber, code })).finally(() => {
+      setLoading(false);
+    });
   };
 
   return (

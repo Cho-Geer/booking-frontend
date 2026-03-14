@@ -52,7 +52,7 @@ interface AvailableSlotsForTable extends TimeSlot {
  */
 const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = false, error: serverError }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { openModal, showError } = useUI();
+  const { openModal, showError, setLoading } = useUI();
   const { currentUser } = useSelector((state: RootState) => state.user);
   // 从Redux store获取状态
   const {
@@ -86,8 +86,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const [updatingBooking, setUpdatingBooking] = useState(false);
   const [bookingCreated, setBookingCreated] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [showGlobalSpinner, setShowGlobalSpinner] = useState(false);
-  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
+  const [cancelBookingId, setCancelBookingId] = useState<string | null>(null); 
 
     // 表单验证状态
   const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
@@ -291,7 +290,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
 
     setBookingCreated(false);
     setEmailSent(false);
-    setShowGlobalSpinner(true);
+    setLoading(true);
 
     const result = await dispatch(createBooking({
       timeSlotId: selectedSlot.id,
@@ -328,7 +327,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       setIsFormValid(false);
       setBookingCreated(false);
       setEmailSent(false);
-      setShowGlobalSpinner(false);
+      setLoading(false);
       // 重新获取预约列表和可用时间段
       await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
@@ -359,13 +358,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       dispatch(setSelectedSlot(null));
       setBookingCreated(false);
       setEmailSent(false);
-      setShowGlobalSpinner(false);
+      setLoading(false);
       return;
     }
     showError('预约创建失败', result.error.message || '请稍后重试');
     setBookingCreated(false);
     setEmailSent(false);
-    setShowGlobalSpinner(false);
+    setLoading(false);
   };
 
   /**
@@ -381,7 +380,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const handleCancelBookingConfirm = async () => {
     if (!cancelBookingId) return;
 
-    setShowGlobalSpinner(true);
+    setLoading(true);
     setShowCancelConfirmModal(false);
 
     const result = await dispatch(cancelBooking(cancelBookingId));
@@ -400,7 +399,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       await refreshBookingsAfterMutation();
       dispatch(getAvailableSlots(selectedDate));
       loadSlotReferenceBookings(selectedDate);
-      setShowGlobalSpinner(false);
+      setLoading(false);
       setShowCancelSuccessModal(true);
       openModal({
         title: '取消预约成功',
@@ -412,7 +411,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     }
 
     showError('预约取消失败', result.error.message || '请稍后重试');
-    setShowGlobalSpinner(false);
+    setLoading(false);
     setCancelBookingId(null);
   };
 
@@ -436,7 +435,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     notes?: string;
   }) => {
     setUpdatingBooking(true);
-    setShowGlobalSpinner(true);
+    setLoading(true);
     
     const result = await dispatch(updateBooking(payload));
     if (updateBooking.fulfilled.match(result)) {
@@ -445,12 +444,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       loadSlotReferenceBookings(selectedDate);
       
       setUpdatingBooking(false);
-      setShowGlobalSpinner(false);
+      setLoading(false);
       return;
     }
     showError('预约更新失败', result.error.message || '请稍后重试');
     setUpdatingBooking(false);
-    setShowGlobalSpinner(false);
+    setLoading(false);
     throw new Error(result.error.message || '预约更新失败');
   };
 
@@ -549,14 +548,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         onConfirmBooking={handleConfirmBooking}
       />
       
-      {showGlobalSpinner && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-white"></div>
-            <p className="text-white text-lg font-medium">正在处理，请稍候...</p>
-          </div>
-        </div>
-      )}
+
       
       <ConfirmModal
         open={showCancelConfirmModal}
