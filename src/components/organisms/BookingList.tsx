@@ -3,11 +3,13 @@
  * 展示如何使用TanStack Query进行数据获取和UI Context进行状态管理
  */
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useBookings, useDeleteBooking, bookingApiUtils, BookingStatus } from '../../services/bookingApi';
 import { useUI } from '../../contexts/UIContext';
-import { Button, Table, Tag, Space, Popconfirm } from 'antd';
+import { Table, Space, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { Trash2, Eye } from 'lucide-react';
+import Button from '../atoms/Button';
 import { Booking } from '../../types';
 
 /**
@@ -58,9 +60,13 @@ const BookingList: React.FC<BookingListProps> = ({
   const isLoading = externalLoading ?? isLoadingBookings;
   const isDeleting = externalDeleting ?? isDeletingBooking;
 
+  const loading = React.useMemo(() => {
+    return isLoading || isDeleting;
+  }, [isLoading, isDeleting]);
+
   React.useEffect(() => {
-    setLoading(isLoading || isDeleting);
-  }, [isLoading, isDeleting, setLoading]);
+    setLoading(loading);
+  }, [loading, setLoading]);
 
   const tableBookings = React.useMemo(() => {
     if (useExternalData) {
@@ -90,19 +96,19 @@ const BookingList: React.FC<BookingListProps> = ({
     if (onDeleteBooking) {
       try {
         await Promise.resolve(onDeleteBooking(id));
-        showSuccess('预约删除成功');
+        showSuccess('预约取消成功');
       } catch (error) {
-        showError('预约删除失败', error instanceof Error ? error.message : '未知错误');
+        showError('预约取消失败', error instanceof Error ? error.message : '未知错误');
       }
       return;
     }
 
     deleteBooking(id, {
       onSuccess: () => {
-        showSuccess('预约删除成功');
+        showSuccess('预约取消成功');
       },
       onError: (error) => {
-        showError('预约删除失败', error instanceof Error ? error.message : '未知错误');
+        showError('预约取消失败', error instanceof Error ? error.message : '未知错误');
       },
     });
   };
@@ -170,35 +176,26 @@ const BookingList: React.FC<BookingListProps> = ({
       dataIndex: 'status',
       key: 'status',
       render: (status: BookingStatus) => {
-        // 根据状态设置不同的标签颜色
-        if (isDarkTheme) {
-          // 深色主题下使用我们自定义的标签样式
-          const statusClasses = {
-            [BookingStatus.PENDING]: 'bg-warning-dark text-warning-light',
-            [BookingStatus.CONFIRMED]: 'bg-secondary-dark text-secondary-light',
-            [BookingStatus.CANCELLED]: 'bg-error-dark text-error-light',
-            [BookingStatus.COMPLETED]: 'bg-info-dark text-info-light',
-          };
-          
-          return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status]}`}>
-              {bookingApiUtils.getStatusText(status)}
-            </span>
-          );
-        }
-        
-        // 浅色主题下使用Ant Design的Tag颜色类型
-        const colorMap: Record<BookingStatus, 'blue' | 'green' | 'orange' | 'red'> = {
-          [BookingStatus.PENDING]: 'orange',
-          [BookingStatus.CONFIRMED]: 'green',
-          [BookingStatus.CANCELLED]: 'red',
-          [BookingStatus.COMPLETED]: 'blue',
+        // 使用统一的标签样式，在深色和浅色主题下保持一致
+        const statusClasses = {
+          [BookingStatus.PENDING]: isDarkTheme 
+            ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' 
+            : 'bg-yellow-100 text-yellow-800',
+          [BookingStatus.CONFIRMED]: isDarkTheme 
+            ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+            : 'bg-green-100 text-green-800',
+          [BookingStatus.CANCELLED]: isDarkTheme 
+            ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
+            : 'bg-red-100 text-red-800',
+          [BookingStatus.COMPLETED]: isDarkTheme 
+            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
+            : 'bg-blue-100 text-blue-800',
         };
         
         return (
-          <Tag color={colorMap[status]}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status]}`}>
             {bookingApiUtils.getStatusText(status)}
-          </Tag>
+          </span>
         );
       },
     },
@@ -214,29 +211,30 @@ const BookingList: React.FC<BookingListProps> = ({
       render: (_: unknown, record: Booking) => (
         <Space size="middle">
           <Button 
-            type="link" 
-            icon={<EyeOutlined />} 
+            variant="ghost" 
+            icon={Eye} 
             onClick={() => handleViewBooking(record.id)}
-            loading={uiState.loading}
+            isLoading={uiState.loading}
+            size="sm"
           >
             查看
           </Button>
           {showDeleteAction && (
             <Popconfirm
-              title="确定要删除这个预约吗？"
-              description="删除后将无法恢复"
+              title="确定要取消这个预约吗？"
+              description="取消后将无法恢复"
               onConfirm={() => handleDeleteBooking(record.id)}
               okText="确定"
               cancelText="取消"
               disabled={isDeleting}
             >
               <Button 
-                type="link" 
-                danger 
-                icon={<DeleteOutlined />}
-                loading={isDeleting}
+                variant="danger" 
+                icon={Trash2}
+                isLoading={isDeleting}
+                size="sm"
               >
-                删除
+                取消
               </Button>
             </Popconfirm>
           )}
@@ -246,14 +244,19 @@ const BookingList: React.FC<BookingListProps> = ({
   ];
 
   return (
-    <div id="booking-list-container" className={`booking-list-container p-4 rounded-lg shadow-sm ${isDarkTheme ? 'bg-background-dark' : 'bg-white'}`}>
+    <motion.div 
+      id="booking-list-container" 
+      className={`booking-list-container p-4 rounded-lg shadow-sm ${isDarkTheme ? 'bg-background-dark' : 'bg-white'}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <div id="booking-list-header" className="flex justify-between items-center mb-4">
         <h2 className={`text-xl font-bold ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-800'}`}>{title}</h2>
         <Button 
-          type="primary"
+          variant="primary"
           onClick={refreshBookings}
-          loading={isLoading}
-          className="bg-primary hover:bg-primary/90"
+          isLoading={isLoading}
         >
           刷新列表
         </Button>
@@ -276,7 +279,7 @@ const BookingList: React.FC<BookingListProps> = ({
           filterReset: '重置',
         }}
       />
-    </div>
+    </motion.div>
   );
 };
 
