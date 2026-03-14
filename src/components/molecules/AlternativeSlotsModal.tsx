@@ -32,6 +32,7 @@ const AlternativeSlotsModal: React.FC<AlternativeSlotsModalProps> = ({
     <Modal
       open={open}
       title={conflictSlot ? `该时间段 (${formatTime(conflictSlot.startTime)}) 已被预约` : ''}
+      showCloseButton={false}
       onClose={onClose}
       footer={(
         <Button

@@ -52,7 +52,7 @@ interface AvailableSlotsForTable extends TimeSlot {
  */
 const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = false, error: serverError }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { showSuccess, showError } = useUI();
+  const { openModal, showError } = useUI();
   const { currentUser } = useSelector((state: RootState) => state.user);
   // 从Redux store获取状态
   const {
@@ -334,6 +334,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       dispatch(getAvailableSlots(selectedDate));
       loadSlotReferenceBookings(selectedDate);
       setShowCreateSuccessModal(true);
+      openModal({
+        title: '创建预约成功',
+        content: '预约创建成功，已发送邮件请确认。',
+        width: 400
+      });
       return;
     }
 
@@ -397,6 +402,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       loadSlotReferenceBookings(selectedDate);
       setShowGlobalSpinner(false);
       setShowCancelSuccessModal(true);
+      openModal({
+        title: '取消预约成功',
+        content: '预约取消成功，已发送邮件请确认。',
+        width: 400
+      });
       setCancelBookingId(null);
       return;
     }

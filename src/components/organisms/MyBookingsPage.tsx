@@ -3,6 +3,7 @@ import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
 import { useTheme } from '@/hooks/useTheme';
+import { useUI } from '@/contexts/UIContext';
 import { Booking, Service } from '@/types';
 import BookingDetailModal from '@/components/molecules/BookingDetailModal';
 import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
@@ -38,8 +39,9 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
   onUpdateBooking
 }) => {
   const { isDark: isDarkTheme } = useTheme();
-  const [showDetailModal, setShowDetailModal] = React.useState(false);
+  const { openModal } = useUI();
   const [showUpdateModal, setShowUpdateModal] = React.useState(false);
+
   const [detailBooking, setDetailBooking] = React.useState<Booking | null>(null);
   const [updateBookingTarget, setUpdateBookingTarget] = React.useState<Booking | null>(null);
   const [updatingBooking, setUpdatingBooking] = React.useState(false);
@@ -143,7 +145,11 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
       setShowUpdateModal(false);
       setUpdateBookingTarget(null);
       setDetailBooking(null);
-      setShowUpdateSuccessModal(true);
+      openModal({
+        title: '更新成功',
+        content: '预约更新成功，已为您保存最新预约信息。已发送邮件请确认',
+        width: 400
+      });
     } finally {
       setUpdatingBooking(false);
     }

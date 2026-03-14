@@ -58,6 +58,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       title="预约详情"
       onClose={onClose}
       size={isMobile ? "sm" : "md"}
+      cardClassName="h-auto"
       headerActions={canUpdate ? (
         <Button variant="warning" size="sm" onClick={() => onUpdate(booking)}>
           更新

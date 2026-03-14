@@ -2,13 +2,13 @@ import React from 'react';
 import BookingDetailModal from '@/components/molecules/BookingDetailModal';
 import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
 import BookingCreateModal from '@/components/molecules/BookingCreateModal';
-import SuccessModal from '@/components/molecules/SuccessModal';
 import AlternativeSlotsModal from '@/components/molecules/AlternativeSlotsModal';
 import BookingLeftPanel from '@/components/organisms/BookingLeftPanel';
 import BookingRightPanel from '@/components/organisms/BookingRightPanel';
 import { useTheme } from '@/hooks/useTheme';
 import { useBookingModals } from '@/hooks/useBookingModals';
 import { useBookingUI } from '@/contexts/BookingContext';
+import { useUI } from '@/contexts/UIContext';
 import { Booking, TimeSlot, Service, AppointmentQuery } from '@/types';
 
 interface TimeSlotForTable extends TimeSlot {
@@ -57,10 +57,6 @@ interface BookingPageProps {
   onSearch: (query: AppointmentQuery) => void;
   notes: string;
   resetBookingState: () => void;
-  showCreateSuccessModal: boolean;
-  setShowCreateSuccessModal: (value: boolean) => void;
-  showCancelSuccessModal: boolean;
-  setShowCancelSuccessModal: (value: boolean) => void;
   bookingCreated: boolean;
   setBookingCreated: (value: boolean) => void;
   emailSent: boolean;
@@ -124,10 +120,6 @@ const BookingPage: React.FC<BookingPageProps> = ({
   pagination,
   onPageChange,
   onSearch,
-  showCreateSuccessModal,
-  setShowCreateSuccessModal,
-  showCancelSuccessModal,
-  setShowCancelSuccessModal,
   bookingCreated,
   emailSent,
   onConfirmBooking
@@ -138,11 +130,10 @@ const BookingPage: React.FC<BookingPageProps> = ({
   
   // 使用BookingContext管理UI状态
   const { 
-    uiState: { searchTerm, statusFilter, dateRange, showUpdateSuccessModal },
+    uiState: { searchTerm, statusFilter, dateRange },
     setSearchTerm,
     setStatusFilter,
     setDateRange,
-    setShowUpdateSuccessModal,
     isEndDateInvalid
   } = useBookingUI();
 
@@ -224,13 +215,22 @@ const BookingPage: React.FC<BookingPageProps> = ({
     }
   };
 
+  // 使用UIContext的openModal统一管理弹窗
+  const { openModal } = useUI();
+
   const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
     setUpdatingBooking(true);
     try {
       await onUpdateBooking(payload);
       handleCloseUpdateModal();
       handleCloseDetailModal();
-      setShowUpdateSuccessModal(true);
+      openModal({
+        title: '更新成功',
+        content: '预约更新成功，已为您保存最新预约信息。已发送邮件请确认。',
+        width: 400
+      });
+    } catch (error) {
+      console.error('更新预约失败:', error);
     } finally {
       setUpdatingBooking(false);
     }
@@ -333,24 +333,6 @@ const BookingPage: React.FC<BookingPageProps> = ({
           onConfirm={handleConfirmUpdate}
           submitting={updatingBooking}
           updatingBooking={updatingBooking}
-        />
-        <SuccessModal
-          open={showUpdateSuccessModal}
-          title="更新成功"
-          message="预约更新成功，已为您保存最新预约信息。<br />已发送邮件请确认。"
-          onClose={() => setShowUpdateSuccessModal(false)}
-        />
-        <SuccessModal
-          open={showCreateSuccessModal}
-          title="创建成功"
-          message="预约创建成功，已为您保存最新预约信息。<br />已发送邮件请确认。"
-          onClose={() => setShowCreateSuccessModal(false)}
-        />
-        <SuccessModal
-          open={showCancelSuccessModal}
-          title="取消成功"
-          message="预约取消成功，已为您更新预约状态。"
-          onClose={() => setShowCancelSuccessModal(false)}
         />
       </div>
     </div>

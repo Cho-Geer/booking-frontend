@@ -2,6 +2,7 @@ import React, { ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Button from '@/components/atoms/Button';
+import Modal from '@/components/atoms/Modal';
 import ThemeToggle from '@/components/atoms/ThemeToggle';
 import { useUI } from '@/contexts/UIContext';
 
@@ -33,11 +34,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   userType 
 }) => {
   const router = useRouter();
-  const { uiState, toggleTheme } = useUI();
+  const { uiState, toggleTheme, closeModal } = useUI();
   
-  /**
-   * 导航项配置
-   */
+  // 导航项配置
   const navItems = [
     { name: '首页', path: '/' },
     { name: '预约', path: '/bookings' },
@@ -127,6 +126,17 @@ const AppLayout: React.FC<AppLayoutProps> = ({
           </div>
         </div>
       </main>
+
+      {/* 全局模态框 - 使用UIContext的modal状态 */}
+      <Modal
+        open={uiState.modal.open}
+        title={uiState.modal.title}
+        onClose={closeModal}
+        footer={uiState.modal.footer}
+        size={typeof uiState.modal.width === 'string' ? undefined : uiState.modal.width >= 600 ? 'lg' : 'sm'}
+      >
+        {uiState.modal.content}
+      </Modal>
     </div>
   );
 };
