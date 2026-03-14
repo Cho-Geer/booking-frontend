@@ -6,6 +6,9 @@ import Dropdown from '@/components/atoms/Dropdown';
 import BookingDetailModal from '@/components/molecules/BookingDetailModal';
 import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
 import BookingCreateModal from '@/components/molecules/BookingCreateModal';
+import SuccessModal from '@/components/molecules/SuccessModal';
+import BookingFilters from '@/components/molecules/BookingFilters';
+import BookingCard from '@/components/molecules/BookingCard';
 import Input from '@/components/atoms/Input';
 import Pagination from '@/components/molecules/Pagination';
 import { useUI } from '@/contexts/UIContext';
@@ -254,8 +257,6 @@ const BookingPage: React.FC<BookingPageProps> = ({
     onSlotSelect(slot);
   };
 
-  const canShowUpdate = (status: string) => status === 'PENDING';
-
   const handleOpenDetail = (booking: Booking) => {
     setDetailBooking(booking);
     setShowDetailModal(true);
@@ -277,39 +278,6 @@ const BookingPage: React.FC<BookingPageProps> = ({
       setShowUpdateSuccessModal(true);
     } finally {
       setUpdatingBooking(false);
-    }
-  };
-
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return isDarkTheme ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800';
-      case 'PENDING':
-        return isDarkTheme ? 'bg-yellow-900/30 text-yellow-400' : 'bg-yellow-100 text-yellow-800';
-      case 'CANCELLED':
-        return isDarkTheme ? 'bg-red-900/30 text-red-400' : 'bg-red-100 text-red-800';
-      case 'COMPLETED':
-        return isDarkTheme ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800';
-      default:
-        return isDarkTheme ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  /**
-   * 获取状态中文名称
-   */
-  const getStatusName = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return '已确认';
-      case 'PENDING':
-        return '待确认';
-      case 'CANCELLED':
-        return '已取消';
-      case 'COMPLETED':
-        return '已完成';
-      default:
-        return status;
     }
   };
 
@@ -446,110 +414,19 @@ const BookingPage: React.FC<BookingPageProps> = ({
                     />
                   </div>
                 </div>
-                <div className="mb-4 space-y-3">
-                  <Input
-                    placeholder="搜索预约（姓名、手机号、备注...）"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-11 text-xs"
-                    fullWidth
-                  />
-                  {isMobile ? (
-                    <div className="space-y-2">
-                      <div>
-                        <input
-                          ref={startDateInputRef}
-                          type="date"
-                          value={dateRange.startDate}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                          onClick={handleStartDateInputClick}
-                          onFocus={handleStartDateInputClick}
-                          onKeyDown={(e) => e.preventDefault()}
-                          onPaste={(e) => e.preventDefault()}
-                          onDrop={(e) => e.preventDefault()}
-                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
-                            isDarkTheme
-                              ? 'border-border-dark bg-background-dark text-text-dark-primary'
-                              : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                          placeholder="开始日期"
-                        />
-                      </div>
-                      <span className={`self-center ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>-</span>
-                      <div>
-                        <input
-                          ref={endDateInputRef}
-                          type="date"
-                          value={dateRange.endDate}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                          onClick={handleEndDateInputClick}
-                          onFocus={handleEndDateInputClick}
-                          onKeyDown={(e) => e.preventDefault()}
-                          onPaste={(e) => e.preventDefault()}
-                          onDrop={(e) => e.preventDefault()}
-                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
-                            isEndDateInvalid
-                              ? 'border-red-500 text-red-500'
-                              : isDarkTheme
-                                ? 'border-border-dark bg-background-dark text-text-dark-primary'
-                                : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                          placeholder="结束日期"
-                        />
-                        {isEndDateInvalid && (
-                          <p className="mt-1 text-xs text-red-500">结束日期不能早于开始日期</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <input
-                          ref={startDateInputRef}
-                          type="date"
-                          value={dateRange.startDate}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                          onClick={handleStartDateInputClick}
-                          onFocus={handleStartDateInputClick}
-                          onKeyDown={(e) => e.preventDefault()}
-                          onPaste={(e) => e.preventDefault()}
-                          onDrop={(e) => e.preventDefault()}
-                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
-                            isDarkTheme
-                              ? 'border-border-dark bg-background-dark text-text-dark-primary'
-                              : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                          placeholder="开始日期"
-                        />
-                      </div>
-                      <span className={`self-center ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>-</span>
-                      <div className="flex-1">
-                        <input
-                          ref={endDateInputRef}
-                          type="date"
-                          value={dateRange.endDate}
-                          onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                          onClick={handleEndDateInputClick}
-                          onFocus={handleEndDateInputClick}
-                          onKeyDown={(e) => e.preventDefault()}
-                          onPaste={(e) => e.preventDefault()}
-                          onDrop={(e) => e.preventDefault()}
-                          className={`block w-full h-11 rounded-md border px-3 text-xs focus:outline-none focus:ring-primary focus:border-primary ${
-                            isEndDateInvalid
-                              ? 'border-red-500 text-red-500'
-                              : isDarkTheme
-                                ? 'border-border-dark bg-background-dark text-text-dark-primary'
-                                : 'border-gray-300 bg-white text-gray-900'
-                          }`}
-                          placeholder="结束日期"
-                        />
-                        {isEndDateInvalid && (
-                          <p className="mt-1 text-xs text-red-500">结束日期不能早于开始日期</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <BookingFilters
+                  searchTerm={searchTerm}
+                  onSearchTermChange={setSearchTerm}
+                  statusFilter={statusFilter}
+                  onStatusFilterChange={setStatusFilter}
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  isEndDateInvalid={isEndDateInvalid}
+                  startDateInputRef={startDateInputRef}
+                  endDateInputRef={endDateInputRef}
+                  onStartDateInputClick={handleStartDateInputClick}
+                  onEndDateInputClick={handleEndDateInputClick}
+                />
 
                 <div className={`mb-4 pb-4 border-b ${isDarkTheme ? 'border-border-dark' : 'border-gray-200'}`}>
                   <div className="flex items-center justify-between">
@@ -576,57 +453,13 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 ) : (
                   <div id="booked-item" className="space-y-4 flex flex-col h-[46vh] overflow-y-auto scrollbar-hide">
                     {bookings.map((booking) => (
-                      <div id={`booking-item-${booking.id}`} key={booking.id} className={`rounded-md p-4 ${isDarkTheme ? 'bg-background-dark-200 border border-border-dark' : 'border border-gray-200'}`}>
-                        <div className={`flex ${isMobile ? 'flex-col gap-3' : 'justify-between items-start gap-4'}`}>
-                          <div className="min-w-0 flex-1">
-                            <p
-                              title={`${formatDate(booking.appointmentDate)} ${formatTime(booking.startTime)} - ${formatTime(booking.endTime)}`}
-                              className={`font-medium truncate whitespace-nowrap ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}
-                            >
-                              {formatDate(booking.appointmentDate)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                            </p>
-                            {booking.notes && (
-                              <p
-                                title={`备注: ${stripHtml(booking.notes)}`}
-                                className={`text-sm mt-1 truncate ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}
-                              >
-                                备注: {stripHtml(booking.notes)}
-                              </p>
-                            )}
-                          </div>
-                          <div className={`${isMobile ? 'w-full' : 'shrink-0 min-w-[180px]'} flex flex-col items-end gap-3`}>
-                            <span className={`inline-flex items-center whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
-                              {getStatusName(booking.status)}
-                            </span>
-                            <div className={`flex flex-wrap gap-2 ${isMobile ? 'justify-start w-full' : 'justify-end'}`}>
-                              <Button
-                                size="xs"
-                                variant="secondary"
-                                onClick={() => handleOpenDetail(booking)}
-                              >
-                                详细
-                              </Button>
-                              {canShowUpdate(booking.status) && (
-                                <Button
-                                  size="xs"
-                                  variant="warning"
-                                  onClick={() => handleOpenUpdate(booking)}
-                                >
-                                  更新
-                                </Button>
-                              )}
-                              {['CONFIRMED', 'PENDING'].includes(booking.status) && (
-                                <Button
-                                  size="xs"
-                                  onClick={() => onCancelBooking(booking.id)}
-                                >
-                                  取消预约
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <BookingCard
+                        key={booking.id}
+                        booking={booking}
+                        onOpenDetail={handleOpenDetail}
+                        onOpenUpdate={handleOpenUpdate}
+                        onCancelBooking={onCancelBooking}
+                      />
                     ))}
                   </div>
                 )}
@@ -713,57 +546,24 @@ const BookingPage: React.FC<BookingPageProps> = ({
           submitting={updatingBooking}
           updatingBooking={updatingBooking}
         />
-        <Modal
+        <SuccessModal
           open={showUpdateSuccessModal}
           title="更新成功"
+          message="预约更新成功，已为您保存最新预约信息。<br />已发送邮件请确认。"
           onClose={() => setShowUpdateSuccessModal(false)}
-          showCloseButton={false}
-          size="sm"
-          footer={(          
-            <Button size="sm" variant="secondary" onClick={() => setShowUpdateSuccessModal(false)}>
-              关闭
-            </Button>
-          )}
-        >
-          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约更新成功，已为您保存最新预约信息。<br />
-            已发送邮件请确认。
-          </p>
-        </Modal>
-        <Modal
+        />
+        <SuccessModal
           open={showCreateSuccessModal}
           title="创建成功"
+          message="预约创建成功，已为您保存最新预约信息。<br />已发送邮件请确认。"
           onClose={() => setShowCreateSuccessModal(false)}
-          showCloseButton={false}
-          size="sm"
-          footer={(          
-            <Button size="sm" variant="secondary" onClick={() => setShowCreateSuccessModal(false)}>
-              关闭
-            </Button>
-          )}
-        >
-          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约创建成功，已为您保存最新预约信息。<br />
-            已发送邮件请确认。
-          </p>
-        </Modal>
-        <Modal
+        />
+        <SuccessModal
           open={showCancelSuccessModal}
           title="取消成功"
+          message="预约取消成功，已为您更新预约状态。"
           onClose={() => setShowCancelSuccessModal(false)}
-          showCloseButton={false}
-          size="sm"
-          footer={(          
-            <Button size="sm" variant="secondary" onClick={() => setShowCancelSuccessModal(false)}>
-              关闭
-            </Button>
-          )}
-        >
-          <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-            预约取消成功，已为您更新预约状态。<br />
-            已发送邮件请确认。
-          </p>
-        </Modal>
+        />
       </div>
     </div>
   );
