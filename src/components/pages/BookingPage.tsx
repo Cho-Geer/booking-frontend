@@ -542,10 +542,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         pagination={pagination}
         onPageChange={handlePageChange}
         onSearch={handleSearch}
-        showCreateSuccessModal={showCreateSuccessModal}
-        setShowCreateSuccessModal={setShowCreateSuccessModal}
-        showCancelSuccessModal={showCancelSuccessModal}
-        setShowCancelSuccessModal={setShowCancelSuccessModal}
         bookingCreated={bookingCreated}
         setBookingCreated={setBookingCreated}
         emailSent={emailSent}

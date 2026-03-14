@@ -129,13 +129,13 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
 
   const handleOpenDetail = (booking: Booking) => {
     setDetailBooking(booking);
-    setShowDetailModal(true);
+    // setShowDetailModal(true);
   };
 
   const handleOpenUpdate = (booking: Booking) => {
     setUpdateBookingTarget(booking);
     setShowUpdateModal(true);
-    setShowDetailModal(false);
+    // setShowDetailModal(false);
   };
 
   const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
@@ -232,10 +232,10 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({
         </Card>
       </div>
       <BookingDetailModal
-        open={showDetailModal}
+        open={false}
         booking={detailBooking}
         onClose={() => {
-          setShowDetailModal(false);
+          // setShowDetailModal(false);
           setDetailBooking(null);
         }}
         onUpdate={handleOpenUpdate}

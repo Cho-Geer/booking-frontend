@@ -133,7 +133,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         title={uiState.modal.title}
         onClose={closeModal}
         footer={uiState.modal.footer}
-        size={typeof uiState.modal.width === 'string' ? undefined : uiState.modal.width >= 600 ? 'lg' : 'sm'}
+        size={uiState.modal.width === undefined || typeof uiState.modal.width === 'string' ? undefined : uiState.modal.width >= 600 ? 'lg' : 'sm'}
       >
         {uiState.modal.content}
       </Modal>
