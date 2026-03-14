@@ -49,13 +49,32 @@ const BookingFilters: React.FC<BookingFiltersProps> = ({
 
   return (
     <div className="mb-4 space-y-3">
-      <Input
-        placeholder="搜索预约（姓名、手机号、备注...）"
-        value={searchTerm}
-        onChange={(e) => onSearchTermChange(e.target.value)}
-        className="h-11 text-xs"
-        fullWidth
-      />
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <Input
+            placeholder="搜索预约（姓名、手机号、备注...）"
+            value={searchTerm}
+            onChange={(e) => onSearchTermChange(e.target.value)}
+            className="h-11 text-xs"
+            fullWidth
+          />
+        </div>
+        <div className="w-1/3 min-w-[112px] text-sm">
+          <Dropdown
+            items={[
+              { label: '全部状态', value: '' },
+              { label: '待确认', value: BookingStatus.PENDING },
+              { label: '已确认', value: BookingStatus.CONFIRMED },
+              { label: '已取消', value: BookingStatus.CANCELLED },
+              { label: '已完成', value: BookingStatus.COMPLETED },
+            ]}
+            value={statusFilter}
+            onChange={(value) => onStatusFilterChange(value as BookingStatus | '')}
+            buttonText="状态筛选"
+            className="w-full"
+          />
+        </div>
+      </div>
       {isMobile ? (
         <div className="space-y-2">
           <div>

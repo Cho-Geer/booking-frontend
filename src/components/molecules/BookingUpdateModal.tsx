@@ -1,10 +1,10 @@
 import React from 'react';
-import Modal from '@/components/atoms/Modal';
 import Button from '@/components/atoms/Button';
 import Input from '@/components/atoms/Input';
 import RichTextEditor from '@/components/atoms/RichTextEditor';
 import Dropdown from '@/components/atoms/Dropdown';
 import ConfirmModal from '@/components/atoms/ConfirmModal';
+import BookingModalBase from '@/components/molecules/BookingModalBase';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -227,14 +227,10 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
 
   return (
     <>
-      <Modal
+      <BookingModalBase
         open={open}
         title="更新预约"
         onClose={onClose}
-        size={isMobile ? "md" : "lg"}
-        cardClassName={`${isMobile ? 'min-h-[70vh]' : 'min-h-[78vh]'} flex flex-col`}
-        closeButtonVariant="secondary"
-        closeButtonText="取消"
         headerActions={(
           <Button 
             variant="warning" 
@@ -392,7 +388,7 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
           />
         </div>
       </div>
-    </Modal>
+    </BookingModalBase>
     
     <ConfirmModal
       open={showConfirmModal}

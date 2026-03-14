@@ -18,6 +18,7 @@ import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import ConfirmModal from '@/components/atoms/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
+import { BookingUIProvider } from '@/contexts/BookingContext';
 import { bookingService } from '@/services/bookingService';
 
 /**
@@ -496,7 +497,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   }
   
   return (
-    <>
+    <BookingUIProvider>
       <BookingPageOrganism 
         loading={slotsLoading}
         bookingsLoading={bookingsLoading}
@@ -563,7 +564,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
           setCancelBookingId(null);
         }}
       />
-    </>
+    </BookingUIProvider>
   );
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import Modal from '@/components/atoms/Modal';
 import Button from '@/components/atoms/Button';
+import BookingModalBase from '@/components/molecules/BookingModalBase';
 import { Booking } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 import { sanitizeHtml } from '@/utils/htmlUtils';
@@ -53,12 +53,11 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   })();
 
   return (
-    <Modal
+    <BookingModalBase
       open={open}
       title="预约详情"
       onClose={onClose}
       size={isMobile ? "sm" : "md"}
-      closeButtonVariant="secondary"
       headerActions={canUpdate ? (
         <Button variant="warning" size="sm" onClick={() => onUpdate(booking)}>
           更新
@@ -120,7 +119,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           </div>
         </div>
       </div>
-    </Modal>
+    </BookingModalBase>
   );
 };
 

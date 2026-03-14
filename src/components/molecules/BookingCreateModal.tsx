@@ -1,8 +1,9 @@
 import React from 'react';
-import Modal from '../atoms/Modal';
 import Button from '../atoms/Button';
 import Input from '../atoms/Input';
 import RichTextEditor from '../atoms/RichTextEditor';
+import ConfirmModal from '../atoms/ConfirmModal';
+import BookingModalBase from '@/components/molecules/BookingModalBase';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -119,14 +120,11 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
 
   return (
     <>
-      <Modal
+      <BookingModalBase
         open={open}
         title="确认预约"
         onClose={onClose}
-        size={isMobile ? "md" : "lg"}
         cardClassName={`${isMobile ? 'min-h-[70vh]' : 'min-h-[78vh]'} flex flex-col relative`}
-        closeButtonVariant="secondary"
-        closeButtonText="取消"
         headerActions={
           <Button
             variant="warning"
@@ -239,37 +237,18 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
             </div>
           </div>
         )}
-      </Modal>
+      </BookingModalBase>
       
-      <Modal
+      <ConfirmModal
         open={showConfirmDialog}
         title="确认预约"
-        onClose={handleCancelBooking}
-        size="sm"
-        showCloseButton={false}
-        footer={(
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="warning"
-              size="sm"
-              onClick={handleConfirmBooking}
-            >
-              确认
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCancelBooking}
-            >
-              取消
-            </Button>
-          </div>
-        )}
-      >
-        <p className={`${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-          请确认您的预约信息无误，点击"确认"后将开始创建预约。
-        </p>
-      </Modal>
+        message="请确认您的预约信息无误，点击&apos;确认&apos;后将开始创建预约。"
+        confirmText="确认"
+        cancelText="取消"
+        onConfirm={handleConfirmBooking}
+        onCancel={handleCancelBooking}
+        isLoading={creatingBooking}
+      />
     </>
   );
 };
