@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Button from '@/components/atoms/Button';
 import { useTheme } from '@/hooks/useTheme';
 import { formatTime } from '@/utils/dateUtils';
@@ -81,4 +81,4 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
   );
 };
 
-export default TimeSlotGrid;
+export default memo(TimeSlotGrid);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Button from '@/components/atoms/Button';
 import { useTheme } from '@/hooks/useTheme';
 import { Booking, BookingStatus } from '@/types';
@@ -115,4 +115,4 @@ const BookingCard: React.FC<BookingCardProps> = ({
   );
 };
 
-export default BookingCard;
+export default memo(BookingCard);

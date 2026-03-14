@@ -1,5 +1,14 @@
 import api from './api';
-import { Booking, TimeSlot, CreateBookingRequest, Service, AppointmentQuery, AppointmentListResponse } from '../types';
+import { 
+  Booking, 
+  TimeSlot, 
+  CreateBookingRequest, 
+  Service, 
+  AppointmentQuery, 
+  AppointmentListResponse,
+  RawBookingResponse,
+  RawAppointmentListResponse
+} from '../types';
 
 /**
  * 预约服务
@@ -30,11 +39,11 @@ export const bookingService = {
    */
   async getBookings(query: AppointmentQuery = {}): Promise<AppointmentListResponse> {
     const response = await api.get('/bookings/all', { params: query });
-    const data = response.data.data || response.data;
+    const data: RawAppointmentListResponse | RawBookingResponse[] = response.data.data || response.data;
     
     // 如果返回的是旧格式（数组），则转换为新格式
     if (Array.isArray(data)) {
-      const items = data.map((item: any) => ({
+      const items = data.map((item: RawBookingResponse) => ({
         ...item,
         startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
         endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',
@@ -51,7 +60,7 @@ export const bookingService = {
     // 新格式处理
     return {
       ...data,
-      items: data.items.map((item: any) => ({
+      items: data.items.map((item: RawBookingResponse) => ({
         ...item,
         startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
         endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',

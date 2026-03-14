@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Card from '@/components/atoms/Card';
 import { useTheme } from '@/hooks/useTheme';
 import { getTodayLocalDate, getMaxDate } from '@/utils/dateUtils';
@@ -67,4 +67,4 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   );
 };
 
-export default DateSelector;
+export default memo(DateSelector);

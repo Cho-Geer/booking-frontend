@@ -229,3 +229,58 @@ export interface GetAvailableSlotsParams {
   serviceId: string;
   date: string;
 }
+
+/**
+ * 后端返回的原始时间段数据结构
+ */
+export interface RawTimeSlot {
+  id: string;
+  slotTime: string;
+  durationMinutes: number;
+  isAvailable: boolean;
+}
+
+/**
+ * 后端返回的原始预约数据结构
+ */
+export interface RawBookingResponse {
+  id: string;
+  appointmentNumber: string;
+  userId: string;
+  timeSlotId: string;
+  appointmentDate: string;
+  status: BookingStatus;
+  notes?: string;
+  timeSlot?: RawTimeSlot;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  customerWechat?: string;
+  serviceId?: string;
+  serviceName?: string;
+  service?: {
+    id: string;
+    name: string;
+    durationMinutes: number;
+  };
+  ipAddress?: string;
+  userAgent?: string;
+  confirmationSent: boolean;
+  reminderSent: boolean;
+  createdAt: string;
+  updatedAt: string;
+  confirmedAt?: string;
+  cancelledAt?: string;
+  completedAt?: string;
+}
+
+/**
+ * 后端返回的原始预约列表数据结构
+ */
+export interface RawAppointmentListResponse {
+  items: RawBookingResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
