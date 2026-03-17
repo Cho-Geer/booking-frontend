@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { authService } from '../services/authService';
+import { userApi } from '../services/userApi';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
 
 /**
@@ -51,7 +51,7 @@ const initialState: UserState = {
 export const registerUser = createAsyncThunk(
   'user/register',
   async (data: RegisterFormData) => {
-    const response = await authService.register(data);
+    const response = await userApi.register(data);
     return response;
   }
 );
@@ -62,7 +62,7 @@ export const registerUser = createAsyncThunk(
 export const sendCode = createAsyncThunk(
   'user/sendCode',
   async ({ phoneNumber, type }: { phoneNumber: string; type: 'login' | 'register' }) => {
-    const response = await authService.sendCode(phoneNumber, type);
+    const response = await userApi.sendCode(phoneNumber, type);
     return response;
   }
 );
@@ -73,7 +73,7 @@ export const sendCode = createAsyncThunk(
 export const verifyCode = createAsyncThunk(
   'user/verifyCode',
   async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
-    const response = await authService.verifyCode(phoneNumber, code);
+    const response = await userApi.verifyCode(phoneNumber, code);
     return response;
   }
 );
@@ -84,7 +84,7 @@ export const verifyCode = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'user/logout',
   async () => {
-    await authService.logout();
+    await userApi.logout();
   }
 );
 
@@ -92,7 +92,7 @@ export const initializeAuth = createAsyncThunk(
   'user/initializeAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await authService.getCurrentUser();
+      const response = await userApi.getCurrentUser();
       return response.data;
     } catch {
       return rejectWithValue(null);
@@ -138,9 +138,11 @@ const userSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.data.user;
+        state.currentUser = {
+          ...action.payload.data.user,
+          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.authInitialized = true;
-        // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -172,10 +174,12 @@ const userSlice = createSlice({
       .addCase(verifyCode.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.data.user;
+        state.currentUser = {
+          ...action.payload.data.user,
+          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.codeSent = false;
         state.authInitialized = true;
-        // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
       .addCase(verifyCode.rejected, (state, action) => {
@@ -192,7 +196,10 @@ const userSlice = createSlice({
         state.authInitialized = false;
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
-        state.currentUser = action.payload;
+        state.currentUser = {
+          ...action.payload,
+          userType: (action.payload?.role === 'ADMIN' || action.payload?.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.isAuthenticated = true;
         state.authInitialized = true;
       })

@@ -3,21 +3,26 @@
  * 基于 BookingList.tsx 提取的通用列表组件
  * 支持配置化展示不同实体的列表
  */
-import React from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Table, Space, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Trash2, Eye, Edit3 } from 'lucide-react';
-import Button from '../atoms/Button';
+import { Button } from '@/components/atoms';
 import { useUI } from '../../contexts/UIContext';
+import { object } from 'zod';
+import { BookingStatus } from '@/types';
 
 /**
  * 通用实体列表组件属性接口
  * @template T 实体类型
  */
-interface EntityListProps<T> {
+interface EntityListProps<T extends object> {
   /** 实体数据列表 */
   data?: T[];
+  total?: number;
+  page?: number;
+  limit?: number;
   /** 加载状态 */
   isLoading?: boolean;
   /** 删除操作加载状态 */
@@ -34,6 +39,8 @@ interface EntityListProps<T> {
   onView?: (id: string) => void;
   /** 编辑实体回调 */
   onEdit?: (item: T) => void;
+  onEditStatus?: (itemId: string, bookingStatus: BookingStatus) => void;
+  onPaginationChange?: (page: number, limit: number) => void;
   /** 是否显示删除操作 */
   showDeleteAction?: boolean;
   /** 是否显示编辑操作 */
@@ -50,28 +57,29 @@ interface EntityListProps<T> {
   customActions?: (item: T) => React.ReactNode;
 }
 
+type EntityListComponent = <T extends object>(props: EntityListProps<T>) => ReactNode;
+
 /**
  * 通用实体列表组件
  * @param props 组件属性
  * @template T 实体类型
  */
-const EntityList = <T extends object>({
+const EntityListImp: EntityListComponent = <T extends object>({
   data: externalData,
   isLoading = false,
-  isDeleting = false,
   title = '实体列表',
+  total,
+  page,
+  limit,
   columns,
   onRefresh,
   onDelete,
   onView,
   onEdit,
-  showDeleteAction = true,
-  showEditAction = false,
-  showViewAction = true,
+  onPaginationChange,
   getItemId,
   emptyText = '暂无数据记录',
   loadingText = '加载中...',
-  customActions,
 }: EntityListProps<T>) => {
   const { uiState, showSuccess, showError } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
@@ -111,74 +119,6 @@ const EntityList = <T extends object>({
     }
   }, [onEdit]);
 
-  /**
-   * 合并用户配置的列和操作列
-   */
-  const mergedColumns: ColumnsType<T> = React.useMemo(() => {
-    const result = [...columns];
-    
-    // 添加操作列
-    if (showViewAction || showEditAction || showDeleteAction || customActions) {
-      result.push({
-        title: '操作',
-        key: 'action',
-        width: 200,
-        fixed: 'right',
-        render: (_: unknown, record: T) => (
-          <Space size="middle">
-            {customActions ? (
-              customActions(record)
-            ) : (
-              <>
-                {showViewAction && (
-                  <Button
-                    variant="ghost"
-                    icon={Eye}
-                    onClick={() => handleView(record)}
-                    size="sm"
-                  >
-                    查看
-                  </Button>
-                )}
-                {showEditAction && (
-                  <Button
-                    variant="secondary"
-                    icon={Edit3}
-                    onClick={() => handleEdit(record)}
-                    size="sm"
-                  >
-                    编辑
-                  </Button>
-                )}
-                {showDeleteAction && onDelete && (
-                  <Popconfirm
-                    title="确定要删除吗？"
-                    description="删除后将无法恢复"
-                    onConfirm={() => handleDelete(record)}
-                    okText="确定"
-                    cancelText="取消"
-                    disabled={isDeleting}
-                  >
-                    <Button
-                      variant="danger"
-                      icon={Trash2}
-                      isLoading={isDeleting}
-                      size="sm"
-                    >
-                      删除
-                    </Button>
-                  </Popconfirm>
-                )}
-              </>
-            )}
-          </Space>
-        ),
-      });
-    }
-    
-    return result;
-  }, [columns, showViewAction, showEditAction, showDeleteAction, customActions, isDeleting, handleView, handleEdit, handleDelete, onDelete]);
-
   return (
     <motion.div
       id="entity-list-container"
@@ -203,27 +143,30 @@ const EntityList = <T extends object>({
       </div>
 
       <Table
-        columns={mergedColumns}
+        columns={columns}
         dataSource={externalData}
         rowKey={getItemId}
         loading={isLoading}
         pagination={{
-          pageSize: 10,
+          current: page,
+          pageSize: limit,
+          total: total,
           showSizeChanger: true,
           showTotal: (total) => `共 ${total} 条记录`,
+          onChange: onPaginationChange || undefined,
         }}
-        className={`entity-table ${isDarkTheme ? 'bg-background-dark-200' : ''}`}
+        className={`booking-table ${isDarkTheme ? 'bg-gray-100' : ''}`}
         locale={{
           emptyText: isLoading ? loadingText : emptyText,
           filterConfirm: '确定',
           filterReset: '重置',
         }}
-        scroll={{ x: 'max-content' }}
+        scroll={{ x: 'max-content', y: '50vh' }}
       />
     </motion.div>
   );
 };
 
-EntityList.displayName = 'EntityList';
-
+// 4. 使用 React.memo 并指定类型
+const EntityList = React.memo(EntityListImp) as EntityListComponent;
 export default EntityList;

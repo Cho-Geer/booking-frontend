@@ -9,7 +9,8 @@ interface BookingDetailModalProps {
   open: boolean;
   booking: Booking | null;
   onClose: () => void;
-  onUpdate: (booking: Booking) => void;
+  onUpdate?: (booking: Booking) => void;
+  isAdmin?: boolean;
 }
 
 const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
@@ -17,6 +18,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   booking,
   onClose,
   onUpdate,
+  isAdmin = false,
 }) => {
   const { uiState } = useUI();
   const isDarkTheme = uiState.theme === 'dark';
@@ -24,7 +26,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
 
   if (!booking) return null;
 
-  const canUpdate = booking.status === 'PENDING';
+  const canUpdate = !isAdmin && booking.status === 'PENDING';
 
   const statusName = (() => {
     switch (booking.status) {
@@ -61,7 +63,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       onClose={onClose}
       size={isMobile ? "sm" : "md"}
       closeButtonVariant="secondary"
-      headerActions={canUpdate ? (
+      headerActions={canUpdate && onUpdate ? (
         <Button variant="warning" size="sm" onClick={() => onUpdate(booking)}>
           更新
         </Button>

@@ -4,7 +4,6 @@ import {
   getBookings, 
   getAvailableSlots, 
   createBooking,
-  getServices,
   setSelectedDate,
   setSelectedSlot,
   resetBookingState,
@@ -13,12 +12,12 @@ import {
   setPage,
   setFilters
 } from '@/store/bookingSlice';
+import { fetchServices } from '@/store/serviceSlice';
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import ConfirmModal from '@/components/molecules/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
-import { bookingService } from '@/services/bookingService';
 
 /**
  * 页面组件：预约页面
@@ -57,7 +56,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const {
     bookings, 
     availableSlots, 
-    services,
     selectedDate, 
     selectedSlot, 
     loading,
@@ -68,6 +66,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     pagination,
     filters
   } = useSelector((state: RootState) => state.booking);
+  const { services, loading: serviceLoading } = useSelector((state: RootState) => state.service); 
 
   // 本地状态
   const [notes, setNotes] = useState('');
@@ -124,18 +123,18 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
 
   // 获取服务列表
   useEffect(() => {
-    dispatch(getServices());
+    dispatch(fetchServices());
   }, [dispatch]);
 
   const loadSlotReferenceBookings = useCallback(async (date: string) => {
     try {
-      const response = await bookingService.getBookings({
+      const res = await dispatch(getBookings({
         page: 1,
         limit: 200,
         startDate: date,
         endDate: date
-      });
-      setSlotReferenceBookings(response.items);
+      }));
+      // setSlotReferenceBookings(res.items || []);
     } catch {
       setSlotReferenceBookings([]);
     }

@@ -9,7 +9,7 @@ import BookingCreateModal from '@/components/molecules/BookingCreateModal';
 import Input from '@/components/atoms/Input';
 import Pagination from '@/components/molecules/Pagination';
 import { useUI } from '@/contexts/UIContext';
-import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus } from '@/types';
+import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus, Pagination as MyPagination } from '@/types';
 import { stripHtml } from '@/utils/htmlUtils';
 
 interface TimeSlotForTable extends TimeSlot {
@@ -36,12 +36,7 @@ interface BookingPageProps {
   serviceId: string;
   serviceError?: string;
   services: Service[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: MyPagination;
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: TimeSlot) => void;
   onCreateBooking: () => void;
@@ -598,12 +593,12 @@ const BookingPage: React.FC<BookingPageProps> = ({
                 <div className={`mb-4 pb-4 border-b ${isDarkTheme ? 'border-border-dark' : 'border-gray-200'}`}>
                   <div className="flex items-center justify-between">
                     <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
-                      共找到 {pagination.total} 条预约记录
+                      共找到 {pagination?.total} 条预约记录
                     </p>
-                    {pagination.totalPages > 1 && (
+                    {pagination?.totalPages as number > 1 && (
                       <Pagination
                         currentPage={pagination.page}
-                        totalPages={pagination.totalPages}
+                        totalPages={pagination?.totalPages as number}
                         onPageChange={onPageChange}
                       />
                     )}

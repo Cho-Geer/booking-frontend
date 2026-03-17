@@ -2,15 +2,16 @@
  * 预约列表组件
  * 展示如何使用TanStack Query进行数据获取和UI Context进行状态管理
  */
+'use client'
 import React from 'react';
-import { motion } from 'framer-motion';
-import { useBookings, useDeleteBooking, bookingApiUtils, BookingStatus } from '../../services/bookingApi';
-import { useUI } from '../../contexts/UIContext';
-import { Table, Space, Popconfirm } from 'antd';
+import { Space, Popconfirm } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { Trash2, Eye } from 'lucide-react';
-import Button from '../atoms/Button';
-import { Booking } from '../../types';
+import { FlagTriangleRight, Disc, MessageSquareOff } from 'lucide-react';
+import { BookingStatus, Booking } from '@/types';
+import { formatBookingDate } from '@/utils/timeUtils';
+import { useUI } from '@/contexts/UIContext';
+import { Button } from '@/components/atoms';
+import EntityList from '../molecules/EntityList';
 
 /**
  * 预约列表组件
@@ -19,107 +20,33 @@ import { Booking } from '../../types';
  */
 type BookingListProps = {
   bookings?: Booking[];
+  total?: number;
+  page?: number;
+  limit?: number;
   isLoading?: boolean;
   isDeleting?: boolean;
   title?: string;
   onRefresh?: () => void;
   onDeleteBooking?: (id: string) => Promise<void> | void;
   onViewBooking?: (id: string) => void;
+  onUpdateBookingStatus?: (id: string, status: BookingStatus) => void;
+  onPaginationChange?: (page: number, pageSize: number) => void;
   showDeleteAction?: boolean;
 };
 
 const BookingList: React.FC<BookingListProps> = ({
   bookings: externalBookings,
+  total: externalTotal,
+  page: externalPage,
+  limit: externalLimit,
   isLoading: externalLoading,
   isDeleting: externalDeleting,
-  title = '我的预约',
+  title = '预约管理',
   onRefresh,
-  onDeleteBooking,
   onViewBooking,
-  showDeleteAction = true,
+  onUpdateBookingStatus,
+  onPaginationChange,
 }) => {
-  const { uiState, setLoading, showSuccess, showError, showInfo } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
-  const useExternalData = Array.isArray(externalBookings);
-
-  const { 
-    data: queryBookings, 
-    isLoading: isLoadingBookings, 
-    refetch: refetchBookings,
-    isError: isBookingsError,
-    error: bookingsError
-  } = useBookings({
-    enabled: !useExternalData,
-  });
-
-  const {
-    mutate: deleteBooking,
-    isPending: isDeletingBooking
-  } = useDeleteBooking();
-
-  const isLoading = externalLoading ?? isLoadingBookings;
-  const isDeleting = externalDeleting ?? isDeletingBooking;
-
-  const loading = React.useMemo(() => {
-    return isLoading || isDeleting;
-  }, [isLoading, isDeleting]);
-
-  React.useEffect(() => {
-    setLoading(loading);
-  }, [loading, setLoading]);
-
-  const tableBookings = React.useMemo(() => {
-    if (useExternalData) {
-      return externalBookings || [];
-    }
-    if (!queryBookings || !Array.isArray(queryBookings)) {
-      return [];
-    }
-    return queryBookings;
-  }, [useExternalData, externalBookings, queryBookings]);
-
-  React.useEffect(() => {
-    if (isBookingsError && bookingsError) {
-      showError('获取预约列表失败', bookingsError instanceof Error ? bookingsError.message : '未知错误');
-    }
-  }, [isBookingsError, bookingsError, showError]);
-
-  const refreshBookings = () => {
-    if (onRefresh) {
-      onRefresh();
-      return;
-    }
-    refetchBookings();
-  };
-
-  const handleDeleteBooking = async (id: string) => {
-    if (onDeleteBooking) {
-      try {
-        await Promise.resolve(onDeleteBooking(id));
-        showSuccess('预约取消成功');
-      } catch (error) {
-        showError('预约取消失败', error instanceof Error ? error.message : '未知错误');
-      }
-      return;
-    }
-
-    deleteBooking(id, {
-      onSuccess: () => {
-        showSuccess('预约取消成功');
-      },
-      onError: (error) => {
-        showError('预约取消失败', error instanceof Error ? error.message : '未知错误');
-      },
-    });
-  };
-
-  const handleViewBooking = (id: string) => {
-    if (onViewBooking) {
-      onViewBooking(id);
-    } else {
-      showInfo('查看预约详情', `预约ID: ${id}`);
-    }
-  };
 
   const columns: ColumnsType<Booking> = [
     {
@@ -127,8 +54,12 @@ const BookingList: React.FC<BookingListProps> = ({
       dataIndex: 'appointmentNumber',
       key: 'appointmentNumber',
       ellipsis: true,
-      render: (text: string, record: Booking) => (
-        <span className="text-primary font-medium hover:underline cursor-pointer" onClick={() => handleViewBooking(record.id)}>
+      width: 140,
+      render: (text, record) => (
+        <span
+          className="text-primary font-medium hover:underline cursor-pointer"
+          onClick={() => onViewBooking?.(record.id)}
+        >
           {text}
         </span>
       ),
@@ -137,31 +68,66 @@ const BookingList: React.FC<BookingListProps> = ({
       title: '客户姓名',
       dataIndex: 'customerName',
       key: 'customerName',
+      width: 120,
     },
     {
       title: '客户电话',
       dataIndex: 'customerPhone',
       key: 'customerPhone',
-      render: (text: string) => (
-        <span className="font-mono">{text}</span>
-      ),
+      width: 140,
+      render: (text) => <span className="font-mono">{text}</span>,
     },
     {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (status: string) => {
+        // 状态样式（直接用字符串匹配，避免枚举报错）
+        const statusClasses = {
+          PENDING: 'bg-yellow-100 text-yellow-800',
+          CONFIRMED: 'bg-green-100 text-green-800',
+          CANCELLED: 'bg-red-100 text-red-800',
+          COMPLETED: 'bg-blue-100 text-blue-800',
+        };
+
+        // 状态文字
+        const statusText = {
+          PENDING: '待确认',
+          CONFIRMED: '已确认',
+          CANCELLED: '已取消',
+          COMPLETED: '已完成',
+        };
+
+        return (
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status as BookingStatus]}`}>
+            {statusText[status as BookingStatus]}
+          </span>
+        );
+      },
+    },
+    // ======================
+    // ✅ 修复：服务名称（嵌套对象写法）
+    // ======================
+    {
       title: '服务名称',
-      dataIndex: 'serviceName',
+      dataIndex: ['service', 'name'], // ✅ 正确写法！
       key: 'serviceName',
+      width: 150,
+      ellipsis: true,
     },
     {
       title: '预约日期',
       dataIndex: 'appointmentDate',
       key: 'appointmentDate',
-      render: (text: string) => bookingApiUtils.formatBookingDate(text),
+      width: 120,
+      render: (text) => formatBookingDate(text),
     },
     {
       title: '时间段',
-      dataIndex: 'timeSlot',
       key: 'timeSlot',
-      render: (_: unknown, record: Booking) => {
+      width: 140,
+      render: (_, record) => {
         if (record.startTime && record.endTime) {
           return `${record.startTime} - ${record.endTime}`;
         }
@@ -172,115 +138,116 @@ const BookingList: React.FC<BookingListProps> = ({
       },
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: BookingStatus) => {
-        // 使用统一的标签样式，在深色和浅色主题下保持一致
-        const statusClasses = {
-          [BookingStatus.PENDING]: isDarkTheme 
-            ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' 
-            : 'bg-yellow-100 text-yellow-800',
-          [BookingStatus.CONFIRMED]: isDarkTheme 
-            ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
-            : 'bg-green-100 text-green-800',
-          [BookingStatus.CANCELLED]: isDarkTheme 
-            ? 'bg-red-500/20 text-red-300 border border-red-500/30' 
-            : 'bg-red-100 text-red-800',
-          [BookingStatus.COMPLETED]: isDarkTheme 
-            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' 
-            : 'bg-blue-100 text-blue-800',
-        };
-        
-        return (
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClasses[status]}`}>
-            {bookingApiUtils.getStatusText(status)}
-          </span>
-        );
-      },
-    },
-    {
       title: '创建时间',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (text: string) => bookingApiUtils.formatBookingDate(text),
+      width: 160,
+      render: (text) => formatBookingDate(text),
     },
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: Booking) => (
-        <Space size="middle">
-          <Button 
-            variant="ghost" 
-            icon={Eye} 
-            onClick={() => handleViewBooking(record.id)}
-            isLoading={uiState.loading}
-            size="sm"
+      width: 'w-max',
+      fixed: 'right',
+      render: (_, record) => (
+        <Space size="small">
+          <Popconfirm
+            title="确定要更新这个预约状态吗？"
+            description="變更預約狀態為「已確認」"
+            onConfirm={() => onUpdateBookingStatus?.(record.id, BookingStatus.CONFIRMED)}
+            okText="确定"
+            cancelText="取消"
           >
-            查看
-          </Button>
-          {showDeleteAction && (
-            <Popconfirm
-              title="确定要取消这个预约吗？"
-              description="取消后将无法恢复"
-              onConfirm={() => handleDeleteBooking(record.id)}
-              okText="确定"
-              cancelText="取消"
-              disabled={isDeleting}
-            >
-              <Button 
-                variant="danger" 
-                icon={Trash2}
-                isLoading={isDeleting}
-                size="sm"
-              >
-                取消
-              </Button>
-            </Popconfirm>
-          )}
+            <Button
+              variant={record.status === 'CONFIRMED' ? "danger" : "secondary"}
+              disabled={record.status === 'CONFIRMED'}
+              icon={<FlagTriangleRight size="16" color={record.status === 'CONFIRMED' ? "gray" : "black"}/>}
+              size="xxs"
+              title="確認"
+            />
+          </Popconfirm>
+          <Popconfirm
+            title="确定要更新这个预约状态吗？"
+            description="變更預約狀態為「待確認」"
+            onConfirm={() => onUpdateBookingStatus?.(record.id, BookingStatus.PENDING)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button
+              variant={record.status === BookingStatus.PENDING ? "danger" : "secondary"}
+              disabled={record.status === BookingStatus.PENDING}
+              icon={<Disc size="16" color={record.status === BookingStatus.PENDING ? "gray" : "black"}/>}
+              size="xxs"
+              title="取消"
+            />
+          </Popconfirm>
+          <Popconfirm
+            title="确定要取消这个预约吗？"
+            description="變更預約狀態為「已取消」"
+            onConfirm={() => onUpdateBookingStatus?.(record.id, BookingStatus.CANCELLED)}
+            okText="确定"
+            cancelText="取消"
+          >
+            <Button 
+              variant={record.status === BookingStatus.CANCELLED ? "danger" : "primary"}
+              disabled={record.status === BookingStatus.CANCELLED}
+              icon={<MessageSquareOff size="16" color={record.status === BookingStatus.CANCELLED ? "gray" : "black"}/>} 
+              size="xxs" 
+              title="取消" />
+          </Popconfirm>
         </Space>
       ),
     },
   ];
 
+  const { uiState, setLoading, showSuccess, showError, showInfo,  } = useUI();
+  const isDarkTheme = uiState.theme === 'dark';
+  const useExternalData = Array.isArray(externalBookings);
+
+  const [pagination, setPagination] = React.useState({
+    total: 0,
+    page: 1,
+    limit: 10
+  });
+
+  const isLoading = externalLoading ?? false;
+  const isDeleting = externalDeleting ?? false;
+
+  const loading = React.useMemo(() => {
+    return isLoading || isDeleting;
+  }, [isLoading, isDeleting]);
+
+  React.useEffect(() => {
+    setLoading(loading);
+  }, [loading, setLoading]);
+
+  React.useEffect(() => {
+      setPagination({
+        total: externalTotal || 0,
+        page: externalPage || 1,
+        limit: externalLimit || 10
+      });
+  }, [useExternalData, externalTotal, externalPage, externalLimit]);
+  
   return (
-    <motion.div 
-      id="booking-list-container" 
-      className={`booking-list-container p-4 rounded-lg shadow-sm ${isDarkTheme ? 'bg-background-dark' : 'bg-white'}`}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div id="booking-list-header" className="flex justify-between items-center mb-4">
-        <h2 className={`text-xl font-bold ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-800'}`}>{title}</h2>
-        <Button 
-          variant="primary"
-          onClick={refreshBookings}
-          isLoading={isLoading}
-        >
-          刷新列表
-        </Button>
-      </div>
-      
-      <Table
-        columns={columns}
-        dataSource={tableBookings}
-        rowKey="id"
-        loading={isLoading}
-        pagination={{
-          pageSize: 10,
-          showSizeChanger: true,
-          showTotal: (total) => `共 ${total} 条记录`,
-        }}
-        className={`booking-table ${isDarkTheme ? 'bg-background-dark-200' : ''}`}
-        locale={{
-          emptyText: isLoading ? '加载中...' : '暂无预约记录',
-          filterConfirm: '确定',
-          filterReset: '重置',
-        }}
-      />
-    </motion.div>
+    <EntityList<Booking>
+      data={externalBookings}
+      total={externalTotal}
+      page={externalPage}
+      limit={externalLimit}
+      isLoading={externalLoading}
+      isDeleting={externalDeleting}
+      title={title}
+      columns={columns}
+      onRefresh={onRefresh}
+      onPaginationChange={onPaginationChange}
+      getItemId={(item) => (item as Booking).id}
+      emptyText="暂无预约记录"
+      loadingText="加载中..."
+    />
   );
 };
+
+BookingList.displayName = 'BookingList';
 
 export default BookingList;

@@ -30,7 +30,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   isLoggedIn, 
   onLogout,
   username,
-  userType 
+  userType
 }) => {
   const router = useRouter();
   const { uiState, toggleTheme } = useUI();
@@ -41,9 +41,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const navItems = [
     { name: '首页', path: '/' },
     { name: '预约', path: '/bookings' },
-    { name: '我的预约', path: '/my-bookings' },
-    { name: 'UI Demo', path: '/demo-ui' },
-    { name: 'Image Gallery', path: '/image-gallery' }
   ];
 
   /**
@@ -51,8 +48,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
    */
   const adminNavItems = [
     { name: '首页', path: '/' },
-    { name: '预约', path: '/bookings' },
-    { name: '我的预约', path: '/my-bookings' },
     { name: '管理控制台', path: '/admin/bookings' },
   ];
 

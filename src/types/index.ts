@@ -6,6 +6,19 @@
 import { ReactNode } from "react";
 
 /**
+ * 管理控制台 Tab 类型定义
+ */
+export type AdminTab = 'bookings' | 'services' | 'users';
+
+/**
+ * 服务行数据类型定义
+ */
+export type ServiceRow = Service & {
+  imageUrl?: string;
+  displayOrder?: number | null;
+};
+
+/**
  * 预约状态枚举
  */
 export enum BookingStatus {
@@ -13,43 +26,6 @@ export enum BookingStatus {
   CONFIRMED = 'CONFIRMED',
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED'
-}
-
-/**
- * 预约状态接口
- */
-export interface BookingState {
-  /** 用户的预约列表 */
-  bookings: Booking[];
-  /** 可用时间段 */
-  availableSlots: TimeSlot[];
-  /** 当前选中的日期 */
-  selectedDate: string;
-  /** 当前选中的时间段 */
-  selectedSlot: TimeSlot | null;
-  /** 加载状态 */
-  loading: boolean;
-  /** 可用时间段加载状态 */
-  slotsLoading: boolean;
-  /** 预约列表加载状态 */
-  bookingsLoading: boolean;
-  /** 错误信息 */
-  error: string | null;
-  /** 创建预约的加载状态 */
-  creatingBooking: boolean;
-  /** 成功状态 */
-  success: boolean;
-  /** 服务列表 */
-  services: Service[];
-  /** 列表分页信息 */
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-  /** 列表筛选条件 */
-  filters: AppointmentQuery;
 }
 
 /**
@@ -75,6 +51,35 @@ export interface AppointmentListResponse {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+export interface ServiceQuery {
+  page?: number;
+  limit?: number;
+  name?: BookingStatus;
+  description?: string;
+  durationMinutes?: number;
+  price?: number;
+  categoryId?: string;
+  isActive?: string;
+  displayOrder?: number;
+}
+
+export interface ServiceListResponse {
+  items: Service[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface NotificationQuery {
+  userId?: string;
+  type?: string[];
+  isRead?: boolean;
+  limit?: number;
+  offset?: number;
+  page?: number;
 }
 
 /**
@@ -215,6 +220,19 @@ export interface Service {
   createdAt: string;
   /** 更新时间 */
   updatedAt: string;
+}
+
+export interface AdminUsersQuery {
+  name?: string;
+  phone?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  userType?: 'customer' | 'admin';
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
 }
 
 /**
@@ -412,6 +430,16 @@ export interface BreadcrumbItem {
   title: string;
   path: string;
   icon?: ReactNode;
+}
+
+/**
+ * 分页参数定义
+ */
+export interface Pagination {
+    page: number;
+    limit: number;
+    total?: number;
+    totalPages?: number;
 }
 
 /**

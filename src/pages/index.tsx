@@ -23,7 +23,7 @@ function HomeRoute() {
   useEffect(() => {
     if (currentUser) {
       // 使用window.location进行完全重定向，避免Next.js路由状态问题
-      window.location.href = '/bookings';
+      window.location.href = currentUser?.userType === 'admin' ? '/admin/bookings' : '/bookings';
     }
   }, [currentUser]);
 

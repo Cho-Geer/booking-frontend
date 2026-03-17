@@ -5,10 +5,11 @@
 import React from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import { Power, ZapOff } from 'lucide-react';
-import EntityList from './EntityList';
+import EntityList from '../molecules/EntityList';
 import { useUI } from '../../contexts/UIContext';
 import { Service } from '../../types';
 import Button from '../atoms/Button';
+import { Space } from 'antd';
 
 /**
  * 服务列表组件属性接口
@@ -16,6 +17,9 @@ import Button from '../atoms/Button';
 interface ServiceListProps {
   /** 服务数据列表 */
   services?: Service[];
+  total?: number;
+  page?: number;
+  limit?: number;
   /** 加载状态 */
   isLoading?: boolean;
   /** 操作加载状态 */
@@ -30,6 +34,8 @@ interface ServiceListProps {
   onToggleServiceStatus?: (service: Service) => Promise<void> | void;
   /** 查看服务详情回调 */
   onViewService?: (id: string) => void;
+  /** 分页变更回调 */
+  onPaginationChange?: (page: number, limit: number) => void;
 }
 
 /**
@@ -38,10 +44,14 @@ interface ServiceListProps {
  */
 const ServiceList: React.FC<ServiceListProps> = ({
   services,
+  total,
+  page,
+  limit,
   isLoading = false,
   isMutating = false,
   title = '服务列表',
   onRefresh,
+  onPaginationChange,
   onEditService,
   onToggleServiceStatus,
   onViewService,
@@ -127,6 +137,22 @@ const ServiceList: React.FC<ServiceListProps> = ({
           });
         },
       },
+      {
+        title: '操作',
+        key: 'action',
+        width: 'w-max',
+        fixed: 'right',
+        render: (_: unknown, record: Service) => (
+          <Space size="middle">
+            <Button
+              variant="secondary"
+              onClick={() => onEditService?.(record)}
+              size="sm"
+              title='编辑'
+            />
+          </Space>
+        ),
+      }
     ],
     [isDarkTheme, getStatusClasses]
   );
@@ -174,17 +200,18 @@ const ServiceList: React.FC<ServiceListProps> = ({
   return (
     <EntityList<Service>
       data={services}
+      total={total}
+      page={page}
+      limit={limit}
       isLoading={isLoading}
       isDeleting={isMutating}
       title={title}
       columns={columns}
       onRefresh={onRefresh}
+      onPaginationChange={onPaginationChange}
       getItemId={(item) => item.id}
       emptyText="暂无服务记录"
       loadingText="加载中..."
-      showDeleteAction={false}
-      showEditAction={false}
-      showViewAction={false}
       customActions={customActions}
     />
   );

@@ -38,7 +38,7 @@ const LoginPage: React.FC = () => {
   // 登录成功后跳转
   useEffect(() => {
     if (currentUser) {
-      router.push('/bookings');
+      router.push(currentUser.userType === 'admin' ? '/admin/bookings' : '/bookings');
     }
   }, [currentUser, router]);
 

@@ -10,11 +10,19 @@ import { combineReducers } from 'redux';
 // Reducers
 import userReducer from './userSlice';
 import bookingReducer from './bookingSlice';
+import serviceReducer from './serviceSlice';
+import slotTimeReducer from './slotTimeSlice';
+import notificationReducer from './notificationSlice';
+import adminReducer from './adminSlice';
 
 // 组合所有reducer
 const rootReducer = combineReducers({
   user: userReducer,
   booking: bookingReducer,
+  service: serviceReducer,
+  slotTime: slotTimeReducer,
+  notification: notificationReducer,
+  admin: adminReducer,
 });
 
 /**

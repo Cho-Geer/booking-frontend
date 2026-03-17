@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { bookingService } from '../services/bookingService';
-import { BookingStatus, TimeSlot, BookingState, AppointmentQuery, AppointmentListResponse } from '../types';
+import { bookingApi } from '../services/bookingApi';
+import { BookingStatus, TimeSlot, AppointmentQuery, AppointmentListResponse, Pagination, Booking } from '@/types';
 
 const getTodayLocalDate = (): string => {
   const now = new Date();
@@ -11,12 +11,44 @@ const getTodayLocalDate = (): string => {
 };
 
 /**
+ * 预约状态接口
+ */
+export interface BookingState {
+  /** 用户的预约列表 */
+  bookings: Booking[];
+  /** 可用时间段 */
+  availableSlots: TimeSlot[];
+  /** 当前选中的日期 */
+  selectedDate: string;
+  /** 当前选中的时间段 */
+  selectedSlot: TimeSlot | null;
+  /** 加载状态 */
+  loading: boolean;
+  /** 可用时间段加载状态 */
+  slotsLoading: boolean;
+  /** 预约列表加载状态 */
+  bookingsLoading: boolean;
+  /** 错误信息 */
+  error: string | null;
+  /** 创建预约的加载状态 */
+  creatingBooking: boolean;
+  /** 成功状态 */
+  success: boolean;
+  /** 服务列表 */
+  // services: Service[];
+  /** 列表分页信息 */
+  pagination: Pagination;
+  /** 列表筛选条件 */
+  filters: AppointmentQuery;
+}
+
+/**
  * 初始状态
  */
 const initialState: BookingState = {
   bookings: [],
   availableSlots: [],
-  services: [],
+  // services: [],
   selectedDate: getTodayLocalDate(),
   selectedSlot: null,
   loading: false,
@@ -40,7 +72,7 @@ const initialState: BookingState = {
 export const getBookings = createAsyncThunk(
   'booking/getBookings',
   async (query?: AppointmentQuery) => {
-    const response = await bookingService.getBookings(query || {});
+    const response = await bookingApi.getBookings(query || {});
     return response;
   }
 );
@@ -51,21 +83,21 @@ export const getBookings = createAsyncThunk(
 export const getAvailableSlots = createAsyncThunk(
   'booking/getAvailableSlots',
   async (date: string) => {
-    const response = await bookingService.getAvailableSlots(date);
+    const response = await bookingApi.getAvailableSlots(date);
     return response;
   }
 );
 
-/**
- * 获取服务列表异步操作
- */
-export const getServices = createAsyncThunk(
-  'booking/getServices',
-  async () => {
-    const response = await bookingService.getServices();
-    return response;
-  }
-);
+// /**
+//  * 获取服务列表异步操作
+//  */
+// export const getServices = createAsyncThunk(
+//   'booking/getServices',
+//   async () => {
+//     const response = await bookingApi.getServices();
+//     return response;
+//   }
+// );
 
 /**
  * 创建预约异步操作
@@ -84,7 +116,7 @@ export const createBooking = createAsyncThunk(
     serviceId: string;
     serviceName: string;
   }) => {
-    const response = await bookingService.createBooking(bookingData);
+    const response = await bookingApi.createBooking(bookingData);
     return response;
   }
 );
@@ -95,7 +127,7 @@ export const createBooking = createAsyncThunk(
 export const cancelBooking = createAsyncThunk(
   'booking/cancelBooking',
   async (bookingId: string) => {
-    const response = await bookingService.cancelBooking(bookingId);
+    const response = await bookingApi.cancelBooking(bookingId);
     return { bookingId, ...response };
   }
 );
@@ -104,18 +136,27 @@ export const updateBooking = createAsyncThunk(
   'booking/updateBooking',
   async (payload: {
     id: string;
-    appointmentDate: string;
-    timeSlotId: string;
-    serviceId: string;
-    customerName: string;
-    customerPhone: string;
+    appointmentDate?: string;
+    timeSlotId?: string;
+    serviceId?: string;
+    customerName?: string;
+    customerPhone?: string;
     customerEmail?: string;
     customerWechat?: string;
     notes?: string;
+    status?: BookingStatus
   }) => {
     const { id, ...bookingData } = payload;
-    const response = await bookingService.updateBooking(id, bookingData);
+    const response = await bookingApi.updateBooking(id, bookingData);
     return response;
+  }
+);
+
+export const deleteBooking = createAsyncThunk(
+  'booking/deleteBooking',
+  async (bookingId: string) => {
+    const response = await bookingApi.deleteBooking(bookingId);
+    return { bookingId, ...response };
   }
 );
 
@@ -207,16 +248,6 @@ const bookingSlice = createSlice({
         state.slotsLoading = false;
         state.error = action.error.message || '获取可用时间段失败';
       })
-      // 获取服务列表
-      .addCase(getServices.pending, (state) => {
-        // state.loading = true; // 可选：是否需要全屏loading
-      })
-      .addCase(getServices.fulfilled, (state, action) => {
-        state.services = action.payload;
-      })
-      .addCase(getServices.rejected, (state, action) => {
-        state.error = action.error.message || '获取服务列表失败';
-      })
       // 创建预约
       .addCase(createBooking.pending, (state) => {
         state.creatingBooking = true;
@@ -264,6 +295,18 @@ const bookingSlice = createSlice({
       .addCase(updateBooking.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || '更新预约失败';
+      })
+      .addCase(deleteBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteBooking.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = state.bookings.filter(b => b.id !== action.payload.bookingId);
+      })
+      .addCase(deleteBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || '删除预约失败';
       });
   },
 });

@@ -4,25 +4,12 @@
  */
 import React from 'react';
 import type { ColumnsType } from 'antd/es/table';
-import EntityList from './EntityList';
+import EntityList from '../molecules/EntityList';
 import { useUI } from '../../contexts/UIContext';
 import Button from '../atoms/Button';
 import { User, Shield, Eye } from 'lucide-react';
-
-/**
- * 管理员用户类型
- */
-interface AdminUser {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  userType: string;
-  status: string;
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Space } from 'antd';
+import { User as AdminUser } from '@/types';
 
 /**
  * 用户列表组件属性接口
@@ -30,6 +17,9 @@ interface AdminUser {
 interface UserListProps {
   /** 用户数据列表 */
   users?: AdminUser[];
+  total?: number;
+  page?: number;
+  limit?: number;
   /** 加载状态 */
   isLoading?: boolean;
   /** 列表标题 */
@@ -42,6 +32,8 @@ interface UserListProps {
   onEditUser?: (user: AdminUser) => void;
   /** 删除用户回调 */
   onDeleteUser?: (id: string) => Promise<void> | void;
+  /** 分页变更回调 */
+  onPaginationChange?: (page: number, limit: number) => void;
   /** 删除操作加载状态 */
   isDeleting?: boolean;
 }
@@ -52,9 +44,13 @@ interface UserListProps {
  */
 const UserList: React.FC<UserListProps> = ({
   users,
+  total,
+  page,
+  limit,
   isLoading = false,
   title = '用户列表',
   onRefresh,
+  onPaginationChange,
   onViewUser,
   onEditUser,
   onDeleteUser,
@@ -190,67 +186,51 @@ const UserList: React.FC<UserListProps> = ({
           });
         },
       },
+      {
+        title: '操作',
+        key: 'action',
+        width: 'w-max',
+        fixed: 'right',
+        render: (_: unknown, record: AdminUser) => (
+          <Space size="middle">
+            <Button
+              variant="ghost"
+              icon={<Eye />}
+              onClick={() => {onViewUser?.(record.id)}}
+              size="sm"
+              title='查看'
+            />
+            <Button
+              variant="secondary"
+              onClick={() => onEditUser?.(record)}
+              size="sm"
+              title='编辑'
+            />
+          </Space>
+        ),
+      }
     ],
     [isDarkTheme, getStatusClasses, getUserTypeIcon]
-  );
-
-  /**
-   * 自定义操作列
-   * @param user 用户实体
-   * @returns 操作按钮组
-   */
-  const customActions = (user: AdminUser) => (
-    <>
-      {onViewUser && (
-        <Button
-          variant="ghost"
-          icon={Eye}
-          onClick={() => onViewUser(user.id)}
-          size="sm"
-        >
-          查看
-        </Button>
-      )}
-      {onEditUser && (
-        <Button
-          variant="secondary"
-          onClick={() => onEditUser(user)}
-          size="sm"
-        >
-          编辑
-        </Button>
-      )}
-      {onDeleteUser && (
-        <Button
-          variant="danger"
-          onClick={() => onDeleteUser(user.id)}
-          isLoading={isDeleting}
-          size="sm"
-        >
-          删除
-        </Button>
-      )}
-    </>
   );
 
   return (
     <EntityList<AdminUser>
       data={users}
+      total={total}
+      page={page}
+      limit={limit}
       isLoading={isLoading}
       isDeleting={isDeleting}
       title={title}
       columns={columns}
       onRefresh={onRefresh}
-      onDelete={onDeleteUser}
+      onPaginationChange={onPaginationChange}
+      // onDelete={onDeleteUser}
       onView={onViewUser}
       onEdit={onEditUser}
-      getItemId={(item) => item.id}
+      getItemId={(item) => (item as AdminUser).id}
       emptyText="暂无用户记录"
       loadingText="加载中..."
-      showDeleteAction={false}
-      showEditAction={false}
-      showViewAction={false}
-      customActions={customActions}
     />
   );
 };

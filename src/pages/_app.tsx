@@ -6,9 +6,6 @@ import '../../public/global.css';
 import { Provider } from 'react-redux';
 import { store } from '../store';
 import { UIProvider } from '../contexts/UIContext';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '../services/reactQuery';
 import dynamic from 'next/dynamic';
 import { initializeAuth } from '@/store/userSlice';
 
@@ -70,20 +67,12 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
   return (
     <UIProvider>
       <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
-          <Head>
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <meta name="description" content="预约系统 - 高效管理您的预约" />
-            <title>预约系统</title>
-          </Head>
-          <PageWrapper Component={Component} pageProps={pageProps} router={router} />
-          {/* 在开发环境下显示React Query DevTools */}
-          {process.env.NODE_ENV === 'development' && (
-            <ReactQueryDevtools
-              initialIsOpen={false}
-            />
-          )}
-        </QueryClientProvider>
+        <Head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <meta name="description" content="预约系统 - 高效管理您的预约" />
+          <title>预约系统</title>
+        </Head>
+        <PageWrapper Component={Component} pageProps={pageProps} router={router} />
       </Provider>
     </UIProvider>
   );
