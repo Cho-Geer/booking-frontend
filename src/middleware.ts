@@ -7,6 +7,7 @@ import type { NextRequest } from 'next/server';
  * 根据迁移文档阶段四的要求实现
  */
 export function middleware(request: NextRequest) {
+  console.log('Middleware request::::::::::::::::::::::::::', request.method, request.url);
   // 获取当前路径
   const { pathname } = request.nextUrl;
   
@@ -92,6 +93,12 @@ export const config = {
      * - /my-bookings
      * 排除静态文件（_next）和API路由
      */
-    '/((?!_next/|api/|v1/|favicon.ico|public/).*)',
+    // '/((?!_next/|api/|v1/|favicon.ico|public/).*)',
+    '/',
+    '/login',
+    '/register',
+    '/admin/:path*',
+     '/my-bookings/:path*',
+     '/bookings/:path*'
   ],
 };

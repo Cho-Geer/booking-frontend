@@ -22,7 +22,9 @@ export type {
   CreateBookingRequest, 
   CreateBookingParams, 
   UpdateBookingParams, 
-  GetAvailableSlotsParams 
+  GetAvailableSlotsParams,
+  RawBookingResponse,
+  RawAppointmentListResponse
 } from './booking';
 
 // ==================== user 模块类型 ====================

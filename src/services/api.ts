@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {AxiosRequestHeaders} from 'axios';
 
 /**
  * API基础配置
@@ -54,7 +54,7 @@ api.interceptors.request.use((config) => {
     const csrfToken = getCookieValue('csrf_token');
     if (csrfToken) {
       if (config.headers && typeof (config.headers as any).set === 'function') {
-        (config.headers as any).set('X-CSRF-Token', csrfToken);
+        (config.headers as AxiosRequestHeaders).set('X-CSRF-Token', csrfToken);
       } else {
         config.headers = {
           ...(config.headers || {}),

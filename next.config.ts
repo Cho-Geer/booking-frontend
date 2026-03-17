@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
    * https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html
    */
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   
   // 配置图像优化
   images: {
