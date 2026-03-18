@@ -11,7 +11,7 @@ export const bookingService = {
    */
   async getServices(): Promise<Service[]> {
     const response = await api.get('/services');
-    return response.data.data;
+    return response.data.data.data;
   },
 
   /**

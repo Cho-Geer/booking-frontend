@@ -48,9 +48,9 @@ export const authService = {
    */
   async getCurrentUser() {
     const response = await api.get('/auth/profile', {
-      headers: {
-        'X-Skip-Auth-Redirect': 'true',
-      },
+      // headers: {
+      //   'X-Skip-Auth-Redirect': 'true',
+      // },
     });
     return response.data;
   },

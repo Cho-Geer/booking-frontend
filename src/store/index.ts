@@ -6,6 +6,7 @@
 import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { combineReducers } from 'redux';
+import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 
 // Reducers
 import userReducer from './userSlice';
@@ -64,10 +65,16 @@ export type AppThunk<ReturnType = void> = ThunkAction<
 >;
 
 /**
- * 选择器Hook类型
- * 用于创建自定义的选择器Hook
+ * Typed useDispatch hook for Redux Toolkit
+ * Provides proper typing for async thunks
  */
-export type SelectorHook<T> = (state: RootState) => T;
+export const useAppDispatch = () => useDispatch<AppDispatch>();
+
+/**
+ * Typed useSelector hook for Redux Toolkit
+ * Provides proper typing for state selectors
+ */
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 /**
  * 获取Redux Store的当前状态
