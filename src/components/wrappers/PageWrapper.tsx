@@ -5,6 +5,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import AppLayout from '@/components/templates/AppLayout';
 import { store } from '../../store';
+import { AuthLoading } from '@/components/atoms/AuthLoading';
 
 // 获取store的dispatch方法
 const getDispatch = () => {
@@ -26,7 +27,12 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   // 使用useRouter钩子获取路由信息，而不是直接使用props中的router
   // 这是为了更好地支持客户端导航和路由状态管理
   const router = useRouter();
-  const { currentUser } = useSelector((state: RootState) => state.user);
+  const { currentUser, authInitialized } = useSelector((state: RootState) => state.user);
+  
+  // Show loading screen while authentication is initializing
+  if (!authInitialized && router.pathname !== '/login' && router.pathname !== '/register') {
+    return <AuthLoading message="Initializing authentication..." />;
+  }
   
   // 不需要AppLayout的页面路径（登录/注册相关页面）
   // const noLayoutPages = ['/login', '/register', '/demo-ui'];

@@ -92,9 +92,22 @@ export const initializeAuth = createAsyncThunk(
   'user/initializeAuth',
   async (_, { rejectWithValue }) => {
     try {
+      
+      // For HttpOnly cookies, we can't check their existence via document.cookie
+      // Instead, we'll attempt to fetch user data and let the API interceptor handle token refresh
+      // The axios interceptor will automatically handle 401 responses and refresh tokens when needed
+      
+      console.log('Attempting to fetch current user data...');
       const response = await authService.getCurrentUser();
+      console.log('User data fetched successfully:', response.data);
       return response.data;
-    } catch {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number }; message?: string };
+      console.log('Authentication initialization failed:', {
+        status: err?.response?.status,
+        message: err?.message,
+        timestamp: new Date().toISOString()
+      });
       return rejectWithValue(null);
     }
   }
@@ -190,16 +203,22 @@ const userSlice = createSlice({
       })
       .addCase(initializeAuth.pending, (state) => {
         state.authInitialized = false;
+        state.loading = true;
+        console.log('Authentication initialization started');
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.currentUser = action.payload;
         state.isAuthenticated = true;
         state.authInitialized = true;
+        state.loading = false;
+        console.log('Authentication initialization completed (authenticated)');
       })
       .addCase(initializeAuth.rejected, (state) => {
         state.currentUser = null;
         state.isAuthenticated = false;
         state.authInitialized = true;
+        state.loading = false;
+        console.log('Authentication initialization completed (unauthenticated)');
       });
   },
 });

@@ -1,7 +1,6 @@
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { useReportWebVitals } from 'next/web-vitals';
-import { useEffect } from 'react';
 import '../../public/global.css';
 import { Provider } from 'react-redux';
 import { store } from '../store';
@@ -10,13 +9,15 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { queryClient } from '../services/reactQuery';
 import dynamic from 'next/dynamic';
-import { initializeAuth } from '@/store/userSlice';
+import { useAuthInitialization } from '@/hooks/useAuthInitialization';
 
 // 动态导入PageWrapper以避免SSR问题
 const PageWrapper = dynamic(
   () => import('../components/wrappers/PageWrapper'),
   { ssr: false }
 );
+
+import { useRouter } from 'next/router';
 
 /**
  * 自定义 App 组件
@@ -29,14 +30,21 @@ const PageWrapper = dynamic(
  * @param {Router} props.router - Next.js 路由对象
  * @returns {JSX.Element} 包装后的应用组件
  */
-export default function MyApp({ Component, pageProps, router }: AppProps) {
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    store.dispatch(initializeAuth());
-  }, []);
+// 创建一个包装组件来处理认证初始化
+const AppWithProviders = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  
+  // 在登录和注册页面不执行认证初始化
+  const shouldInitializeAuth = router.pathname !== '/login' && router.pathname !== '/register';
+  
+  if (shouldInitializeAuth) {
+    useAuthInitialization(); // 现在可以在Provider内部使用这个hook了
+  }
+  
+  return <>{children}</>;
+};
 
+export default function MyApp({ Component, pageProps, router }: AppProps) {
   // 性能监控配置 - 根据迁移文档阶段四的要求实现
   useReportWebVitals((metric) => {
     // 在控制台记录性能数据
@@ -76,7 +84,9 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
             <meta name="description" content="预约系统 - 高效管理您的预约" />
             <title>预约系统</title>
           </Head>
-          <PageWrapper Component={Component} pageProps={pageProps} router={router} />
+          <AppWithProviders>
+            <PageWrapper Component={Component} pageProps={pageProps} router={router} />
+          </AppWithProviders>
           {/* 在开发环境下显示React Query DevTools */}
           {process.env.NODE_ENV === 'development' && (
             <ReactQueryDevtools

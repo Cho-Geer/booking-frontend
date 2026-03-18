@@ -41,9 +41,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const navItems = [
     { name: '首页', path: '/' },
     { name: '预约', path: '/bookings' },
-    { name: '我的预约', path: '/my-bookings' },
-    { name: 'UI Demo', path: '/demo-ui' },
-    { name: 'Image Gallery', path: '/image-gallery' }
   ];
 
   /**
@@ -51,8 +48,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
    */
   const adminNavItems = [
     { name: '首页', path: '/' },
-    { name: '预约', path: '/bookings' },
-    { name: '我的预约', path: '/my-bookings' },
     { name: '管理控制台', path: '/admin/bookings' },
   ];
 
@@ -60,7 +55,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   const bgColorClass = uiState.theme === 'dark' ? 'bg-background-dark' : 'bg-gray-50';
 
   // 根据用户类型选择导航项
-  const userNavItems = userType === 'admin' ? adminNavItems : navItems;
+  const userNavItems = (userType as string)?.toLowerCase() === 'admin' ? adminNavItems : navItems;
 
   return (
     <div id="app-layout-container" className={`h-screen ${bgColorClass}`}>
