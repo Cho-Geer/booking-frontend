@@ -156,6 +156,30 @@ api.interceptors.response.use(
         }
         return Promise.reject(customError);
     }
+
+    // 1.2. 处理角色降权（ADMIN → 普通用户）
+    // 后端检测到 JWT 中角色与数据库角色不一致（降权）时返回此消息
+    if (customError.message === '用户角色已降级，请重新登录') {
+        clearAuthData();
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('accountDisabledReason', 'ROLE_CHANGED_FROM_ADMIN');
+            window.location.href = '/account-disabled?reason=ROLE_CHANGED_FROM_ADMIN';
+            throw new Error('Role downgraded: redirecting to account-disabled');
+        }
+        return Promise.reject(customError);
+    }
+
+    // 1.3. 处理角色升权（普通用户 → ADMIN）
+    // 后端检测到 JWT 中角色与数据库角色不一致（升权）时返回此消息
+    if (customError.message === '用户角色已升级，请重新登录') {
+        clearAuthData();
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('accountDisabledReason', 'ROLE_UPGRADED_TO_ADMIN');
+            window.location.href = '/account-disabled?reason=ROLE_UPGRADED_TO_ADMIN';
+            throw new Error('Role upgraded: redirecting to account-disabled');
+        }
+        return Promise.reject(customError);
+    }
     
     // 1.5. 处理 403 权限不足错误 - 当用户角色从 ADMIN 被降级为普通用户时
     // 后端返回 "仅管理员可操作" 时，说明用户已无管理员权限

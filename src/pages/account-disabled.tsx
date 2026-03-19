@@ -42,6 +42,13 @@ const AccountDisabledPage: React.FC = () => {
       };
     }
     
+    if (effectiveReason === 'ROLE_UPGRADED_TO_ADMIN') {
+      return {
+        title: '您的账户已升级为管理员',
+        description: '您的账户已被升级为管理员，当前页面将关闭。\n请重新登录以使用管理员身份访问管理控制台。',
+      };
+    }
+    
     // 默认为 INACTIVE 或其他原因
     return {
       title: '账户已停用',
