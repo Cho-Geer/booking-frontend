@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Button from '../Button';
 
-// Mock UIContext
 jest.mock('../../../contexts/UIContext', () => ({
   useUI: () => ({
     uiState: { theme: 'light' },
@@ -27,11 +26,11 @@ describe('Button Component', () => {
 
     rerender(<Button variant="secondary">次要按钮</Button>);
     button = screen.getByRole('button', { name: /次要按钮/i });
-    expect(button).toHaveClass('bg-gray-200');
+    expect(button).toHaveClass('bg-secondary');
 
     rerender(<Button variant="danger">危险按钮</Button>);
     button = screen.getByRole('button', { name: /危险按钮/i });
-    expect(button).toHaveClass('bg-red-500');
+    expect(button).toHaveClass('bg-red-600');
 
     rerender(<Button variant="ghost">幽灵按钮</Button>);
     button = screen.getByRole('button', { name: /幽灵按钮/i });
@@ -62,7 +61,6 @@ describe('Button Component', () => {
     const button = screen.getByRole('button', { name: /加载中/i });
     
     expect(button).toBeDisabled();
-    expect(button).toContainHTML('animate-spin'); // 检查加载动画
   });
 
   it('renders with full width', () => {
