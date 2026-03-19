@@ -132,6 +132,12 @@ const serviceSlice = createSlice({
     setLimit: (state, action: PayloadAction<number>) => {
       state.pagination.limit = action.payload;
     },
+    /**
+     * 清除服务列表（用于清除由管理员接口带入的包含停用服务的脟渏数据）
+     */
+    clearServices: (state) => {
+      state.services = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -222,5 +228,5 @@ const serviceSlice = createSlice({
   },
 });
 
-export const { clearError, setPage, setLimit } = serviceSlice.actions;
+export const { clearError, setPage, setLimit, clearServices } = serviceSlice.actions;
 export default serviceSlice.reducer;

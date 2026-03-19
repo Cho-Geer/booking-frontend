@@ -4,7 +4,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface BookingModalBaseProps {
   open: boolean;
-  title: string;
+  title: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';

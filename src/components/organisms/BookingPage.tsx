@@ -43,7 +43,7 @@ interface BookingPageProps {
   onCreateBooking: () => void;
   onCancelCreating: () => void;
   onCancelBooking: (bookingId: string) => void;
-  onUpdateBooking: (payload: BookingUpdatePayload) => Promise<void>;
+  onUpdateBooking: (payload: BookingUpdatePayload) => Promise<boolean | void>;
   onNotesChange: (notes: string) => void;
   onCustomerNameChange: (name: string) => void;
   onCustomerPhoneChange: (phone: string) => void;
@@ -218,7 +218,9 @@ const BookingPage: React.FC<BookingPageProps> = ({
   const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
     setUpdatingBooking(true);
     try {
-      await onUpdateBooking(payload);
+      // onUpdateBooking 返回 false 表示更新失败，错误信息已通过 showError 全局通知展示
+      const success = await onUpdateBooking(payload);
+      if (success === false) return;
       handleCloseUpdateModal();
       handleCloseDetailModal();
       openModal({

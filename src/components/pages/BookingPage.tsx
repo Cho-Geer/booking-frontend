@@ -13,7 +13,7 @@ import {
   setPage,
   setFilters
 } from '@/store/bookingSlice';
-import { fetchServicesForUsers } from '@/store/serviceSlice';
+import { fetchServicesForUsers, clearServices } from '@/store/serviceSlice';
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
@@ -123,8 +123,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     }
   }, [dispatch, isSSR, serverError]);
 
-  // 获取服务列表
+  // 获取服务列表：先清除由管理员接口带入的脟渏数据（含停用服务），再获取仅启用服务
   useEffect(() => {
+    dispatch(clearServices());
     dispatch(fetchServicesForUsers());
   }, [dispatch]);
 
@@ -444,10 +445,17 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       setLoading(false);
       return;
     }
-    showError('预约更新失败', result.error.message || '请稍后重试');
+    // 获取后端返回的错误消息，优先使用 payload.data.message（业务异常），其次使用 error.message
+    const errMsg =
+      (result.payload as any)?.message ||
+      result.error?.message ||
+      '请稍后重试';
+    // 通过全局通知组件展示错误信息，避免抛出异常导致 Next.js Runtime Error 覆盖层
+    showError('预约更新失败', errMsg);
     setUpdatingBooking(false);
     setLoading(false);
-    throw new Error(result.error.message || '预约更新失败');
+    // 返回 false 表示更新失败，上层调用方据此阻止显示"更新成功"弹窗
+    return false;
   };
 
   /**

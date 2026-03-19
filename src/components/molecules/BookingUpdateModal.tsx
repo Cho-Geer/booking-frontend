@@ -67,7 +67,8 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
   const bookings = useAppSelector((state) => state.booking.bookings);
   const slotsLoading = useAppSelector((state) => state.booking.slotsLoading);
   const bookingsLoading = useAppSelector((state) => state.booking.bookingsLoading);
-  const sliceError = useAppSelector((state) => state.booking.error);
+  // 不使用 state.booking.error：该全局错误可能包含与时间段无关的错误（如更新预约失败），
+  // 展示在时间段区域会误导用户。时间段加载错误均取自本地 slotError 状态。
 
   const [selectedDate, setSelectedDate] = React.useState('');
   const [serviceId, setServiceId] = React.useState('');
@@ -241,17 +242,23 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
     
     setShowConfirmModal(false);
     const data = getValues();
-    await onConfirm({
-      id: booking!.id,
-      appointmentDate: selectedDate,
-      timeSlotId: selectedTimeSlotId,
-      serviceId,
-      customerName: data.customerName.trim(),
-      customerPhone: data.customerPhone.trim(),
-      customerEmail: data.customerEmail?.trim() || undefined,
-      customerWechat: data.customerWechat?.trim() || undefined,
-      notes: data.notes?.trim() || undefined,
-    });
+    try {
+      await onConfirm({
+        id: booking!.id,
+        appointmentDate: selectedDate,
+        timeSlotId: selectedTimeSlotId,
+        serviceId,
+        customerName: data.customerName.trim(),
+        customerPhone: data.customerPhone.trim(),
+        customerEmail: data.customerEmail?.trim() || undefined,
+        customerWechat: data.customerWechat?.trim() || undefined,
+        notes: data.notes?.trim() || undefined,
+      });
+    } catch (error) {
+      // 上层（BookingPage organism）已通过 showError 展示错误提示，
+      // 此处仅停止错误传播，避免 Next.js 展示 Runtime Error 覆盖层
+      console.error('预约更新操作失败:', error);
+    }
   };
 
   const handleCancelUpdate = () => {
@@ -330,8 +337,9 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
           <p className={`mb-2 text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>可用时间段</p>
           {(slotsLoading || bookingsLoading) ? (
             <p className={`${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>加载中...</p>
-          ) : (slotError || sliceError) ? (
-            <p className="text-red-500">{slotError || sliceError}</p>
+          ) : slotError ? (
+            // 仅展示时间段加载自身的错误，不展示全局 booking state.error
+            <p className="text-red-500">{slotError}</p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
               {slotOptions.map((slot) => {

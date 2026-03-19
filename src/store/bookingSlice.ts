@@ -98,21 +98,29 @@ export const cancelBooking = createAsyncThunk(
 
 export const updateBooking = createAsyncThunk(
   'booking/updateBooking',
-  async (payload: {
-    id: string;
-    appointmentDate?: string;
-    timeSlotId?: string;
-    serviceId?: string;
-    customerName?: string;
-    customerPhone?: string;
-    customerEmail?: string;
-    customerWechat?: string;
-    notes?: string;
-    status?: BookingStatus
-  }) => {
-    const { id, ...bookingData } = payload;
-    const response = await bookingApi.updateBooking(id, bookingData);
-    return response;
+  async (
+    payload: {
+      id: string;
+      appointmentDate?: string;
+      timeSlotId?: string;
+      serviceId?: string;
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
+      customerWechat?: string;
+      notes?: string;
+      status?: BookingStatus;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { id, ...bookingData } = payload;
+      const response = await bookingApi.updateBooking(id, bookingData);
+      return response;
+    } catch (error: any) {
+      // 将后端返回的业务错误消息封装入 rejectWithValue，以便前端可分析 result.payload.message
+      return rejectWithValue({ message: error.message || '预约更新失败' });
+    }
   }
 );
 
@@ -283,7 +291,9 @@ const bookingSlice = createSlice({
       })
       .addCase(updateBooking.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || '更新预约失败';
+        // 不将更新预约的错误写入 state.error，避免全局错误栏和 Modal 内时间段列表显示 "Rejected"。
+        // 业务错误消息已通过 BookingPage.handleUpdateBooking 的 showError 全局通知展示。
+        // 保留 state.error 不变（即保持上次清空的状态）。
       })
       .addCase(deleteBooking.pending, (state) => {
         state.loading = true;

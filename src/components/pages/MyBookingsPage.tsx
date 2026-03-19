@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import MyBookingsPageOrganism from '@/components/organisms/MyBookingsPage';
 import { getBookings, cancelBooking, updateBooking } from '@/store/bookingSlice';
-import { fetchServicesForUsers } from '@/store/serviceSlice';
+import { fetchServicesForUsers, clearServices } from '@/store/serviceSlice';
 import { withAuth } from '@/components/hoc/withAuth';
 
 /**
@@ -19,6 +19,8 @@ const MyBookingsPage: React.FC = () => {
   // 获取预约列表（withAuth已确保用户已登录）
   useEffect(() => {
     dispatch(getBookings());
+    // 先清除由管理员接口带入的脟渏数据（含停用服务），再获取仅启用服务
+    dispatch(clearServices());
     dispatch(fetchServicesForUsers());
   }, [dispatch]);
 

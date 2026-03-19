@@ -5,7 +5,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface ModalProps {
   open: boolean;
-  title?: string;
+  title?: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
   footer?: React.ReactNode;
