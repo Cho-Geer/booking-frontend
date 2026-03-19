@@ -30,7 +30,8 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   const { currentUser, authInitialized } = useSelector((state: RootState) => state.user);
   
   // Show loading screen while authentication is initializing
-  if (!authInitialized && router.pathname !== '/login' && router.pathname !== '/register') {
+  // Exclude login, register, and account-disabled pages
+  if (!authInitialized && router.pathname !== '/login' && router.pathname !== '/register' && router.pathname !== '/account-disabled') {
     return <AuthLoading message="Initializing authentication..." />;
   }
   
@@ -43,12 +44,27 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   // 处理登出逻辑
   const handleLogout = async () => {
     const dispatch = getDispatch();
-    // 导入logoutUser thunk
+    // 导入 logoutUser thunk
     const { logoutUser } = await import('../../store/userSlice');
-    // 调用登出API
-    await dispatch(logoutUser());
-    // 重定向到注册页面
-    router.push('/register');
+    try {
+      // 调用登出 API - 后端会清除 HttpOnly cookies
+      await dispatch(logoutUser());
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // 清除前端存储（sessionStorage 中的 CSRF token、redirect flags 等）
+      // 注意：HttpOnly cookies 已被后端清除，这里只清理非 HttpOnly 的数据
+      if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        // localStorage 清理（如果有存储任何本地数据）
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('user_info');
+      }
+      
+      // 重定向到登录页面（使用 window.location 确保完全刷新）
+      window.location.href = '/login';
+    }
   };
   
   // 如果页面需要布局包装

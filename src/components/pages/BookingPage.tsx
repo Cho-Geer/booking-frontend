@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   getBookings, 
+  getBookingsByDate,
   getAvailableSlots, 
   createBooking,
-  getServices,
   setSelectedDate,
   setSelectedSlot,
   resetBookingState,
@@ -13,13 +13,13 @@ import {
   setPage,
   setFilters
 } from '@/store/bookingSlice';
+import { fetchServicesForUsers } from '@/store/serviceSlice';
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import ConfirmModal from '@/components/atoms/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
 import { BookingUIProvider } from '@/contexts/BookingContext';
-import { bookingService } from '@/services/bookingService';
 
 /**
  * 页面组件：预约页面
@@ -54,11 +54,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const dispatch = useDispatch<AppDispatch>();
   const { openModal, showError, setLoading } = useUI();
   const { currentUser } = useSelector((state: RootState) => state.user);
-  // 从Redux store获取状态
+  // 从 Redux store 获取状态
   const {
     bookings, 
+    slotReferenceBookings: reduxSlotReferenceBookings,
     availableSlots, 
-    services,
     selectedDate, 
     selectedSlot, 
     loading,
@@ -67,8 +67,9 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     error, 
     creatingBooking,
     pagination,
-    filters
+    filters,
   } = useSelector((state: RootState) => state.booking);
+  const { services, loading: serviceLoading } = useSelector((state: RootState) => state.service); 
 
   // 本地状态
   const [notes, setNotes] = useState('');
@@ -79,7 +80,6 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const [customerWechat, setCustomerWechat] = useState('');
   const [serviceId, setServiceId] = useState('');
   const [slots, setSlots] = useState<AvailableSlotsForTable[]>([]);
-  const [slotReferenceBookings, setSlotReferenceBookings] = useState<Booking[]>([]);
   const [showCreateSuccessModal, setShowCreateSuccessModal] = useState(false);
   const [showCancelSuccessModal, setShowCancelSuccessModal] = useState(false);
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
@@ -103,11 +103,12 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
       // 客户端渲染时获取数据
       dispatch(getBookings({ ...filters, page: pagination.page, limit: pagination.limit }));
     }
-  }, [dispatch, isSSR, pagination.page, pagination.limit, filters]);
+  }, [dispatch, isSSR, filters, pagination.page, pagination.limit]);
+
 
   // 处理分页变化
   const handlePageChange = useCallback((page: number) => {
-    dispatch(setPage(page));
+      dispatch(setPage(page));
   }, [dispatch]);
 
   // 处理搜索
@@ -124,33 +125,24 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
 
   // 获取服务列表
   useEffect(() => {
-    dispatch(getServices());
+    dispatch(fetchServicesForUsers());
   }, [dispatch]);
 
   const loadSlotReferenceBookings = useCallback(async (date: string) => {
-    try {
-      const response = await bookingService.getBookings({
-        page: 1,
-        limit: 200,
-        startDate: date,
-        endDate: date
-      });
-      setSlotReferenceBookings(response.items);
-    } catch {
-      setSlotReferenceBookings([]);
-    }
-  }, []);
+    // Use the new dedicated endpoint that fetches ALL bookings for the date (no pagination)
+    await dispatch(getBookingsByDate(date));
+  }, [dispatch]);
 
   useEffect(() => {
     loadSlotReferenceBookings(selectedDate);
   }, [loadSlotReferenceBookings, selectedDate]);
-
-  // 预约状态更新时更新slots状态
+  
+  // 预约状态更新时更新 slots 状态
   useEffect(() => {
     if(availableSlots.length > 0){
       setSlots(availableSlots.map(slot => {
-        // 检查当前用户是否有预约
-        const myBooking = slotReferenceBookings.find(booking => 
+        // 使用 Redux 中的 slotReferenceBookings，不受分页影响
+        const myBooking = reduxSlotReferenceBookings.find(booking => 
           booking.timeSlotId === slot.id 
           && ['CONFIRMED', 'PENDING'].includes(booking.status)
           && selectedDate === booking.appointmentDate.slice(0, 10)
@@ -190,7 +182,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
         };
       }));
     }
-  }, [slotReferenceBookings, availableSlots, selectedDate]);
+  }, [reduxSlotReferenceBookings, availableSlots, selectedDate]);
 
   // 日期改变时获取可用时间段
   useEffect(() => {
@@ -284,8 +276,13 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     if (!validateForm()) return;
     if (!selectedSlot || !customerName || !customerPhone) return;
 
-    // 查找选中的服务名称
+    // Validate service status before creating booking
     const selectedService = services.find(s => s.id === serviceId);
+    if (selectedService && !selectedService.isActive) {
+      showError(`服务 "${selectedService.name}" 已被禁用，无法创建预约`);
+      return;
+    }
+    
     const serviceName = selectedService ? selectedService.name : 'Unknown Service';
 
     setBookingCreated(false);

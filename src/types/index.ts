@@ -7,6 +7,22 @@
  */
 
 import { ReactNode } from 'react';
+import { Service } from './service';
+
+/**
+ * 管理控制台 Tab 类型定义
+ */
+export type AdminTab = 'bookings' | 'services' | 'users';
+
+// ==================== services 模块类型 ====================
+export type ServiceRow = Service & {
+  imageUrl?: string;
+  displayOrder?: number | null;
+};
+
+export type { Service, ServiceQuery, ServiceListResponse } from './service';
+
+export type { NotificationQuery } from './notification';
 
 // ==================== booking 模块类型 ====================
 // enum 需要作为值导出，不能用 export type
@@ -17,8 +33,7 @@ export type {
   AppointmentQuery, 
   AppointmentListResponse, 
   TimeSlot, 
-  Booking, 
-  Service, 
+  Booking,  
   CreateBookingRequest, 
   CreateBookingParams, 
   UpdateBookingParams, 
@@ -27,12 +42,15 @@ export type {
   RawAppointmentListResponse
 } from './booking';
 
+
+
 // ==================== user 模块类型 ====================
 // enum 需要作为值导出
 export { UserRole } from './user';
 // 接口和类型使用 type 导出
 export type { 
-  User, 
+  User,
+  AdminUsersQuery,
   VerifyLoginRequest, 
   SendVerificationCodeRequest, 
   SendCodeParams, 
@@ -57,6 +75,7 @@ export type {
 
 // ==================== 通用类型 ====================
 export type { ReactNode };
+export type { Pagination } from './pagination';
 
 /**
  * API响应通用接口

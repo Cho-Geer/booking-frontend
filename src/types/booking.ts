@@ -2,6 +2,7 @@
  * 预约相关类型定义
  * 集中管理所有与预约业务相关的类型
  */
+import { Service } from './service';
 
 /**
  * 预约状态枚举
@@ -21,6 +22,7 @@ export interface BookingState {
   bookings: Booking[];
   /** 可用时间段 */
   availableSlots: TimeSlot[];
+  slotReferenceBookings: Booking[];
   /** 当前选中的日期 */
   selectedDate: string;
   /** 当前选中的时间段 */
@@ -35,8 +37,10 @@ export interface BookingState {
   error: string | null;
   /** 创建预约的加载状态 */
   creatingBooking: boolean;
-  /** 成功状态 */
+  /** 成功状态（用于创建预约） */
   success: boolean;
+  /** 更新预约成功状态 */
+  updateSuccess: boolean;
   /** 服务列表 */
   services: Service[];
   /** 列表分页信息 */
@@ -48,6 +52,10 @@ export interface BookingState {
   };
   /** 列表筛选条件 */
   filters: AppointmentQuery;
+}
+
+export interface slotReferenceBookings {
+  slotReferenceBookings: Booking[];
 }
 
 /**
@@ -143,28 +151,6 @@ export interface Booking {
   cancelledAt?: string;
   /** 完成时间 */
   completedAt?: string;
-}
-
-/**
- * 服务实体接口
- */
-export interface Service {
-  /** 服务ID */
-  id: string;
-  /** 服务名称 */
-  name: string;
-  /** 服务描述 */
-  description?: string;
-  /** 服务时长（分钟） */
-  durationMinutes: number;
-  /** 价格 */
-  price?: number;
-  /** 是否可用 */
-  isActive: boolean;
-  /** 创建时间 */
-  createdAt: string;
-  /** 更新时间 */
-  updatedAt: string;
 }
 
 /**

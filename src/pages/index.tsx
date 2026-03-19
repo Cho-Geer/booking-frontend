@@ -22,8 +22,17 @@ function HomeRoute() {
   // 已登录用户重定向到预约页面
   useEffect(() => {
     if (currentUser) {
-      // 使用window.location进行完全重定向，避免Next.js路由状态问题
-      window.location.href = '/bookings';
+      // 检查是否有 role_changed 标志，如果有则不重定向，让用户看到登录页
+      const urlParams = new URLSearchParams(window.location.search);
+      const isRoleChanged = urlParams.get('role_changed') === 'true';
+        
+      if (isRoleChanged) {
+        // 角色变更，不清除认证数据，让用户重新登录
+        return;
+      }
+        
+      // 使用 window.location 进行完全重定向，避免 Next.js 路由状态问题
+      window.location.href = currentUser?.userType === 'admin' ? '/admin/bookings' : '/bookings';
     }
   }, [currentUser]);
 

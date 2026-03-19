@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import MyBookingsPageOrganism from '@/components/organisms/MyBookingsPage';
-import { getBookings, cancelBooking, getServices, updateBooking } from '@/store/bookingSlice';
+import { getBookings, cancelBooking, updateBooking } from '@/store/bookingSlice';
+import { fetchServices } from '@/store/serviceSlice';
 import { withAuth } from '@/components/hoc/withAuth';
 
 /**
@@ -12,12 +13,13 @@ import { withAuth } from '@/components/hoc/withAuth';
  */
 const MyBookingsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { bookings, services, loading, error } = useSelector((state: RootState) => state.booking);
+  const { bookings, loading: bookingLoading, error: bookingError } = useSelector((state: RootState) => state.booking);
+  const { services, loading: serviceLoading, error: serviceError } = useSelector((state: RootState) => state.service); 
   
   // 获取预约列表（withAuth已确保用户已登录）
   useEffect(() => {
     dispatch(getBookings());
-    dispatch(getServices());
+    dispatch(fetchServices());
   }, [dispatch]);
 
   /**
@@ -50,8 +52,8 @@ const MyBookingsPage: React.FC = () => {
     <MyBookingsPageOrganism
       bookings={bookings}
       services={services}
-      loading={loading}
-      error={error || undefined}
+      loading={bookingLoading || serviceLoading}
+      error={bookingError || serviceError || undefined}
       onCancelBooking={handleCancelBooking}
       onUpdateBooking={handleUpdateBooking}
     />

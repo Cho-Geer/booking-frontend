@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'ref'> {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'warning';
   size?: 'xxs' | 'xs' | 'sm' | 'md' | 'lg';
   isLoading?: boolean;

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { bookingService } from '../../services/bookingService';
+import { bookingApi } from '../../services/bookingApi';
 import { BookingStatus } from '../../types';
 
 /**
@@ -44,24 +44,24 @@ async function handleGetRequest(req: NextApiRequest, res: NextApiResponse) {
 
   // 获取单个预约详情
   if (id) {
-    const booking = await bookingService.getBookingById(id as string);
+    const booking = await bookingApi.getBookingById(id as string);
     return res.status(200).json(booking);
   }
 
   // 获取所有预约（管理员权限）
   if (all === 'true') {
-    const bookings = await bookingService.getBookings();
+    const bookings = await bookingApi.getBookings();
     return res.status(200).json(bookings);
   }
 
   // 获取指定日期的可用时间段
   if (date) {
-    const slots = await bookingService.getAvailableSlots(date as string);
+    const slots = await bookingApi.getAvailableSlots(date as string);
     return res.status(200).json(slots);
   }
 
   // 默认获取当前用户的预约
-  const bookings = await bookingService.getMyBookings();
+  const bookings = await bookingApi.getMyBookings();
   res.status(200).json(bookings);
 }
 
@@ -77,7 +77,7 @@ async function handlePostRequest(req: NextApiRequest, res: NextApiResponse) {
     return res.status(400).json({ error: '缺少必要的预约数据' });
   }
 
-  const newBooking = await bookingService.createBooking(bookingData);
+  const newBooking = await bookingApi.createBooking(bookingData);
   res.status(201).json(newBooking);
 }
 
@@ -94,7 +94,7 @@ async function handlePatchRequest(req: NextApiRequest, res: NextApiResponse) {
   }
 
   if (action === 'cancel') {
-    const result = await bookingService.cancelBooking(id as string);
+    const result = await bookingApi.cancelBooking(id as string);
     return res.status(200).json(result);
   }
 

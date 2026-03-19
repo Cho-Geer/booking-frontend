@@ -41,7 +41,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   items,
   value,
   onChange,
-  buttonText = "选择选项",
+  buttonText,
   className = ''
 }) => {
   const { theme } = useTheme();

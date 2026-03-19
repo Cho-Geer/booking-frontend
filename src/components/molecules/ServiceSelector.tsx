@@ -33,7 +33,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
       <Dropdown
         items={[
           { label: "选择服务类型", value: "", disabled: true },
-          ...services.map(s => ({ label: s.name, value: s.id }))
+          ...services.filter(s => s.isActive).map(s => ({ label: s.name, value: s.id }))
         ]}
         value={serviceId}
         onChange={(value) => onServiceIdChange(value)}

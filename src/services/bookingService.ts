@@ -32,53 +32,6 @@ export const bookingService = {
     return response.data;
   },
 
-  /**
-   * 获取所有用户的预约列表（管理员）
-   * @param query - 查询参数
-   * @returns 预约列表响应
-   */
-  async getBookings(query: AppointmentQuery = {}): Promise<AppointmentListResponse> {
-    const response = await api.get('/bookings/all', { params: query });
-    const data: RawAppointmentListResponse | RawBookingResponse[] = response.data.data || response.data;
-    
-    // 如果返回的是旧格式（数组），则转换为新格式
-    if (Array.isArray(data)) {
-      const items: Booking[] = data.map((item: RawBookingResponse) => ({
-        ...item,
-        startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
-        endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',
-        timeSlot: item.timeSlot 
-          ? { 
-              slotTime: item.timeSlot.slotTime, 
-              durationMinutes: item.timeSlot.durationMinutes 
-            } 
-          : { slotTime: '', durationMinutes: 0 }
-      }));
-      return {
-        items,
-        total: items.length,
-        page: 1,
-        limit: items.length,
-        totalPages: 1
-      };
-    }
-
-    // 新格式处理
-    return {
-      ...data,
-      items: data.items.map((item: RawBookingResponse) => ({
-        ...item,
-        startTime: item.timeSlot?.slotTime?.split(':').slice(0, 2).join(':') || '',
-        endTime: item.timeSlot ? this.calculateEndTime(item.timeSlot.slotTime, item.timeSlot.durationMinutes) : '',
-        timeSlot: item.timeSlot 
-          ? { 
-              slotTime: item.timeSlot.slotTime, 
-              durationMinutes: item.timeSlot.durationMinutes 
-            } 
-          : { slotTime: '', durationMinutes: 0 }
-      }))
-    };
-  },
 
   /**
    * 获取指定日期的可用时间段

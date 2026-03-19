@@ -9,7 +9,9 @@ import { useTheme } from '@/hooks/useTheme';
 import { useBookingModals } from '@/hooks/useBookingModals';
 import { useBookingUI } from '@/contexts/BookingContext';
 import { useUI } from '@/contexts/UIContext';
-import { Booking, TimeSlot, Service, AppointmentQuery } from '@/types';
+import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus, Pagination as MyPagination } from '@/types';
+import { stripHtml } from '@/utils/htmlUtils';
+// import { Booking, TimeSlot, Service, AppointmentQuery } from '@/types';
 
 interface TimeSlotForTable extends TimeSlot {
   isBooked: boolean;
@@ -35,12 +37,7 @@ interface BookingPageProps {
   serviceId: string;
   serviceError?: string;
   services: Service[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: MyPagination;
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: TimeSlot) => void;
   onCreateBooking: () => void;
@@ -237,7 +234,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   };
 
   return (
-    <div id="booking-page-container" className={`h-[scal(100vh-16px)] py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scorllbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
+    <div id="booking-page-container" className={`h-[calc(100vh-16px)] py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
       <div id="booking-content-container" className="max-w-7xl mx-auto">
         <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-2xl' : ''}`}>预约服务</h1>
         
@@ -281,7 +278,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
               endDateInputRef={endDateInputRef}
               onStartDateInputClick={handleStartDateInputClick}
               onEndDateInputClick={handleEndDateInputClick}
-              pagination={pagination}
+              pagination={pagination as MyPagination}
               onPageChange={onPageChange}
               onOpenDetail={handleOpenDetail}
               onOpenUpdate={handleOpenUpdate}

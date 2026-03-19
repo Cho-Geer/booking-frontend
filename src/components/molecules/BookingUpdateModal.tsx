@@ -9,7 +9,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Booking, Service, TimeSlot } from '@/types';
-import { bookingService } from '@/services/bookingService';
+import { useAppDispatch, useAppSelector } from '@/store';
+import { getAvailableSlots, getBookings } from '@/store/bookingSlice';
 import { useTheme } from '@/hooks/useTheme';
 import { getTodayLocalDate, getMaxDate } from '@/utils/dateUtils';
 
@@ -60,13 +61,21 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
   updatingBooking = false,
 }) => {
   const { isDark: isDarkTheme, isMobile } = useTheme();
+  const dispatch = useAppDispatch();
+  // Select available slots and bookings list from Redux store
+  const availableSlots = useAppSelector((state) => state.booking.availableSlots);
+  const bookings = useAppSelector((state) => state.booking.bookings);
+  const slotsLoading = useAppSelector((state) => state.booking.slotsLoading);
+  const bookingsLoading = useAppSelector((state) => state.booking.bookingsLoading);
+  const sliceError = useAppSelector((state) => state.booking.error);
+
   const [selectedDate, setSelectedDate] = React.useState('');
   const [serviceId, setServiceId] = React.useState('');
   const [selectedTimeSlotId, setSelectedTimeSlotId] = React.useState('');
   const [slotOptions, setSlotOptions] = React.useState<TimeSlotOption[]>([]);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [slotLoading, setSlotLoading] = React.useState(false);
   const [slotError, setSlotError] = React.useState('');
+  const [serviceStatusError, setServiceStatusError] = React.useState('');
   const [showConfirmModal, setShowConfirmModal] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement | null>(null);
   const {
@@ -108,65 +117,79 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
     setSelectedTimeSlotId(booking.timeSlotId);
     setErrors({});
     setSlotError('');
-  }, [booking, open, normalizeDate, reset]);
+    setServiceStatusError('');
+    
+    // Check if the selected service is active
+    if (booking.service?.id) {
+      const selectedService = services.find(s => s.id === booking.service?.id);
+      if (selectedService && !selectedService.isActive) {
+        setServiceStatusError(`服务 "${selectedService.name}" 已被禁用，无法更新预约`);
+      }
+    }
+  }, [booking, open, normalizeDate, reset, services]);
 
   React.useEffect(() => {
     if (!booking || !open || !selectedDate) return;
     let active = true;
     const fetchSlots = async () => {
-      setSlotLoading(true);
       setSlotError('');
       try {
-        const [slots, myBookings] = await Promise.all([
-          bookingService.getAvailableSlots(selectedDate),
-          bookingService.getBookings(),
+        // Dispatch both Redux thunks in parallel; results are stored in the Redux store
+        await Promise.all([
+          dispatch(getAvailableSlots(selectedDate)),
+          dispatch(getBookings()),
         ]);
-        if (!active) return;
-        const today = getTodayLocalDate();
-        const now = new Date();
-        const currentDate = normalizeDate(booking.appointmentDate);
-        const isCurrentDate = selectedDate === currentDate;
-        const myBookedSlotIds = new Set(
-          myBookings.items
-            .filter((item) => normalizeDate(item.appointmentDate) === selectedDate)
-            .filter((item) => ['PENDING', 'CONFIRMED'].includes(item.status))
-            .map((item) => item.timeSlotId)
-        );
-        const mapped = slots.map((slot) => {
-          let isPast = false;
-          if (selectedDate === today) {
-            const [hours, minutes] = slot.startTime.split(':').map(Number);
-            const slotTime = new Date();
-            slotTime.setHours(hours, minutes, 0, 0);
-            isPast = now > slotTime;
-          }
-          const isCurrentBooking = isCurrentDate && slot.id === booking.timeSlotId;
-          const isMyBooking = isCurrentBooking || myBookedSlotIds.has(slot.id);
-          return {
-            ...slot,
-            isPast,
-            isBooked: !slot.available,
-            isMyBooking,
-            isCurrentBooking,
-          };
-        });
-        setSlotOptions(mapped);
       } catch (error: unknown) {
         if (!active) return;
         const message = error instanceof Error ? error.message : '获取可用时间段失败';
         setSlotError(message);
         setSlotOptions([]);
-      } finally {
-        if (active) {
-          setSlotLoading(false);
-        }
       }
     };
     fetchSlots();
     return () => {
       active = false;
     };
-  }, [booking, getTodayLocalDate, normalizeDate, open, selectedDate]);
+  }, [booking, dispatch, open, selectedDate]);
+
+  /**
+   * Derive slotOptions whenever Redux store data (availableSlots / bookings) or
+   * the selected date changes. This keeps all the mapping logic intact while
+   * reading from the Redux store instead of local state populated by bookingService.
+   */
+  React.useEffect(() => {
+    if (!booking || !open || !selectedDate) return;
+    const today = getTodayLocalDate();
+    const now = new Date();
+    const currentDate = normalizeDate(booking.appointmentDate);
+    const isCurrentDate = selectedDate === currentDate;
+    // Identify time slots that the current user has already booked on this date
+    const myBookedSlotIds = new Set(
+      bookings
+        .filter((item) => normalizeDate(item.appointmentDate) === selectedDate)
+        .filter((item) => ['PENDING', 'CONFIRMED'].includes(item.status))
+        .map((item) => item.timeSlotId)
+    );
+    const mapped = availableSlots.map((slot) => {
+      let isPast = false;
+      if (selectedDate === today) {
+        const [hours, minutes] = slot.startTime.split(':').map(Number);
+        const slotTime = new Date();
+        slotTime.setHours(hours, minutes, 0, 0);
+        isPast = now > slotTime;
+      }
+      const isCurrentBooking = isCurrentDate && slot.id === booking.timeSlotId;
+      const isMyBooking = isCurrentBooking || myBookedSlotIds.has(slot.id);
+      return {
+        ...slot,
+        isPast,
+        isBooked: !slot.available,
+        isMyBooking,
+        isCurrentBooking,
+      };
+    });
+    setSlotOptions(mapped);
+  }, [availableSlots, booking, bookings, normalizeDate, open, selectedDate]);
 
   if (!booking) return null;
 
@@ -183,6 +206,16 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
     if (!selectedTimeSlotId) {
       nextErrors.timeSlotId = '请选择时间段';
     }
+    
+    // Validate service status
+    const selectedService = services.find(s => s.id === serviceId);
+    if (selectedService && !selectedService.isActive) {
+      setServiceStatusError(`服务 "${selectedService.name}" 已被禁用，无法更新预约`);
+      return false;
+    } else {
+      setServiceStatusError('');
+    }
+    
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -229,7 +262,14 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
     <>
       <BookingModalBase
         open={open}
-        title="更新预约"
+        title={
+          <div className="flex flex-col gap-2">
+            <span>更新预约</span>
+            {serviceStatusError && (
+              <span className="text-sm text-error-light">{serviceStatusError}</span>
+            )}
+          </div>
+        }
         onClose={onClose}
         headerActions={(
           <Button 
@@ -237,7 +277,7 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
             size="sm" 
             onClick={handleSubmit(handleConfirm)} 
             isLoading={submitting}
-            disabled={submitting || updatingBooking}
+            disabled={submitting || updatingBooking || !!serviceStatusError}
           >
             {updatingBooking ? '更新中...' : '确认'}
           </Button>
@@ -270,12 +310,12 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
           </div>
           <div>
             <label className={`mb-1 block text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
-              服务类型
+              服务类型（仅显示可用服务）
             </label>
             <Dropdown
               items={[
                 { label: '选择服务类型', value: '', disabled: true },
-                ...services.map((service) => ({ label: service.name, value: service.id })),
+                ...services.filter(s => s.isActive).map((service) => ({ label: service.name, value: service.id })),
               ]}
               value={serviceId}
               onChange={setServiceId}
@@ -288,10 +328,10 @@ const BookingUpdateModal: React.FC<BookingUpdateModalProps> = ({
 
         <div>
           <p className={`mb-2 text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>可用时间段</p>
-          {slotLoading ? (
+          {(slotsLoading || bookingsLoading) ? (
             <p className={`${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>加载中...</p>
-          ) : slotError ? (
-            <p className="text-red-500">{slotError}</p>
+          ) : (slotError || sliceError) ? (
+            <p className="text-red-500">{slotError || sliceError}</p>
           ) : (
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
               {slotOptions.map((slot) => {

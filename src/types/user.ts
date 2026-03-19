@@ -117,3 +117,17 @@ export interface LogoutResult {
   success: boolean;
   message: string;
 }
+
+export interface AdminUsersQuery {
+  name?: string;
+  phone?: string;
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+  userType?: 'customer' | 'admin';
+  email?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+}

@@ -23,8 +23,8 @@ interface BookingRightPanelProps {
   pagination: {
     page: number;
     limit: number;
-    total: number;
-    totalPages: number;
+    total?: number;
+    totalPages?: number;
   };
   onPageChange: (page: number) => void;
   onOpenDetail: (booking: Booking) => void;
@@ -84,10 +84,10 @@ const BookingRightPanel: React.FC<BookingRightPanelProps> = ({
             <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
               共找到 {pagination.total} 条预约记录
             </p>
-            {pagination.totalPages > 1 && (
+            {pagination.totalPages as number > 1 && (
               <Pagination
                 currentPage={pagination.page}
-                totalPages={pagination.totalPages}
+                totalPages={pagination.totalPages as number}
                 onPageChange={onPageChange}
               />
             )}

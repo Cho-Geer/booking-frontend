@@ -5,6 +5,7 @@ import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
 import Spinner from '@/components/atoms/Spinner';
 import ThemeToggle from '@/components/atoms/ThemeToggle';
+import NotificationContainer from '@/components/molecules/NotificationContainer';
 import { useUI } from '@/contexts/UIContext';
 
 
@@ -32,7 +33,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   isLoggedIn, 
   onLogout,
   username,
-  userType 
+  userType
 }) => {
   const router = useRouter();
   const { uiState, toggleTheme, closeModal } = useUI();
@@ -123,7 +124,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
         </div>
       </main>
 
-      {/* 全局模态框 - 使用UIContext的modal状态 */}
+      {/* 全局模态框 - 使用 UIContext 的 modal 状态 */}
       <Modal
         open={uiState.modal.open}
         title={uiState.modal.title}
@@ -138,6 +139,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       {uiState.loading && (
         <Spinner text="正在处理，请稍候..." global size="lg" />
       )}
+
+      {/* 全局通知容器 - 显示所有通知消息 */}
+      <NotificationContainer />
     </div>
   );
 };

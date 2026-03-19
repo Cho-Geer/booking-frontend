@@ -35,3 +35,5 @@ export function withAdmin<P extends object>(WrappedComponent: React.ComponentTyp
 
   return ComponentWithAdminAuth;
 }
+
+export default withAdmin;

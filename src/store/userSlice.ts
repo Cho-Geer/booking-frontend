@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { authService } from '../services/authService';
+import { userApi } from '../services/userApi';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
 
 /**
@@ -51,7 +51,7 @@ const initialState: UserState = {
 export const registerUser = createAsyncThunk(
   'user/register',
   async (data: RegisterFormData) => {
-    const response = await authService.register(data);
+    const response = await userApi.register(data);
     return response;
   }
 );
@@ -62,7 +62,7 @@ export const registerUser = createAsyncThunk(
 export const sendCode = createAsyncThunk(
   'user/sendCode',
   async ({ phoneNumber, type }: { phoneNumber: string; type: 'login' | 'register' }) => {
-    const response = await authService.sendCode(phoneNumber, type);
+    const response = await userApi.sendCode(phoneNumber, type);
     return response;
   }
 );
@@ -73,7 +73,7 @@ export const sendCode = createAsyncThunk(
 export const verifyCode = createAsyncThunk(
   'user/verifyCode',
   async ({ phoneNumber, code }: { phoneNumber: string; code: string }) => {
-    const response = await authService.verifyCode(phoneNumber, code);
+    const response = await userApi.verifyCode(phoneNumber, code);
     return response;
   }
 );
@@ -84,7 +84,7 @@ export const verifyCode = createAsyncThunk(
 export const logoutUser = createAsyncThunk(
   'user/logout',
   async () => {
-    await authService.logout();
+    await userApi.logout();
   }
 );
 
@@ -98,7 +98,7 @@ export const initializeAuth = createAsyncThunk(
       // The axios interceptor will automatically handle 401 responses and refresh tokens when needed
       
       console.log('Attempting to fetch current user data...');
-      const response = await authService.getCurrentUser();
+      const response = await userApi.getCurrentUser();
       console.log('User data fetched successfully:', response.data);
       return response.data;
     } catch (error: unknown) {
@@ -110,6 +110,17 @@ export const initializeAuth = createAsyncThunk(
       });
       return rejectWithValue(null);
     }
+  }
+);
+
+/**
+ * 切换用户状态异步操作
+ */
+export const toggleUserStatus = createAsyncThunk(
+  'user/toggleUserStatus',
+  async ({ id, status }: { id: string; status: string }) => {
+    const response = await userApi.toggleUserStatus(id, status);
+    return response.data;
   }
 );
 
@@ -151,9 +162,11 @@ const userSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.data.user;
+        state.currentUser = {
+          ...action.payload.data.user,
+          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.authInitialized = true;
-        // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -185,10 +198,12 @@ const userSlice = createSlice({
       .addCase(verifyCode.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.currentUser = action.payload.data.user;
+        state.currentUser = {
+          ...action.payload.data.user,
+          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.codeSent = false;
         state.authInitialized = true;
-        // 登录成功后，重置验证码输入框状态
         state.showCodeInput = false;
       })
       .addCase(verifyCode.rejected, (state, action) => {
@@ -207,7 +222,10 @@ const userSlice = createSlice({
         console.log('Authentication initialization started');
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
-        state.currentUser = action.payload;
+        state.currentUser = {
+          ...action.payload,
+          userType: (action.payload?.role === 'ADMIN' || action.payload?.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+        };
         state.isAuthenticated = true;
         state.authInitialized = true;
         state.loading = false;
@@ -219,6 +237,25 @@ const userSlice = createSlice({
         state.authInitialized = true;
         state.loading = false;
         console.log('Authentication initialization completed (unauthenticated)');
+      })
+      // 切换用户状态
+      .addCase(toggleUserStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(toggleUserStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        // 如果当前用户是被更新的用户，更新 currentUser
+        if (state.currentUser && state.currentUser.id === action.payload.data.id) {
+          state.currentUser = {
+            ...state.currentUser,
+            status: action.payload.data.status,
+          };
+        }
+      })
+      .addCase(toggleUserStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || '切换用户状态失败';
       });
   },
 });
