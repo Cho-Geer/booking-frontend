@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import MyBookingsPageOrganism from '@/components/organisms/MyBookingsPage';
 import { getBookings, cancelBooking, updateBooking } from '@/store/bookingSlice';
-import { fetchServices } from '@/store/serviceSlice';
+import { fetchServicesForUsers } from '@/store/serviceSlice';
 import { withAuth } from '@/components/hoc/withAuth';
 
 /**
@@ -19,7 +19,7 @@ const MyBookingsPage: React.FC = () => {
   // 获取预约列表（withAuth已确保用户已登录）
   useEffect(() => {
     dispatch(getBookings());
-    dispatch(fetchServices());
+    dispatch(fetchServicesForUsers());
   }, [dispatch]);
 
   /**
