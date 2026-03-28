@@ -10,9 +10,6 @@
 !.yarn/releases
 !.yarn/versions
 
-# testing
-/coverage
-
 # next.js
 /.next/
 /out/
@@ -41,4 +38,4 @@ yarn-error.log*
 next-env.d.ts
 
 /docs
-/.trae/
+/.trae
