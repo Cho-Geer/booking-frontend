@@ -51,7 +51,7 @@ Notes:
 - `/admin/bookings` is the current admin entry page.
 - Middleware also contains logic for `/my-bookings`, but there is no page file for that route in the current codebase.
 
-## Implemented Features
+## Runtime Features
 
 - Login and registration flows
 - JWT and refresh-token based auth using HttpOnly cookies
@@ -81,7 +81,7 @@ Current default API base URL:
 http://localhost:3001/v1
 ```
 
-`next.config.ts` also rewrites `/v1/:path*` to `http://localhost:3001/v1/:path*` during development.
+`next.config.ts` also rewrites `/v1/:path*` to `http://localhost:3001/v1/:path*` during development, so local frontend work stays aligned with the same `/v1` contract used by the backend README.
 
 ### Main Contract For This Branch
 
@@ -172,6 +172,8 @@ NEXT_PUBLIC_WS_URL=ws://localhost:3001
 NEXT_PUBLIC_INSTANCE_NAME=local
 ```
 
+This keeps local frontend requests aligned with the backend contract at `http://localhost:3001/v1`.
+
 ## Local Development
 
 Install dependencies:
@@ -185,6 +187,8 @@ Start the dev server:
 ```bash
 npm run dev
 ```
+
+The Next.js app runs locally at `http://localhost:3000` and talks to the backend API at `http://localhost:3001`.
 
 Then open:
 
