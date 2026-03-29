@@ -69,6 +69,12 @@ Notes:
 
 API requests are sent through [src/services/api.ts](./src/services/api.ts).
 
+The backend API runs locally at:
+
+```text
+http://localhost:3001
+```
+
 Current default API base URL:
 
 ```text
@@ -76,6 +82,31 @@ http://localhost:3001/v1
 ```
 
 `next.config.ts` also rewrites `/v1/:path*` to `http://localhost:3001/v1/:path*` during development.
+
+### Main Contract For This Branch
+
+The frontend should treat these backend endpoints as the main booking flow contract:
+
+- `/v1/bookings/all`
+- `/v1/time-slots/available-slots`
+- `/v1/bookings/by-date` when date-based booking views need it
+
+Important rules:
+
+- The frontend uses `/bookings/all` as the shared endpoint for both regular users and admins.
+- Filtering regular users down to their own bookings is the backend's responsibility.
+- `/bookings/me` is not assumed in this branch and should not be used as a contract dependency.
+
+### Example API Usage In Current Code
+
+- `GET /v1/bookings/all`
+  Main booking list endpoint used by the current booking API client.
+
+- `GET /v1/bookings/by-date?date=YYYY-MM-DD`
+  Used for date-specific booking lookups.
+
+- `GET /v1/time-slots/available-slots?date=YYYY-MM-DD`
+  Used for slot availability queries.
 
 Frontend service modules currently include:
 
@@ -133,7 +164,7 @@ Example env files are included:
 - `.env.example`
 - `.env.production.example`
 
-Typical local setup:
+Create `.env.local` in the project root with:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/v1
@@ -155,7 +186,7 @@ Start the dev server:
 npm run dev
 ```
 
-Open:
+Then open:
 
 ```text
 http://localhost:3000
