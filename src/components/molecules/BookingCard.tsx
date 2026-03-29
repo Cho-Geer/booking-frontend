@@ -43,7 +43,11 @@ const getStatusName = (status: BookingStatus) => {
 };
 
 const canShowUpdate = (status: BookingStatus) => {
-  return [BookingStatus.PENDING, BookingStatus.CONFIRMED].includes(status);
+  return [BookingStatus.PENDING].includes(status);
+};
+
+const canShowCancel = (status: BookingStatus) => {
+  return [BookingStatus.PENDING].includes(status);
 };
 
 /**
@@ -100,7 +104,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 更新
               </Button>
             )}
-            {['CONFIRMED', 'PENDING'].includes(booking.status) && (
+            {canShowCancel(booking.status) && (
               <Button
                 size="xs"
                 onClick={() => onCancelBooking(booking.id)}

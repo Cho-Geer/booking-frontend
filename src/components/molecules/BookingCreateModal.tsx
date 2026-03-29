@@ -152,7 +152,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
           <div className="flex flex-1 min-h-0 h-full flex-col gap-4">
             <Input
               label="姓名（必填）"
-              placeholder="Alice"
+              placeholder="请输入您的姓名"
               error={errors.customerName?.message}
               fullWidth
               {...register('customerName')}
@@ -164,7 +164,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
             
             <Input
               label="手机号（必填）"
-              placeholder="18100000000"
+              placeholder="请输入您的手机号（11位数字）"
               error={errors.customerPhone?.message}
               fullWidth
               {...register('customerPhone')}

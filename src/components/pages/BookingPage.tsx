@@ -76,8 +76,8 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   // 本地状态
   const [notes, setNotes] = useState('');
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [customerName, setCustomerName] = useState('Alice');
-  const [customerPhone, setCustomerPhone] = useState('18100000000');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerWechat, setCustomerWechat] = useState('');
   const [serviceId, setServiceId] = useState('');
@@ -240,7 +240,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     }
     
     if (!customerPhone.trim()) {
-      errors.phone = '请输入手机号码';
+      errors.phone = '请输入手机号码（11位数字）';
     } else if (!/^1[3-9]\d{9}$/.test(customerPhone.trim())) {
       errors.phone = '请输入有效的手机号码';
     }

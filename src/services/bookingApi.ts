@@ -6,36 +6,11 @@ import api from './api';
 import { Booking, TimeSlot, CreateBookingRequest, Service, AppointmentQuery, AppointmentListResponse, BookingStatus } from '../types';
 import { calculateEndTime, formatTime, formatDateShort, formatDate, isBookingExpired, formatBookingDate, stripHtml, sanitizeHtml } from '@/utils/index';
 
-// const calculateEndTime = (startTime: string, durationMinutes: number): string => {
-//   const [hours, minutes] = startTime.split(':').map(Number);
-//   const totalMinutes = hours * 60 + minutes + durationMinutes;
-//   const endHours = Math.floor(totalMinutes / 60) % 24;
-//   const endMinutes = totalMinutes % 60;
-//   return `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`;
-// };
-
 const resolvePayload = <T>(response: { data: unknown }): T => {
   return response.data as T;
 };
 
 export const bookingApi = {
-  /**
-   * 获取所有服务列表
-   * @returns 服务列表
-   */
-  // async getServices(): Promise<Service[]> {
-  //   const response = await api.get('/services');
-  //   return resolvePayload<Service[]>(response);
-  // },
-
-  /**
-   * 获取当前用户的预约列表
-   * @returns 预约列表
-   */
-  async getMyBookings(): Promise<Booking[]> {
-    const response = await api.get('/bookings');
-    return resolvePayload<Booking[]>(response);
-  },
 
   /**
    * 获取所有用户的预约列表（管理员）
@@ -114,10 +89,11 @@ export const bookingApi = {
    */
   async createBooking(bookingData: CreateBookingRequest): Promise<Booking> {
     const response = await api.post('/bookings', bookingData);
+    const payload = resolvePayload<Booking>(response);
     return {
-      ...response.data, 
-      startTime: response.data.timeSlot.slotTime.split(':').slice(0, 2).join(':'),
-      endTime: calculateEndTime(response.data.timeSlot.slotTime, response.data.timeSlot.durationMinutes),
+      ...payload, 
+      startTime: payload.timeSlot.slotTime.split(':').slice(0, 2).join(':'),
+      endTime: calculateEndTime(payload.timeSlot.slotTime, payload.timeSlot.durationMinutes),
     };
   },
 
@@ -128,7 +104,7 @@ export const bookingApi = {
    */
   async cancelBooking(bookingId: string): Promise<{ success: boolean }> {
     const response = await api.patch(`/bookings/${bookingId}/cancel`);
-    return response.data;
+    return resolvePayload<{ success: boolean }>(response);
   },
 
   /**
@@ -152,7 +128,7 @@ export const bookingApi = {
     }
   ): Promise<Booking> {
     const response = await api.patch(`/bookings/${bookingId}`, bookingData);
-    const payload = response.data?.data ?? response.data;
+    const payload = resolvePayload<Booking>(response);
     return {
       ...payload,
       serviceName: payload.service?.name || payload.serviceName,
@@ -170,7 +146,7 @@ export const bookingApi = {
    */
   async getBookingById(bookingId: string): Promise<Booking> {
     const response = await api.get(`/bookings/${bookingId}`);
-    return response.data?.data || response.data;
+    return resolvePayload<Booking>(response);
   },
 
   /**
@@ -180,6 +156,6 @@ export const bookingApi = {
    */
   async deleteBooking(bookingId: string): Promise<{ success: boolean }> {
     const response = await api.delete(`/bookings/${bookingId}`);
-    return response.data;
+    return resolvePayload<{ success: boolean }>(response);
   },
 };
