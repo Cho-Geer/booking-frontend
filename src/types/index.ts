@@ -46,7 +46,7 @@ export type {
 
 // ==================== user 模块类型 ====================
 // enum 需要作为值导出
-export { UserRole } from './user';
+export { UserRole, type UserType, type UserStatus } from './user';
 // 接口和类型使用 type 导出
 export type { 
   User,
@@ -58,7 +58,8 @@ export type {
   UserInfo, 
   VerifyResult, 
   SendCodeResult, 
-  LogoutResult 
+  LogoutResult,
+  LoginResponseDto 
 } from './user';
 
 // ==================== ui 模块类型 ====================

@@ -6,8 +6,7 @@ import api from './api';
 import { NotificationQuery } from '@/types';
  
 const resolvePayload = <T>(response: { data: unknown }): T => {
-  const payload = response.data as { data?: T };
-  return payload.data as T;
+  return response.data as T;
 };
 
 export interface Notification {

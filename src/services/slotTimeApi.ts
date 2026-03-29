@@ -4,10 +4,10 @@
  */
 import api from './api';
 import { TimeSlot } from '../types';
+import { calculateEndTime, formatTime, formatDateShort, formatDate, isBookingExpired, formatBookingDate, stripHtml, sanitizeHtml } from '@/utils/index';
 
 const resolvePayload = <T>(response: { data: unknown }): T => {
-  const payload = response.data as { data?: T };
-  return payload.data as T;
+  return response.data as T;
 };
 
 export interface CreateTimeSlotPayload {
@@ -38,6 +38,24 @@ export const slotTimeApi = {
   async getTimeSlots(): Promise<TimeSlot[]> {
     const response = await api.get('/time-slots');
     return resolvePayload<TimeSlot[]>(response) || [];
+  },
+
+  /**
+   * 获取指定日期的可用时间段
+   * @param date - 日期 (YYYY-MM-DD)
+   * @returns 可用时间段列表
+   */
+  async getAvailableSlots(date: string): Promise<TimeSlot[]> {
+    const response = await api.get('/time-slots/available-slots', {
+      params: { date }
+    });
+    const slots = resolvePayload<{ id: string; slotTime: string; durationMinutes: number; isAvailable: boolean }[]>(response) || [];
+    return slots.map((slot: { id: string; slotTime: string; durationMinutes: number; isAvailable: boolean }) => ({
+      id: slot.id,
+      startTime: slot.slotTime.split(':').slice(0, 2).join(':'),
+      endTime: calculateEndTime(slot.slotTime, slot.durationMinutes),
+      available: slot.isAvailable
+    }));
   },
 
   /**

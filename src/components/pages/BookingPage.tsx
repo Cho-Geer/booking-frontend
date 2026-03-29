@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { 
   getBookings, 
-  getBookingsByDate,
-  getAvailableSlots, 
+  getBookingsByDate, 
   createBooking,
   setSelectedDate,
   setSelectedSlot,
@@ -14,12 +13,14 @@ import {
   setFilters
 } from '@/store/bookingSlice';
 import { fetchServicesForUsers, clearServices } from '@/store/serviceSlice';
+import { getAvailableSlots } from '@/store/slotTimeSlice';
 import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import ConfirmModal from '@/components/atoms/ConfirmModal';
 import { useUI } from '@/contexts/UIContext';
 import { BookingUIProvider } from '@/contexts/BookingContext';
+import { getTodayLocalDate } from '@/utils';
 
 /**
  * 页面组件：预约页面
@@ -58,7 +59,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   const {
     bookings, 
     slotReferenceBookings: reduxSlotReferenceBookings,
-    availableSlots, 
+    // availableSlots, 
     selectedDate, 
     selectedSlot, 
     loading,
@@ -69,6 +70,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     pagination,
     filters,
   } = useSelector((state: RootState) => state.booking);
+  const { availableSlots } = useSelector((state: RootState) => state.slotTime);
   const { services, loading: serviceLoading } = useSelector((state: RootState) => state.service); 
 
   // 本地状态
@@ -127,6 +129,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
   useEffect(() => {
     dispatch(clearServices());
     dispatch(fetchServicesForUsers());
+    dispatch(getAvailableSlots(getTodayLocalDate()));
   }, [dispatch]);
 
   const loadSlotReferenceBookings = useCallback(async (date: string) => {

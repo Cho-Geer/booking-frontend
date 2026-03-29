@@ -7,7 +7,7 @@ import { Service, ServiceQuery, ServiceListResponse } from '../types';
 
 const resolvePayload = <T>(response: { data: unknown }): T => {
   const payload = response.data as { data?: T };
-  return payload.data as T;
+  return payload as T;
 };
 
 const isService = (data: unknown): data is Service => {
@@ -41,7 +41,7 @@ export const serviceApi = {
    */
   async getServicesForCustomers(query: ServiceQuery = {}): Promise<Service[]> {
     const response = await api.get('/services', { params: query });
-    return (response.data.data || response.data) as Service[];
+    return resolvePayload<Service[]>(response);
   },
 
   /**
@@ -50,8 +50,7 @@ export const serviceApi = {
    */
   async getServices(query: ServiceQuery = {}): Promise<ServiceListResponse> {
     const response = await api.get('/services/all', { params: query });
-    const data = (response.data.data || response.data) as ServiceListResponse;
-    return data;
+    return resolvePayload<ServiceListResponse>(response);
   },
 
   /**
@@ -83,7 +82,7 @@ export const serviceApi = {
    */
   async toggleServiceStatus(id: string, isActive: boolean): Promise<Service> {
     const response = await api.patch(`/services/admin/${id}/status`, { isActive });
-    const payload = resolvePayload<unknown>(response.data);
+    const payload = resolvePayload<Service>(response);
     
     if (!isService(payload)) {
       console.error('Invalid service data format:', payload);

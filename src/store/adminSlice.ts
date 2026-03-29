@@ -5,7 +5,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../services/api';
 import { adminApi } from '../services/adminApi';
-import { User, AdminUsersQuery, Pagination } from '../types';
+import { User, AdminUsersQuery, Pagination, UserType, UserRole, UserStatus } from '../types';
 
 /**
  * 预约统计数据
@@ -397,12 +397,12 @@ const adminSlice = createSlice({
         state.bookingActionLoading = true;
         state.usersError = null;
       })
-      .addCase(toggleUserStatus.fulfilled, (state, action: PayloadAction<{ id: string; status: string; userType?: string }>) => {
+      .addCase(toggleUserStatus.fulfilled, (state, action: PayloadAction<{ id: string; status: string; userType: UserType }>) => {
         state.bookingActionLoading = false;
         // ユーザーリストを更新
         const updatedUser = action.payload;
         state.users = state.users.map(user => 
-          user.id === updatedUser.id ? { ...user, status: updatedUser.status, userType: updatedUser.userType || user.userType } : user
+          user.id === updatedUser.id ? { ...user, status: updatedUser.status as UserStatus, userType: updatedUser.userType.toLowerCase() as UserType || user.userType } : user
         );
       })
       .addCase(toggleUserStatus.rejected, (state, action) => {
@@ -416,12 +416,12 @@ const adminSlice = createSlice({
         state.bookingActionLoading = true;
         state.usersError = null;
       })
-      .addCase(updateUserType.fulfilled, (state, action: PayloadAction<{ id: string; userType: 'customer' | 'admin'; role?: string }>) => {
+      .addCase(updateUserType.fulfilled, (state, action: PayloadAction<{ id: string; userType: UserType; role?: string }>) => {
         state.bookingActionLoading = false;
         // ユーザーリストを更新
         const updatedUser = action.payload;
         state.users = state.users.map(user => 
-          user.id === updatedUser.id ? { ...user, userType: updatedUser.userType, role: updatedUser.role || user.role } : user
+          user.id === updatedUser.id ? { ...user, userType: updatedUser.userType.toLowerCase() as UserType, role: updatedUser.role as UserRole || user.role } : user
         );
       })
       .addCase(updateUserType.rejected, (state, action) => {

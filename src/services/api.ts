@@ -3,7 +3,7 @@ import axios, {AxiosRequestHeaders} from 'axios';
 /**
  * API基础配置
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/v1';
 
 /**
  * Axios实例
@@ -97,7 +97,7 @@ api.interceptors.request.use((config) => {
  */
 api.interceptors.response.use(
   (response) => {
-    return response;
+    return response.data;
   },
   async (error) => {
     const originalRequest = error.config;

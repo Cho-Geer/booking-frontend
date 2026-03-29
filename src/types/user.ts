@@ -11,6 +11,9 @@ export enum UserRole {
   ADMIN = 'ADMIN'
 }
 
+export type UserType = 'customer' | 'admin';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+
 /**
  * 用户实体接口
  */
@@ -32,13 +35,11 @@ export interface User {
   /** 是否已验证 */
   isVerified: boolean;
   /** 用户类型：customer, admin */
-  userType: 'customer' | 'admin';
+  userType: UserType;
   /** 状态：active, inactive, blocked */
-  status: 'active' | 'inactive' | 'blocked';
+  status: UserStatus;
   /** 最后登录时间 */
   lastLoginAt?: string;
-  /** 登录次数 */
-  loginCount: number;
   /** 注册IP地址 */
   ipAddress?: string;
   /** 用户代理 */
@@ -122,7 +123,7 @@ export interface AdminUsersQuery {
   name?: string;
   phone?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
-  userType?: 'customer' | 'admin';
+  userType?: UserType;
   email?: string;
   startDate?: string;
   endDate?: string;
@@ -130,4 +131,18 @@ export interface AdminUsersQuery {
   limit?: number;
   total?: number;
   totalPages?: number;
+}
+
+export interface LoginResponseDto {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    role: string;
+    status: string;
+  };
 }

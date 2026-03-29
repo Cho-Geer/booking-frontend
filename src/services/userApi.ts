@@ -2,8 +2,13 @@
  * User API - 用户认证接口
  * 对应 userSlice.ts
  */
+import { LoginResponseDto, User } from '@/types';
 import api from './api';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
+
+const resolvePayload = <T>(response: { data: unknown }): T => {
+  return response.data as T;
+};
 
 export const userApi = {
   /**
@@ -11,14 +16,14 @@ export const userApi = {
    * @param data - 注册表单数据
    * @returns 注册结果
    */
-  async register(data: RegisterFormData) {
+  async register(data: RegisterFormData): Promise<LoginResponseDto> {
     const response = await api.post('/auth/register', {
       name: data.name,
       phoneNumber: data.phoneNumber,
       verificationCode: data.verificationCode,
       email: data.email,
     });
-    return response.data;
+    return resolvePayload<LoginResponseDto>(response);
   },
 
   /**
@@ -29,7 +34,7 @@ export const userApi = {
    */
   async sendCode(phoneNumber: string, type: 'login' | 'register') {
     const response = await api.post('/auth/send-verification-code', { phoneNumber, type });
-    return response.data;
+    return resolvePayload(response);
   },
 
   /**
@@ -40,20 +45,16 @@ export const userApi = {
    */
   async verifyCode(phoneNumber: string, code: string) {
     const response = await api.post('/auth/login', { phoneNumber, verificationCode: code });
-    return response.data;
+    return resolvePayload<LoginResponseDto>(response);
   },
 
   /**
    * 获取当前用户信息
    * @returns 用户信息
    */
-  async getCurrentUser() {
-    const response = await api.get('/auth/profile', {
-      // headers: {
-      //   'X-Skip-Auth-Redirect': 'true',
-      // },
-    });
-    return response.data;
+  async getCurrentUser(): Promise<User>{
+    const response = await api.get('/auth/profile', {});
+    return resolvePayload<User>(response);
   },
 
   /**
@@ -65,7 +66,7 @@ export const userApi = {
       const response = await api.post('/auth/logout');
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
-      return response.data;
+      return resolvePayload(response);
     } catch (error) {
       localStorage.removeItem('user');
       sessionStorage.removeItem('user');
@@ -79,8 +80,8 @@ export const userApi = {
    * @param status - 新的用户状态
    * @returns 更新后的用户信息
    */
-  async toggleUserStatus(id: string, status: string) {
+  async toggleUserStatus(id: string, status: string): Promise<User> {
     const response = await api.put(`/users/${id}/status`, { status });
-    return response.data;
+    return resolvePayload<User>(response);
   },
 };

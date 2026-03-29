@@ -10,7 +10,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Booking, Service, TimeSlot } from '@/types';
 import { useAppDispatch, useAppSelector } from '@/store';
-import { getAvailableSlots, getBookings } from '@/store/bookingSlice';
+import { getBookings } from '@/store/bookingSlice';
+import { getAvailableSlots } from '@/store/slotTimeSlice';
 import { useTheme } from '@/hooks/useTheme';
 import { getTodayLocalDate, getMaxDate } from '@/utils/dateUtils';
 

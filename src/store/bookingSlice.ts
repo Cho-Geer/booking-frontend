@@ -55,13 +55,13 @@ export const getBookingsByDate = createAsyncThunk(
 /**
  * 获取可用时间段异步操作
  */
-export const getAvailableSlots = createAsyncThunk(
-  'booking/getAvailableSlots',
-  async (date: string) => {
-    const response = await bookingApi.getAvailableSlots(date);
-    return response;
-  }
-);
+// export const getAvailableSlots = createAsyncThunk(
+//   'booking/getAvailableSlots',
+//   async (date: string) => {
+//     const response = await bookingApi.getAvailableSlots(date);
+//     return response;
+//   }
+// );
 
 /**
  * 创建预约异步操作
@@ -111,16 +111,10 @@ export const updateBooking = createAsyncThunk(
       notes?: string;
       status?: BookingStatus;
     },
-    { rejectWithValue }
   ) => {
-    try {
       const { id, ...bookingData } = payload;
       const response = await bookingApi.updateBooking(id, bookingData);
       return response;
-    } catch (error: any) {
-      // 将后端返回的业务错误消息封装入 rejectWithValue，以便前端可分析 result.payload.message
-      return rejectWithValue({ message: error.message || '预约更新失败' });
-    }
   }
 );
 
@@ -229,21 +223,21 @@ const bookingSlice = createSlice({
         state.error = action.error.message || '获取日期预约失败';
       })
       // 获取可用时间段
-      .addCase(getAvailableSlots.pending, (state) => {
-        state.loading = true;
-        state.slotsLoading = true;
-        state.error = null;
-      })
-      .addCase(getAvailableSlots.fulfilled, (state, action) => {
-        state.loading = false;
-        state.slotsLoading = false;
-        state.availableSlots = action.payload;
-      })
-      .addCase(getAvailableSlots.rejected, (state, action) => {
-        state.loading = false;
-        state.slotsLoading = false;
-        state.error = action.error.message || '获取可用时间段失败';
-      })
+      // .addCase(getAvailableSlots.pending, (state) => {
+      //   state.loading = true;
+      //   state.slotsLoading = true;
+      //   state.error = null;
+      // })
+      // .addCase(getAvailableSlots.fulfilled, (state, action) => {
+      //   state.loading = false;
+      //   state.slotsLoading = false;
+      //   state.availableSlots = action.payload;
+      // })
+      // .addCase(getAvailableSlots.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.slotsLoading = false;
+      //   state.error = action.error.message || '获取可用时间段失败';
+      // })
       // 创建预约
       .addCase(createBooking.pending, (state) => {
         state.creatingBooking = true;
@@ -291,9 +285,7 @@ const bookingSlice = createSlice({
       })
       .addCase(updateBooking.rejected, (state, action) => {
         state.loading = false;
-        // 不将更新预约的错误写入 state.error，避免全局错误栏和 Modal 内时间段列表显示 "Rejected"。
-        // 业务错误消息已通过 BookingPage.handleUpdateBooking 的 showError 全局通知展示。
-        // 保留 state.error 不变（即保持上次清空的状态）。
+        state.error = action.error.message || '更新预约失败';
       })
       .addCase(deleteBooking.pending, (state) => {
         state.loading = true;

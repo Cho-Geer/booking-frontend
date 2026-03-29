@@ -19,13 +19,6 @@ export const useAuthInitialization = (shouldInitialize: boolean = true) => {
       return;
     }
 
-    // Log current authentication state for debugging
-    console.log('Auth Initialization Check:', {
-      hasUserData: currentUser !== null,
-      isAuthenticated,
-      authInitialized
-    });
-
     // Dispatch initializeAuth which handles authentication properly
     dispatch(initializeAuth());
   }, [shouldInitialize, dispatch]);

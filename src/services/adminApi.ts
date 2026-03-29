@@ -7,8 +7,7 @@ import { User } from '../types';
 import { Pagination, AdminUsersQuery } from '@/types';
 
 const resolvePayload = <T>(response: { data: unknown }): T => {
-  const payload = response.data as { data?: T };
-  return payload.data as T;
+  return response.data as T;
 };
 
 export interface AppointmentStatistics {
@@ -84,9 +83,14 @@ export const adminApi = {
         limit: pagination.limit,
       },
     });
-    const payload = resolvePayload<Record<string, unknown>>(response);
-    
-    const items = (payload.items as User[]) || [];
+    const payload = resolvePayload<{
+      items: User[];
+      total?: number;
+      page?: number;
+      limit?: number;
+      totalPages?: number;
+    }>(response);
+    const items = payload.items as User[] || [];
     const total = typeof payload.total === 'number' ? payload.total : items.length;
     const currentPage = typeof payload.page === 'number' ? payload.page : pagination.page;
     const currentLimit = typeof payload.limit === 'number' ? payload.limit : pagination.limit;

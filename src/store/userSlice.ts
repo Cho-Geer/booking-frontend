@@ -18,7 +18,6 @@ interface UserState {
     status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
     isVerified: boolean;
     lastLoginAt?: string;
-    loginCount: number;
   } | null;
   /** 登录状态 */
   isAuthenticated: boolean;
@@ -99,8 +98,8 @@ export const initializeAuth = createAsyncThunk(
       
       console.log('Attempting to fetch current user data...');
       const response = await userApi.getCurrentUser();
-      console.log('User data fetched successfully:', response.data);
-      return response.data;
+      console.log('User data fetched successfully:', response);
+      return response;
     } catch (error: unknown) {
       const err = error as { response?: { status?: number }; message?: string };
       console.log('Authentication initialization failed:', {
@@ -120,7 +119,7 @@ export const toggleUserStatus = createAsyncThunk(
   'user/toggleUserStatus',
   async ({ id, status }: { id: string; status: string }) => {
     const response = await userApi.toggleUserStatus(id, status);
-    return response.data;
+    return response;
   }
 );
 
@@ -163,8 +162,11 @@ const userSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.currentUser = {
-          ...action.payload.data.user,
-          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+          ...action.payload.user,
+          status: action.payload.user.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
+          phone: action.payload.user.phoneNumber,
+          userType: action.payload.user.role === 'ADMIN' ? 'admin' : 'customer',
+          isVerified: action.payload.user.status === 'ACTIVE',
         };
         state.authInitialized = true;
         state.showCodeInput = false;
@@ -199,8 +201,11 @@ const userSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = true;
         state.currentUser = {
-          ...action.payload.data.user,
-          userType: (action.payload.data.user.role === 'ADMIN' || action.payload.data.user.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+          ...action.payload.user,
+          status: action.payload.user.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
+          phone: action.payload.user.phoneNumber,
+          userType: action.payload.user.role === 'ADMIN' ? 'admin' : 'customer',
+          isVerified: action.payload.user.status === 'ACTIVE',
         };
         state.codeSent = false;
         state.authInitialized = true;
@@ -224,7 +229,9 @@ const userSlice = createSlice({
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.currentUser = {
           ...action.payload,
-          userType: (action.payload?.role === 'ADMIN' || action.payload?.userType?.toLowerCase() === 'admin') ? 'admin' : 'customer',
+          status: action.payload.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
+          isVerified: action.payload.status === 'ACTIVE',
+          userType: action.payload?.role === 'ADMIN' ? 'admin' : 'customer',
         };
         state.isAuthenticated = true;
         state.authInitialized = true;
@@ -246,10 +253,10 @@ const userSlice = createSlice({
       .addCase(toggleUserStatus.fulfilled, (state, action) => {
         state.loading = false;
         // 如果当前用户是被更新的用户，更新 currentUser
-        if (state.currentUser && state.currentUser.id === action.payload.data.id) {
+        if (state.currentUser && state.currentUser.id === action.payload.id) {
           state.currentUser = {
             ...state.currentUser,
-            status: action.payload.data.status,
+            status: action.payload.status as 'ACTIVE' | 'INACTIVE' | 'BLOCKED',
           };
         }
       })

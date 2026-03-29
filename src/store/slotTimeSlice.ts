@@ -25,6 +25,7 @@ export interface BlockedTimeSlot {
  */
 export interface SlotTimeState {
   timeSlots: TimeSlot[];
+  availableSlots: TimeSlot[];
   blockedSlots: BlockedTimeSlot[];
   loading: boolean;
   error: string | null;
@@ -35,6 +36,7 @@ export interface SlotTimeState {
  */
 const initialState: SlotTimeState = {
   timeSlots: [],
+  availableSlots: [],
   blockedSlots: [],
   loading: false,
   error: null,
@@ -47,6 +49,17 @@ export const fetchTimeSlots = createAsyncThunk(
   'slotTime/fetchTimeSlots',
   async () => {
     return await slotTimeApi.getTimeSlots();
+  }
+);
+
+/**
+ * 获取可用时间段异步操作
+ */
+export const getAvailableSlots = createAsyncThunk(
+  'slotTime/getAvailableSlots',
+  async (date: string) => {
+    const response = await slotTimeApi.getAvailableSlots(date);
+    return response;
   }
 );
 
@@ -131,7 +144,23 @@ const slotTimeSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || '获取时间段列表失败';
       });
-
+    builder
+      // 获取可用时间段
+      .addCase(getAvailableSlots.pending, (state) => {
+        state.loading = true;
+        // state.slotsLoading = true;
+        state.error = null;
+      })
+      .addCase(getAvailableSlots.fulfilled, (state, action) => {
+        state.loading = false;
+        // state.slotsLoading = false;
+        state.availableSlots = action.payload;
+      })
+      .addCase(getAvailableSlots.rejected, (state, action) => {
+        state.loading = false;
+        // state.slotsLoading = false;
+        state.error = action.error.message || '获取可用时间段失败';
+      });
     // 创建时间段
     builder
       .addCase(createTimeSlot.pending, (state) => {

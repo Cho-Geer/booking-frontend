@@ -329,13 +329,12 @@ const AdminBookingsPage: React.FC = () => {
       console.log('Error message:', error instanceof Error ? error.message : 'Unknown error');
         
       // サービスが無効化されている場合のエラーハンドリング
-      const errorMessage = (error as Error).name === 'Error' ? (error as Error).message : '';
+      const errorMessage: string = (error as Error).name === 'Error' ? (error as Error).message : '';
       if (errorMessage.includes('服务已被禁用') || 
           errorMessage.includes('サービスが無効化されている') || 
           errorMessage.includes('无法更新')) {
         // 1. ポップアップ通知（詳細メッセージ + 予約番号）
         showWarning('更新不可', `相关服务已被禁用，无法更新预约。\n预约编号：${booking?.appointmentNumber || '不明'}`);
-        
         // 2. グローバルエラーメッセージ（予約番号付き）
         dispatch(setGlobalErrorMessage(`预约 ${booking?.appointmentNumber || '不明'} 更新失败：相关服务已被禁用`));
       } else {

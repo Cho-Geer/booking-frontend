@@ -62,7 +62,7 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       size={isMobile ? "sm" : "md"}
       cardClassName="h-auto"
       headerActions={canUpdate ? (
-        <Button variant="warning" size="sm" onClick={() => onUpdate(booking)}>
+        <Button variant="warning" size="sm" onClick={() => onUpdate?.(booking)}>
           更新
         </Button>
       ) : null}

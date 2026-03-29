@@ -67,8 +67,6 @@ function createLoginRedirect(request: NextRequest, errorMessage?: string, redire
  * 用于路由保护、认证检查和请求处理
  */
 export function middleware(request: NextRequest) {
-
-  console.log('Middleware request::::::', request.method, request.url);
   // 获取当前路径
   const { pathname } = request.nextUrl;
   
@@ -128,7 +126,7 @@ export function middleware(request: NextRequest) {
     // 通过查询参数 cleared_from_disabled_page 识别
     const isFromDisabledPage = searchParams.get('cleared_from_disabled_page') === 'true';
     
-    if (isFromDisabledPage && (pathname === '/login' || pathname === '/')) {
+    if (isFromDisabledPage && (pathname === '/login')) {
       // 允许从禁用页面导航到登录页或首页，同时清除 cookies
       // 不再检查 token 角色，直接允许访问
       const response = NextResponse.next();
@@ -174,11 +172,9 @@ export function middleware(request: NextRequest) {
           }
           
           if (decodedToken.role === 'ADMIN') {
-            console.log('Admin user detected, redirecting to /admin/bookings');
             return NextResponse.redirect(new URL('/admin/bookings', request.url));
           } else {
             // 普通用户尝试访问管理后台，清除 tokens 并重定向到账户禁用页面
-            console.log('Regular user attempting to access admin panel, clearing tokens and redirecting to /account-disabled');
             const response = NextResponse.redirect(new URL('/account-disabled?reason=ROLE_CHANGED_FROM_ADMIN', request.url));
             // 清除所有认证 cookies
             response.cookies.delete('access_token');
