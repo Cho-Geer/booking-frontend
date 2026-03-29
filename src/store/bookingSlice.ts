@@ -53,17 +53,6 @@ export const getBookingsByDate = createAsyncThunk(
 );
 
 /**
- * 获取可用时间段异步操作
- */
-// export const getAvailableSlots = createAsyncThunk(
-//   'booking/getAvailableSlots',
-//   async (date: string) => {
-//     const response = await bookingApi.getAvailableSlots(date);
-//     return response;
-//   }
-// );
-
-/**
  * 创建预约异步操作
  */
 export const createBooking = createAsyncThunk(
@@ -222,22 +211,6 @@ const bookingSlice = createSlice({
         state.bookingsLoading = false;
         state.error = action.error.message || '获取日期预约失败';
       })
-      // 获取可用时间段
-      // .addCase(getAvailableSlots.pending, (state) => {
-      //   state.loading = true;
-      //   state.slotsLoading = true;
-      //   state.error = null;
-      // })
-      // .addCase(getAvailableSlots.fulfilled, (state, action) => {
-      //   state.loading = false;
-      //   state.slotsLoading = false;
-      //   state.availableSlots = action.payload;
-      // })
-      // .addCase(getAvailableSlots.rejected, (state, action) => {
-      //   state.loading = false;
-      //   state.slotsLoading = false;
-      //   state.error = action.error.message || '获取可用时间段失败';
-      // })
       // 创建预约
       .addCase(createBooking.pending, (state) => {
         state.creatingBooking = true;

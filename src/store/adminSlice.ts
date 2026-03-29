@@ -3,8 +3,8 @@
  * 管理后台的用户列表、运营统计、系统日志、活动日志等
  */
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../services/api';
 import { adminApi } from '../services/adminApi';
+import { systemApi } from '../services/systemApi';
 import { User, AdminUsersQuery, Pagination, UserType, UserRole, UserStatus } from '../types';
 
 /**
@@ -206,8 +206,8 @@ export const updateUserType = createAsyncThunk(
 export const fetchStatistics = createAsyncThunk(
   'admin/fetchStatistics',
   async () => {
-    const response = await api.get('/system/reports/statistics');
-    return response.data?.data || response.data;
+    const response = await systemApi.getStatistics();
+    return response;
   }
 );
 
@@ -217,8 +217,8 @@ export const fetchStatistics = createAsyncThunk(
 export const fetchActivityLogs = createAsyncThunk(
   'admin/fetchActivityLogs',
   async (query?: { page?: number; limit?: number }) => {
-    const response = await api.get('/system/logs/activity', { params: query });
-    return response.data?.data || response.data;
+    const response = await systemApi.getActivityLogs(query);
+    return response;
   }
 );
 
@@ -228,8 +228,8 @@ export const fetchActivityLogs = createAsyncThunk(
 export const fetchSystemLogs = createAsyncThunk(
   'admin/fetchSystemLogs',
   async (query?: { page?: number; limit?: number; level?: string }) => {
-    const response = await api.get('/system/logs', { params: query });
-    return response.data?.data || response.data;
+    const response = await systemApi.getSystemLogs(query);
+    return response;
   }
 );
 
