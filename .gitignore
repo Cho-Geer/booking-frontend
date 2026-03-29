@@ -38,7 +38,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/docs
+/docs/*
+!/docs/api-contract.md
 /.trae
 /.trae-aicc
 /.sfdx

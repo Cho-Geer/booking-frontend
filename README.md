@@ -1,360 +1,212 @@
 # CRM Booking Platform Frontend
 
-Frontend application for the CRM-style booking platform.
+Next.js frontend for the CRM booking platform.
 
-Built with **Next.js**, **React**, and **TypeScript**, this project provides a modern dashboard interface for managing bookings and users.
+This application provides the user and admin interfaces for login, registration, booking management, service browsing, and account state handling. It integrates with the NestJS backend over `/v1` APIs and uses Redux Toolkit for client state management.
 
----
+Detailed endpoint contract: [docs/api-contract.md](./docs/api-contract.md)
 
-# Overview
+## Tech Stack
 
-This project is the frontend client for the CRM Booking Platform.
-
-It communicates with the backend API built with **NestJS** and provides a user-friendly interface for managing bookings.
-
-Main features include:
-
-- User authentication (SMS verification code login)
-- Booking management (create, update, cancel, view)
-- Admin dashboard for managing users, services, and bookings
-- Time slot management
-- Email/SMS notifications
-- Form validation
-- API integration
-- Responsive UI with dark/light theme support
-
----
-
-# Features
-
-- JWT + Refresh Token based authentication (stored in HttpOnly Cookies)
-- CSRF token protection
-- Booking management dashboard
-- Form validation with React Hook Form and Zod
-- API integration with NestJS backend
-- State management using Redux Toolkit
-- Server data fetching using React Query
-- Responsive UI built with Ant Design
-- Dark/Light theme support
-- Role-based access control (USER/ADMIN)
-
-# Tech Stack
-
-Framework
-
-- Next.js 15 (Pages Router)
+- Next.js 15 using the Pages Router
 - React 19
 - TypeScript
-
-State Management
-
 - Redux Toolkit
-- React Query (TanStack Query)
-
-UI
-
-- Ant Design 6
-- Tailwind CSS
-- Framer Motion (animations)
-
-Form Handling
-
+- Axios
 - React Hook Form
-- Zod validation
-
-Authentication
-
-- JWT + Refresh Token (HttpOnly Cookies)
-- CSRF Token protection
-
-Testing
-
+- Zod
+- Tailwind CSS
+- Framer Motion
 - Jest
 - React Testing Library
 
----
+## Current App Structure
 
-# System Architecture
+Main folders in `src`:
 
-```
-Browser
-   │
-   ▼
-Next.js Frontend (Pages Router)
-   │
-   ▼
-REST API (NestJS Backend) - /v1 prefix
-   │
-   ▼
-PostgreSQL Database
-   │
-   ▼
-Redis Cache
-```
+- `pages/` for route entry points
+- `components/` for UI composition
+- `services/` for API clients
+- `store/` for Redux slices and store setup
+- `contexts/` for UI and booking related context
+- `hooks/` for shared client hooks
+- `types/` for shared TypeScript models
+- `utils/` for helper functions
 
-The frontend communicates with the backend through RESTful APIs with automatic token refresh.
+## Implemented Routes
 
----
+The current page files define these routes:
 
-# Project Structure
+- `/`
+- `/login`
+- `/register`
+- `/bookings`
+- `/admin/bookings`
+- `/account-disabled`
 
-```
-src
-├── app/              # Next.js app router (reserved for future migration)
-├── pages/            # Next.js pages router (current routing)
-│   ├── index.tsx     # Home page (redirects based on auth status)
-│   ├── login.tsx     # Login page
-│   ├── register.tsx  # Register page
-│   ├── bookings.tsx  # Booking page (main booking interface)
-│   ├── my-bookings.tsx # My bookings page
-│   └── admin/        # Admin pages
-│       └── bookings.tsx # Admin booking management
-├── components/       # Reusable UI components
-│   ├── atoms/        # Base components (Button, Input, Modal, etc.)
-│   ├── molecules/    # Composite components (Forms, DateSelector, etc.)
-│   ├── organisms/    # Feature modules (BookingPage, AdminBookingList, etc.)
-│   ├── pages/        # Page-level components
-│   ├── templates/    # Layout templates
-│   ├── hoc/          # Higher-order components (withAuth, withAdmin)
-│   └── wrappers/     # Wrapper components
-├── contexts/         # React contexts (UIContext, BookingContext)
-├── hooks/            # Custom React hooks
-├── services/         # API service layer
-│   ├── api.ts        # Axios instance with interceptors
-│   ├── bookingApi.ts # Booking API
-│   ├── serviceApi.ts # Service API
-│   ├── userApi.ts    # User API
-│   └── notificationApi.ts # Notification API
-├── store/            # Redux store and slices
-│   ├── bookingSlice.ts # Booking state management
-│   ├── userSlice.ts   # User state management
-│   ├── serviceSlice.ts # Service state management
-│   └── index.ts       # Store configuration
-├── types/            # TypeScript type definitions
-├── utils/            # Utility functions
-└── styles/           # Global styles
+Notes:
+
+- `/` renders the login page for unauthenticated users and redirects authenticated users into the app.
+- `/bookings` is protected.
+- `/admin/bookings` is the current admin entry page.
+- Middleware also contains logic for `/my-bookings`, but there is no page file for that route in the current codebase.
+
+## Implemented Features
+
+- Login and registration flows
+- JWT and refresh-token based auth using HttpOnly cookies
+- CSRF token forwarding on mutating requests
+- Auth aware route protection
+- Role based admin routing behavior
+- Booking creation and update UI
+- Service and slot fetching through API clients
+- Admin booking management page
+- Account disabled / role changed handling
+- Global Redux store for app state
+- UI notifications through app state and UI context
+
+## API Integration
+
+API requests are sent through [src/services/api.ts](./src/services/api.ts).
+
+Current default API base URL:
+
+```text
+http://localhost:3001/v1
 ```
 
-The project follows an atomic design structure to improve maintainability and scalability.
+`next.config.ts` also rewrites `/v1/:path*` to `http://localhost:3001/v1/:path*` during development.
 
----
+Frontend service modules currently include:
 
-# Core Features
+- `adminApi.ts`
+- `bookingApi.ts`
+- `notificationApi.ts`
+- `serviceApi.ts`
+- `slotTimeApi.ts`
+- `systemApi.ts`
+- `userApi.ts`
 
-## Authentication
+These files represent the frontend client layer. Some endpoints referenced there may depend on backend work that is not currently wired in the backend app, so treat them as the frontend contract rather than guaranteed live backend coverage.
 
-- Login / Logout (SMS verification code)
-- JWT + Refresh Token authentication (HttpOnly Cookies)
-- CSRF token protection on mutations
-- Automatic token refresh on 401
-- Protected routes (withAuth HOC)
-- Role-based access control (USER/ADMIN)
-- Account status handling (active/inactive/blocked)
+## State Management
 
----
+The app currently sets up these Redux slices in [src/store/index.ts](./src/store/index.ts):
 
-## Booking Management
+- `user`
+- `booking`
+- `service`
+- `slotTime`
+- `notification`
+- `admin`
 
-Users can:
+The app is wrapped with Redux `Provider` and `UIProvider` in [src/pages/_app.tsx](./src/pages/_app.tsx).
 
-- Create bookings (select date, time slot, service)
-- Update bookings (change date, time, service, customer info)
-- Cancel bookings
-- View booking history
-- View available time slots
-- Automatic conflict detection (backend validation)
+## Forms and Validation
 
-Booking statuses: PENDING → CONFIRMED → COMPLETED or CANCELLED
+The codebase actively uses:
 
----
+- `react-hook-form`
+- `zod`
 
-## Time Slot Management
+Examples include:
 
-- View available time slots by date
-- Time slot availability status
-- Service duration handling
-- Automatic status update when booking/cancel
+- `src/components/molecules/LoginForm.tsx`
+- `src/components/molecules/RegisterForm.tsx`
+- `src/components/molecules/BookingCreateModal.tsx`
+- `src/components/molecules/BookingUpdateModal.tsx`
 
----
+## Styling
 
-## Admin Dashboard
+The current implementation uses:
 
-Provides admin users with:
+- Tailwind CSS utilities
+- Custom components under `src/components`
+- Framer Motion for some animated UI behavior
 
-- Manage all bookings across users
-- User management (enable/disable accounts)
-- Service management (create, update, toggle active status)
-- Booking statistics
-- Notification management (broadcast messages)
+Although `antd` and `@tanstack/react-query` are present in dependencies, they are not part of the main documented runtime flow here because the current codebase does not clearly use them in the primary app wiring.
 
----
+## Environment
 
-# Page Routes
+Example env files are included:
 
-| Route | Description |
-|-------|-------------|
-| `/` | Home page (redirects to login or booking page based on auth) |
-| `/login` | Login page with SMS verification |
-| `/register` | User registration page |
-| `/bookings` | Main booking interface (requires auth) |
-| `/my-bookings` | User's booking list (requires auth) |
-| `/admin/bookings` | Admin booking management (requires ADMIN role) |
+- `.env.example`
+- `.env.production.example`
 
----
+Typical local setup:
 
-# API Integration
-
-The frontend communicates with backend APIs at `/v1` prefix.
-
-Example API calls:
-
-```
-POST /v1/auth/send-verification-code
-POST /v1/auth/verify-code
-POST /v1/auth/refresh
-GET  /v1/bookings
-GET  /v1/bookings/available-slots?date=YYYY-MM-DD
-POST /v1/bookings
-PATCH /v1/bookings/:id
-PATCH /v1/bookings/:id/cancel
-GET  /v1/services
-GET  /v1/notifications
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:3001/v1
+NEXT_PUBLIC_WS_URL=ws://localhost:3001
+NEXT_PUBLIC_INSTANCE_NAME=local
 ```
 
-API Features:
+## Local Development
 
-- Axios instance with automatic token refresh
-- CSRF token injection on mutations
-- HttpOnly cookies for token storage
-- Role change detection (ADMIN → USER or USER → ADMIN)
-- Account status handling (active/inactive/blocked)
+Install dependencies:
 
----
-
-# Running the Project
-
-## Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Backend API running at http://localhost:3000
-
-## Installation
-
-Install dependencies
-
-```
+```bash
 npm install
 ```
 
-## Development
+Start the dev server:
 
-Start development server
-
-```
+```bash
 npm run dev
 ```
 
-Open http://localhost:3000 in browser
+Open:
 
-## Production
-
-Build production version
-
+```text
+http://localhost:3000
 ```
+
+## Build and Start
+
+Build:
+
+```bash
 npm run build
 ```
 
-Start production server
+Start production server:
 
-```
+```bash
 npm start
 ```
 
-## Code Quality
+## Quality and Tests
 
-Run linter
+Lint:
 
-```
+```bash
 npm run lint
 ```
 
-Fix linting errors
+Auto-fix lint issues:
 
-```
+```bash
 npm run lint:fix
 ```
 
-Run type check
+Type check:
 
-```
+```bash
 npm run check
 ```
 
----
+Run tests:
 
-# Testing
-
-Run tests
-
-```
+```bash
 npm run test
 ```
 
-Run tests in watch mode
+Run coverage:
 
-```
-npm run test:watch
-```
-
-Run tests with coverage
-
-```
+```bash
 npm run test:coverage
 ```
 
-Testing tools:
+## Related Backend
 
-- Jest
-- React Testing Library
-
----
-
-# Environment Variables
-
-Create `.env.local` in project root:
-
-```
-NEXT_PUBLIC_API_URL=http://localhost:3000/v1
-```
-
----
-
-# Future Improvements
-
-Possible enhancements:
-
-- Migration to Next.js App Router
-- Server-side rendering optimization
-- Server-side caching
-- Advanced analytics dashboard
-- Mobile app (React Native)
-
----
-
-# Related Project
-
-Backend repository:
-
-https://github.com/Cho-Geer/booking-backend
-
----
-
-# Author
-
-Zixi Tao  
-Senior Software Engineer  
-14+ years experience building enterprise systems
-
-GitHub  
-https://github.com/Cho-Geer
+This frontend is designed to work with the backend in the sibling `booking-backend` project.
