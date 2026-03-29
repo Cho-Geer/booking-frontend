@@ -16,6 +16,7 @@
 
 # production
 /build
+/coverage
 
 # misc
 .DS_Store
@@ -39,3 +40,7 @@ next-env.d.ts
 
 /docs
 /.trae
+/.trae-aicc
+/.sfdx
+/.qoder
+/figma-disabled
