@@ -1,13 +1,12 @@
 /**
- * userSlice 单元测试
- * 测试用户相关状态管理的各项功能，包括验证码发送、验证码验证、用户登出等
+ * userSlice unit tests
  */
 import userReducer, {
   sendCode,
   verifyCode,
   logout,
   clearError,
-  setShowCodeInput
+  setShowCodeInput,
 } from '@/store/userSlice';
 
 jest.mock('@/services/userApi');
@@ -15,17 +14,16 @@ jest.mock('@/services/userApi');
 const testConstants = {
   mockUserId: '1',
   mockUserPhone: '13800138000',
-  mockToken: 'test-token',
 };
 
 const testData = {
   mockUser: {
     id: testConstants.mockUserId,
-    phone: testConstants.mockUserPhone,
     name: 'Test User',
-    userType: 'customer',
+    phoneNumber: testConstants.mockUserPhone,
+    role: 'USER',
+    status: 'ACTIVE',
   },
-  mockToken: testConstants.mockToken,
   mockError: 'Some error',
   mockSendCodeError: 'Failed to send code',
   mockVerifyCodeError: 'Invalid code',
@@ -42,8 +40,8 @@ describe('userSlice', () => {
     authInitialized: false,
   };
 
-  describe('基础状态管理功能', () => {
-    it('should handle initial state', () => {
+  describe('basic state management', () => {
+    it('handles initial state', () => {
       const result = userReducer(undefined, { type: 'unknown' });
       expect(result.currentUser).toBeNull();
       expect(result.isAuthenticated).toBe(false);
@@ -54,15 +52,22 @@ describe('userSlice', () => {
       expect(result.authInitialized).toBe(false);
     });
 
-    it('should handle setShowCodeInput', () => {
+    it('handles setShowCodeInput', () => {
       const actual = userReducer(initialState, setShowCodeInput(true));
       expect(actual.showCodeInput).toEqual(true);
     });
 
-    it('should handle logout (local state)', () => {
+    it('handles logout', () => {
       const stateWithUser = {
         ...initialState,
-        currentUser: testData.mockUser,
+        currentUser: {
+          id: testConstants.mockUserId,
+          phone: testConstants.mockUserPhone,
+          name: 'Test User',
+          userType: 'customer',
+          status: 'ACTIVE',
+          isVerified: true,
+        },
         isAuthenticated: true,
       };
 
@@ -72,15 +77,15 @@ describe('userSlice', () => {
       expect(actual.authInitialized).toBe(true);
     });
 
-    it('should handle clearError', () => {
+    it('handles clearError', () => {
       const stateWithError = { ...initialState, error: testData.mockError };
       const actual = userReducer(stateWithError, clearError());
       expect(actual.error).toBeNull();
     });
   });
 
-  describe('验证码发送功能', () => {
-    it('should handle sendCode pending state', () => {
+  describe('sendCode', () => {
+    it('handles pending state', () => {
       const actual = userReducer(initialState, {
         type: sendCode.pending.type,
       });
@@ -88,7 +93,7 @@ describe('userSlice', () => {
       expect(actual.error).toBeNull();
     });
 
-    it('should handle sendCode fulfilled state', () => {
+    it('handles fulfilled state', () => {
       const actual = userReducer(initialState, {
         type: sendCode.fulfilled.type,
       });
@@ -97,7 +102,7 @@ describe('userSlice', () => {
       expect(actual.codeSent).toBe(true);
     });
 
-    it('should handle sendCode rejected state', () => {
+    it('handles rejected state', () => {
       const actual = userReducer(initialState, {
         type: sendCode.rejected.type,
         error: { message: testData.mockSendCodeError },
@@ -108,8 +113,8 @@ describe('userSlice', () => {
     });
   });
 
-  describe('验证码验证功能', () => {
-    it('should handle verifyCode pending state', () => {
+  describe('verifyCode', () => {
+    it('handles pending state', () => {
       const actual = userReducer(initialState, {
         type: verifyCode.pending.type,
       });
@@ -117,21 +122,26 @@ describe('userSlice', () => {
       expect(actual.error).toBeNull();
     });
 
-    it('should handle verifyCode fulfilled state', () => {
+    it('handles fulfilled state with the current API payload shape', () => {
       const actual = userReducer(initialState, {
         type: verifyCode.fulfilled.type,
-        payload: { data: { user: testData.mockUser, token: testData.mockToken } },
+        payload: { user: testData.mockUser },
       });
 
       expect(actual.loading).toBe(false);
       expect(actual.isAuthenticated).toBe(true);
-      expect(actual.currentUser).toBeDefined();
+      expect(actual.currentUser).toEqual({
+        ...testData.mockUser,
+        phone: testData.mockUser.phoneNumber,
+        userType: 'customer',
+        isVerified: true,
+      });
       expect(actual.codeSent).toBe(false);
       expect(actual.showCodeInput).toBe(false);
       expect(actual.authInitialized).toBe(true);
     });
 
-    it('should handle verifyCode rejected state', () => {
+    it('handles rejected state', () => {
       const actual = userReducer(initialState, {
         type: verifyCode.rejected.type,
         error: { message: testData.mockVerifyCodeError },
@@ -139,9 +149,5 @@ describe('userSlice', () => {
       expect(actual.loading).toBe(false);
       expect(actual.error).toEqual(testData.mockVerifyCodeError);
     });
-  });
-
-  afterAll(() => {
-    jest.restoreAllMocks();
   });
 });

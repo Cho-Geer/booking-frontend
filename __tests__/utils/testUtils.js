@@ -1,7 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { BrowserRouter } from 'react-router-dom';
 import mockStore from './mockStore';
 
 // 创建一个自定义的 render 函数，包含所有必要的上下文
@@ -15,9 +14,7 @@ export const renderWithProviders = (
 ) => {
   const Wrapper = ({ children }) => (
     <Provider store={store}>
-      <BrowserRouter>
-        {children}
-      </BrowserRouter>
+      {children}
     </Provider>
   );
 
