@@ -13,35 +13,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          path: booking-frontend
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: booking-frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: npm ci
-        working-directory: booking-frontend
 
       - name: Lint
-        run: npm run lint:check
-        working-directory: booking-frontend
+        run: npm run lint
 
       - name: Typecheck
-        run: npm run typecheck
-        working-directory: booking-frontend
+        run: npm run check
 
       - name: Unit tests
         run: npm run test -- --runInBand
-        working-directory: booking-frontend
 
       - name: Build
         run: npm run build
-        working-directory: booking-frontend
 
   e2e-gate:
     runs-on: ubuntu-latest
@@ -80,57 +73,104 @@ jobs:
       NEXT_PUBLIC_API_URL: http://localhost:3001/v1
       E2E_BASE_URL: http://127.0.0.1:3000
     steps:
-      - name: Checkout
+      - name: Checkout frontend
         uses: actions/checkout@v4
         with:
-          path: booking-frontend
+          path: frontend
 
       - name: Checkout backend
         uses: actions/checkout@v4
         with:
-          path: booking-backend
+          repository: Cho-Geer/booking-backend
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: backend
 
-      - name: Setup Node
+      - name: Debug backend checkout
+        run: |
+          echo "Listing backend directory:"
+          ls -la backend/
+          echo "Checking package.json:"
+          cat backend/package.json | grep -A 5 -B 5 prisma:generate
+
+      - name: Setup Node for backend
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: booking-backend/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
         run: npm ci
-        working-directory: booking-backend
+        working-directory: backend
 
       - name: Prisma generate
         run: npm run prisma:generate
-        working-directory: booking-backend
+        working-directory: backend
 
       - name: Prisma migrate deploy
         run: npm run prisma:deploy
-        working-directory: booking-backend
+        working-directory: backend
 
       - name: Prisma seed
         run: npm run prisma:seed
-        working-directory: booking-backend
+        working-directory: backend
+
+      - name: Start backend server
+        run: npm run start:dev &
+        working-directory: backend
+        env:
+          PORT: 3001
+
+      - name: Wait for backend
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:3001/v1/health > /dev/null; then
+              echo "Backend is up!"
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/30)"
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
 
       - name: Setup Node for frontend
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: booking-frontend/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
         run: npm ci
-        working-directory: booking-frontend
+        working-directory: frontend
 
       - name: Build frontend
         run: npm run build
-        working-directory: booking-frontend
+        working-directory: frontend
+
+      - name: Start frontend server
+        run: npm run start &
+        working-directory: frontend
+        env:
+          PORT: 3000
+
+      - name: Wait for frontend
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:3000 > /dev/null; then
+              echo "Frontend is up!"
+              exit 0
+            fi
+            echo "Waiting for frontend... ($i/30)"
+            sleep 2
+          done
+          echo "Frontend failed to start"
+          exit 1
 
       - name: E2E tests
         run: npm run test:e2e
-        working-directory: booking-frontend
+        working-directory: frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           NEXT_PUBLIC_API_URL: http://localhost:3001/v1
