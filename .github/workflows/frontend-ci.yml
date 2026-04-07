@@ -1,0 +1,137 @@
+name: Frontend CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: booking-frontend
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: booking-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: booking-frontend
+
+      - name: Lint
+        run: npm run lint:check
+        working-directory: booking-frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: booking-frontend
+
+      - name: Unit tests
+        run: npm run test -- --runInBand
+        working-directory: booking-frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: booking-frontend
+
+  e2e-gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: booking_system
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 5382
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d booking_system"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:5382@localhost:5432/booking_system
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      JWT_SECRET: ci-only-secret
+      JWT_EXPIRES_IN: 3600
+      FRONTEND_URL: http://localhost:3000
+      FRONTEND_URLS: http://localhost:3000,http://127.0.0.1:3000
+      NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+      E2E_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: booking-frontend
+
+      - name: Checkout backend
+        uses: actions/checkout@v4
+        with:
+          path: booking-backend
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: booking-backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: booking-backend
+
+      - name: Prisma generate
+        run: npm run prisma:generate
+        working-directory: booking-backend
+
+      - name: Prisma migrate deploy
+        run: npm run prisma:deploy
+        working-directory: booking-backend
+
+      - name: Prisma seed
+        run: npm run prisma:seed
+        working-directory: booking-backend
+
+      - name: Setup Node for frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: booking-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: booking-frontend
+
+      - name: Build frontend
+        run: npm run build
+        working-directory: booking-frontend
+
+      - name: E2E tests
+        run: npm run test:e2e
+        working-directory: booking-frontend
+        env:
+          E2E_BASE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+          CI: true
