@@ -21,12 +21,12 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  webServer: [
+  webServer: process.env.CI ? [] : [
     {
       command: 'npm run prisma:deploy && npm run prisma:seed && npm run start:dev',
       cwd: backendDir,
       url: 'http://127.0.0.1:3001/v1/health',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 3 * 60 * 1000,
       env: {
         ...process.env,
@@ -40,7 +40,7 @@ export default defineConfig({
       command: 'npm run dev -- --hostname 127.0.0.1 --port 3000',
       cwd: __dirname,
       url: 'http://127.0.0.1:3000/login',
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: true,
       timeout: 3 * 60 * 1000,
       env: {
         ...process.env,
