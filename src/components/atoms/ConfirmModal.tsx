@@ -12,6 +12,7 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isLoading?: boolean;
+  confirmButtonTestId?: string;
 }
 
 /**
@@ -28,7 +29,8 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
   cancelText = '取消',
   onConfirm,
   onCancel,
-  isLoading = false
+  isLoading = false,
+  confirmButtonTestId
 }) => {
   const { isDark: isDarkTheme } = useTheme();
 
@@ -42,6 +44,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
       footer={(
         <div className="flex gap-3 justify-end">
           <Button
+            data-testid={confirmButtonTestId}
             variant="warning"
             size="sm"
             onClick={onConfirm}

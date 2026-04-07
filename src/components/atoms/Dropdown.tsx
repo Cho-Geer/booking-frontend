@@ -24,6 +24,8 @@ interface DropdownProps {
   buttonText?: string;
   /** 自定义类名 */
   className?: string;
+  /** 测试选择器 */
+  buttonTestId?: string;
 }
 
 /**
@@ -42,7 +44,8 @@ const Dropdown: React.FC<DropdownProps> = ({
   value,
   onChange,
   buttonText,
-  className = ''
+  className = '',
+  buttonTestId
 }) => {
   const { theme } = useTheme();
   const buttonRef = React.useRef<HTMLButtonElement | null>(null);
@@ -81,6 +84,7 @@ const Dropdown: React.FC<DropdownProps> = ({
             <div>
               <Menu.Button
                 ref={buttonRef}
+                data-testid={buttonTestId}
                 onClick={() => requestAnimationFrame(updateMenuRect)}
                 className={`inline-flex items-center justify-between w-full rounded-md border shadow-sm px-3 py-2 text-left focus:outline-none focus:ring-primary focus:border-primary ${
                   theme === 'dark'

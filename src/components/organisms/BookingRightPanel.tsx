@@ -102,7 +102,7 @@ const BookingRightPanel: React.FC<BookingRightPanelProps> = ({
         ) : bookings.length === 0 ? (
           <p className={`text-center py-8 ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-500'}`}>暂无预约记录</p>
         ) : (
-          <div id="booked-item" className="space-y-4 flex flex-col h-[38rem] overflow-y-auto scrollbar-hide">
+          <div id="booked-item" data-testid="booking-list" className="space-y-4 flex flex-col h-[38rem] overflow-y-auto scrollbar-hide">
             {bookings.map((booking) => (
               <BookingCard
                 key={booking.id}

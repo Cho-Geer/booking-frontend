@@ -42,7 +42,7 @@ const TimeSlotGrid: React.FC<TimeSlotGridProps> = ({
   }
 
   return (
-    <div className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+    <div data-testid="time-slot-grid" className={`grid gap-3 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
       {slots.map((slot, index) => (
         <Button
           key={index}

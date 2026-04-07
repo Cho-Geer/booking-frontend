@@ -46,6 +46,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
       <h2 className={`text-lg font-medium ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} mb-4 ${isMobile ? 'text-base' : ''}`}>选择日期</h2>
       <input
+        data-testid="booking-date-input"
         ref={dateInputRef}
         type="date"
         value={selectedDate}

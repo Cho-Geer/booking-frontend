@@ -45,3 +45,6 @@ next-env.d.ts
 /.sfdx
 /.qoder
 /figma-disabled
+playwright-report/
+test-results/
+figma-disabled/

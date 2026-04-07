@@ -17,6 +17,7 @@ const config: Config = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
+    '<rootDir>/e2e/',
     '<rootDir>/__tests__/integration/',
     '<rootDir>/__tests__/components/pages/LoginPage.test.js',
     '<rootDir>/__tests__/components/pages/BookingPage.test.js',

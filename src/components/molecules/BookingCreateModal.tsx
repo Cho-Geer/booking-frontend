@@ -127,6 +127,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
         cardClassName={`${isMobile ? 'min-h-[70vh]' : 'min-h-[78vh]'} flex flex-col relative`}
         headerActions={
           <Button
+            data-testid="submit-booking-button"
             variant="warning"
             size="sm"
             onClick={handleSubmit(handleFormSubmit)}
@@ -248,6 +249,7 @@ const BookingCreateModal: React.FC<BookingCreateModalProps> = ({
         onConfirm={handleConfirmBooking}
         onCancel={handleCancelBooking}
         isLoading={creatingBooking}
+        confirmButtonTestId="confirm-booking-button"
       />
     </>
   );

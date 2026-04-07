@@ -39,6 +39,7 @@ const ServiceSelector: React.FC<ServiceSelectorProps> = ({
         onChange={(value) => onServiceIdChange(value)}
         buttonText="选择服务类型"
         className="w-full"
+        buttonTestId="booking-service-selector"
       />
       {serviceError && (
         <p className={`mt-1 text-sm ${isDarkTheme ? 'text-error-light' : 'text-red-600'}`}>
