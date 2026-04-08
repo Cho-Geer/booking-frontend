@@ -177,9 +177,7 @@ List endpoints that paginate use this shape:
 - request shape:
 
 ```json
-{
-  "refreshToken": "jwt"
-}
+{}
 ```
 
 - response shape:
@@ -207,7 +205,7 @@ List endpoints that paginate use this shape:
 ```
 
 - notes:
-  The backend prefers the `refresh_token` cookie when present and falls back to `body.refreshToken`.
+  The backend uses the `refresh_token` cookie for authentication. The request body is typically empty as the token is transported via HttpOnly cookie.
 
 ### `POST /v1/auth/logout`
 
@@ -268,32 +266,7 @@ List endpoints that paginate use this shape:
 - notes:
   Treat this as the canonical "current user" endpoint for this branch.
 
-### `GET /v1/auth/verify`
 
-- method: `GET`
-- path: `/v1/auth/verify`
-- auth required?: `Yes`
-- request shape:
-  No request body.
-
-- response shape:
-
-```json
-{
-  "code": 200,
-  "message": "Token is valid",
-  "data": {
-    "userId": "uuid",
-    "valid": true,
-    "expiresAt": 1770000000000
-  },
-  "requestId": "req_xxx",
-  "timestamp": "..."
-}
-```
-
-- notes:
-  `expiresAt` is returned as a millisecond timestamp.
 
 ## Bookings
 
@@ -602,6 +575,124 @@ List endpoints that paginate use this shape:
 - notes:
   Admin-oriented service list endpoint with pagination and filtering support.
 
+### `POST /v1/services/admin`
+
+- method: `POST`
+- path: `/v1/services/admin`
+- auth required?: `Yes`
+- request shape:
+
+```json
+{
+  "name": "Consultation",
+  "description": "30 minute consultation",
+  "durationMinutes": 30,
+  "price": 199,
+  "imageUrl": "https://example.com/service.png",
+  "isActive": true
+}
+```
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Service created",
+  "data": {
+    "id": "uuid",
+    "name": "Consultation",
+    "description": "30 minute consultation",
+    "durationMinutes": 30,
+    "price": 199,
+    "imageUrl": "https://example.com/service.png",
+    "isActive": true,
+    "createdAt": "2026-03-30T00:00:00.000Z",
+    "updatedAt": "2026-03-30T00:00:00.000Z"
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Admin-only endpoint for creating new services.
+
+### `PATCH /v1/services/admin/:id`
+
+- method: `PATCH`
+- path: `/v1/services/admin/:id`
+- auth required?: `Yes`
+- request shape:
+
+```json
+{
+  "name": "Updated Consultation",
+  "description": "45 minute consultation",
+  "durationMinutes": 45,
+  "price": 299,
+  "imageUrl": "https://example.com/service-updated.png",
+  "isActive": false
+}
+```
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Service updated",
+  "data": {
+    "id": "uuid",
+    "name": "Updated Consultation",
+    "description": "45 minute consultation",
+    "durationMinutes": 45,
+    "price": 299,
+    "imageUrl": "https://example.com/service-updated.png",
+    "isActive": false,
+    "createdAt": "2026-03-30T00:00:00.000Z",
+    "updatedAt": "2026-03-31T00:00:00.000Z"
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Admin-only endpoint for updating existing services.
+
+### `PATCH /v1/services/admin/:id/status`
+
+- method: `PATCH`
+- path: `/v1/services/admin/:id/status`
+- auth required?: `Yes`
+- request shape:
+
+```json
+{
+  "isActive": false
+}
+```
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Service status updated",
+  "data": {
+    "id": "uuid",
+    "isActive": false,
+    "updatedAt": "2026-03-31T00:00:00.000Z"
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Admin-only endpoint for toggling service active status.
+
 ## Time Slots
 
 ### `GET /v1/time-slots`
@@ -676,3 +767,128 @@ List endpoints that paginate use this shape:
 - notes:
   Primary time-slot availability endpoint for this branch.
   `date` must be passed in `YYYY-MM-DD` format.
+
+## Notifications
+
+### `GET /v1/notifications`
+
+- method: `GET`
+- path: `/v1/notifications`
+- auth required?: `Yes`
+- request shape:
+  Query params may include `userId`, `type`, `isRead`, `priority`, `page`, `limit`.
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Notifications loaded",
+  "data": {
+    "items": [
+      {
+        "id": "uuid",
+        "userId": "uuid",
+        "type": "BOOKING_CONFIRMED",
+        "title": "Booking Confirmed",
+        "message": "Your booking AP-20260330-0001 has been confirmed",
+        "isRead": false,
+        "priority": "MEDIUM",
+        "metadata": {},
+        "createdAt": "2026-03-30T00:00:00.000Z",
+        "updatedAt": "2026-03-30T00:00:00.000Z"
+      }
+    ],
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "totalPages": 1
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Retrieve notifications for the current user.
+
+### `GET /v1/notifications/unread-count`
+
+- method: `GET`
+- path: `/v1/notifications/unread-count`
+- auth required?: `Yes`
+- request shape:
+  No request body.
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Unread count loaded",
+  "data": {
+    "count": 5
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Get unread notification count for the current user.
+
+### `PUT /v1/notifications/:id/read`
+
+- method: `PUT`
+- path: `/v1/notifications/:id/read`
+- auth required?: `Yes`
+- request shape:
+
+```json
+{}
+```
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "Notification marked as read",
+  "data": {
+    "id": "uuid",
+    "isRead": true,
+    "updatedAt": "2026-03-30T00:00:00.000Z"
+  },
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Mark a specific notification as read.
+
+### `PUT /v1/notifications/read-all`
+
+- method: `PUT`
+- path: `/v1/notifications/read-all`
+- auth required?: `Yes`
+- request shape:
+
+```json
+{}
+```
+
+- response shape:
+
+```json
+{
+  "code": 200,
+  "message": "All notifications marked as read",
+  "data": null,
+  "requestId": "req_xxx",
+  "timestamp": "..."
+}
+```
+
+- notes:
+  Mark all notifications for the current user as read.

@@ -84,6 +84,7 @@ jobs:
           repository: Cho-Geer/booking-backend
           token: ${{ secrets.GITHUB_TOKEN }}
           path: backend
+          ref: ${{ github.ref_name == 'dev' && 'dev' || 'main' }}  # 根据前端分支选择对应后端分支
 
       - name: Debug backend checkout
         run: |

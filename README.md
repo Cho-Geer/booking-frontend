@@ -161,20 +161,114 @@ Although `antd` and `@tanstack/react-query` are present in dependencies, they ar
 
 Example env files are included:
 
-- `.env.example`
+- `.env.development.example`
 - `.env.production.example`
 
-Create `.env.local` in the project root with:
+Create `.env.development` in the project root with:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/v1
-NEXT_PUBLIC_WS_URL=ws://localhost:3001
-NEXT_PUBLIC_INSTANCE_NAME=local
+NEXT_PUBLIC_WS_URL=ws://localhost:3001/ws
+NEXT_PUBLIC_INSTANCE_NAME=dev
 ```
 
 This keeps local frontend requests aligned with the backend contract at `http://localhost:3001/v1`.
 
+**Environment Variable Standardization**
+
+The frontend and backend use standardized environment variables for consistency:
+
+| Variable | Purpose | Default Value |
+|----------|---------|---------------|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:3001/v1` |
+| `NEXT_PUBLIC_WS_URL` | WebSocket URL for real-time updates | `ws://localhost:3001/ws` |
+| `NEXT_PUBLIC_INSTANCE_NAME` | Instance identifier for multi-tenant setups | `dev` |
+
+**CI/CD Integration**
+The frontend CI workflow (`frontend-ci.yml`) uses the same environment variable values as the backend CI, ensuring consistent testing across repositories. The E2E tests verify the full integration flow between frontend and backend services.
+
+## Frontend Development Environment Configuration
+
+### Configuration Files
+
+The frontend now uses template-based configuration for local development:
+
+1. **Template File**: `.env.development.example`
+   - Contains all frontend environment variables with detailed comments
+   - Safe to commit to version control
+   - Includes API endpoint guidance for different environments (local, Docker, production)
+
+2. **Personal Configuration**: `.env.development`
+   - Created by copying from the template
+   - Contains your actual development values
+   - **Never commit this file** (it's in `.gitignore`)
+
+3. **Initialization Script**: `scripts/init-local-env.sh`
+   - Automates the configuration setup process
+   - Provides interactive guidance and environment selection
+   - Supports backup of existing configurations
+
+### Quick Setup
+
+```bash
+# 1. Run the initialization script
+./scripts/init-local-env.sh
+
+# 2. The script will create .env.development from the template
+#    You can adjust API endpoints based on your development environment
+
+# 3. Start development server
+npm run dev
+```
+
+### Environment-Specific Configuration
+
+The frontend configuration supports different development environments:
+
+| Environment | NEXT_PUBLIC_API_URL | NEXT_PUBLIC_WS_URL | Description |
+|-------------|---------------------|-------------------|-------------|
+| Local Development | `http://localhost:3001/v1` | `ws://localhost:3001/ws` | Backend and frontend running locally |
+| Docker Compose | `http://booking-backend:3001/v1` | `ws://booking-backend:3001/ws` | Both services in Docker containers |
+| Production | `https://api.yourdomain.com/v1` | `wss://api.yourdomain.com/ws` | Live production environment |
+
+### Configuration Variables
+
+| Variable | Description | Default Value |
+|----------|-------------|---------------|
+| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:3001/v1` |
+| `NEXT_PUBLIC_WS_URL` | WebSocket URL for real-time updates | `ws://localhost:3001/ws` |
+| `NEXT_PUBLIC_INSTANCE_NAME` | Instance identifier | `dev` |
+
+### Security Notes
+
+- Frontend environment variables are exposed in the browser
+- **Never** put sensitive information (API keys, passwords) in frontend configuration
+- All sensitive operations should be performed through backend APIs
+- Use HTTPS/WSS in production environments
+
+### Troubleshooting
+
+- **Missing configuration**: Run `./scripts/init-local-env.sh` to create it
+- **Permission denied**: Make the script executable: `chmod +x scripts/init-local-env.sh`
+- **Template not found**: Ensure `.env.development.example` exists in project root
+- **API connection issues**: Verify backend is running and accessible
+
 ## Local Development
+
+**Development with Rewrite Configuration (Recommended)**
+
+For local development, the frontend is configured to use Next.js rewrite rules that proxy API requests to the backend. This approach:
+
+1. **Eliminates CORS issues** - All requests go through the same origin (`localhost:3000`)
+2. **Simplifies environment configuration** - No need to configure CORS on the backend
+3. **Matches production routing** - Similar to how a reverse proxy would work in production
+
+The rewrite configuration in `next.config.ts` automatically routes `/v1/*` requests to `http://localhost:3001/v1/*`. This means you can use relative URLs (`/v1/health`) in your frontend code without worrying about cross-origin requests.
+
+**Alternative: Direct API calls**
+If you need to make direct API calls (e.g., testing with curl or Postman), you can access the backend directly at `http://localhost:3001/v1/*`. However, for normal development, the rewrite approach is recommended.
+
+**Note on Multi-Instance Scripts**: The repository contains historical multi-instance deployment scripts (`start-frontend-instances.sh`) that were used for previous deployment strategies. These scripts are maintained for historical reference but are not part of the primary development or deployment workflow. New development should use the single-instance approach with rewrite configuration.
 
 Install dependencies:
 
@@ -241,6 +335,25 @@ Run coverage:
 ```bash
 npm run test:coverage
 ```
+
+## Cross-Repository E2E Testing
+
+The frontend CI includes a cross-repository E2E testing workflow that:
+
+1. **Checks out both repositories** - Frontend and backend are cloned in the same CI runner
+2. **Sets up standardized infrastructure** - Uses PostgreSQL 16 and Redis 7-alpine (same versions as backend CI)
+3. **Executes full integration tests** - Tests the three main user flows:
+   - User login with verification code
+   - Querying available time slots for future dates
+   - Creating bookings from the booking page
+
+**E2E Test Flow:**
+1. Backend services start with database migrations and seeding
+2. Frontend builds and starts
+3. Health checks verify both services are ready (`/v1/health` endpoint)
+4. Playwright tests execute user scenarios
+
+This ensures that changes in either repository don't break the integrated booking flow.
 
 ## Related Backend
 
