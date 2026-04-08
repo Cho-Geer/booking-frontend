@@ -9,7 +9,7 @@ import { NotificationQuery } from '@/types';
 /**
  * 通知类型
  */
-export interface Notification {
+export interface BackendNotification {
   id: string;
   userId: string;
   appointmentId: string | null;
@@ -28,7 +28,7 @@ export interface Notification {
  * 通知状态接口
  */
 export interface NotificationState {
-  notifications: Notification[];
+  notifications: BackendNotification[];
   unreadCount: number;
   loading: boolean;
   sending: boolean;
@@ -159,7 +159,7 @@ const notificationSlice = createSlice({
     /**
      * 更新本地通知状态
      */
-    updateLocalNotification: (state, action: PayloadAction<{ id: string; updates: Partial<Notification> }>) => {
+    updateLocalNotification: (state, action: PayloadAction<{ id: string; updates: Partial<BackendNotification> }>) => {
       const index = state.notifications.findIndex(n => n.id === action.payload.id);
       if (index !== -1) {
         state.notifications[index] = { ...state.notifications[index], ...action.payload.updates };

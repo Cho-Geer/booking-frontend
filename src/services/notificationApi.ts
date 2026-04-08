@@ -9,7 +9,7 @@ const resolvePayload = <T>(response: { data: unknown }): T => {
   return response.data as T;
 };
 
-export interface Notification {
+export interface BackendNotification {
   id: string;
   userId: string;
   appointmentId: string | null;
@@ -25,7 +25,7 @@ export interface Notification {
 }
 
 export interface NotificationListResponse{
-  items: Notification[];
+  items: BackendNotification[];
   total: number;
   page: number;
   limit: number;
@@ -93,9 +93,9 @@ export const notificationApi = {
    * @param payload 通知内容
    * @returns 发送结果
    */
-  async sendNotification(payload: SendNotificationPayload): Promise<Notification> {
+  async sendNotification(payload: SendNotificationPayload): Promise<BackendNotification> {
     const response = await api.post('/notifications', payload);
-    return resolvePayload<Notification>(response);
+    return resolvePayload<BackendNotification>(response);
   },
 
   /**
