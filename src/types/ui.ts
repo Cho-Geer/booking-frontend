@@ -5,6 +5,9 @@
 
 import { ReactNode } from 'react';
 
+// 确保 Notification 类型与 UINotification 一致
+type Notification = UINotification;
+
 /**
  * 主题类型定义
  */
@@ -21,9 +24,9 @@ export type LanguageType = 'zh-CN' | 'en-US' | 'auto';
 export type NotificationType = 'success' | 'info' | 'warning' | 'error';
 
 /**
- * 通知实体定义
+ * UI 通知实体定义
  */
-export interface Notification {
+export interface UINotification {
   id: string;
   type: NotificationType;
   message: string;
@@ -67,7 +70,7 @@ export interface UIState {
   // 侧边栏状态
   sidebarOpen: boolean;
   // 通知列表
-  notifications: Notification[];
+  notifications: UINotification[];
   // 模态框配置
   modal: ModalConfig;
   // 全局加载状态
@@ -94,7 +97,7 @@ export interface UIContextType {
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
   // 通知相关方法
-  addNotification: (notification: Omit<Notification, 'id'>) => string;
+  addNotification: (notification: Omit<UINotification, 'id'>) => string;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
   // 便捷通知方法

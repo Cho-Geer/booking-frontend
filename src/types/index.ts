@@ -67,7 +67,7 @@ export type {
   ThemeType, 
   LanguageType, 
   NotificationType, 
-  Notification, 
+  UINotification, 
   ModalConfig, 
   BreadcrumbItem, 
   UIState, 

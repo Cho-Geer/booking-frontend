@@ -4,7 +4,7 @@
  */
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { ThemeType, LanguageType, Notification, ModalConfig, BreadcrumbItem, UIState, UIContextType } from '@/types';
+import { ThemeType, LanguageType, UINotification, ModalConfig, BreadcrumbItem, UIState, UIContextType } from '@/types';
 
 /**
  * 初始UI状态
@@ -181,8 +181,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
   /**
    * 添加通知
    */
-  const addNotification = useCallback((notification: Omit<Notification, 'id'>) => {
-    const newNotification: Notification = {
+  const addNotification = useCallback((notification: Omit<UINotification, 'id'>) => {
+    const newNotification: UINotification = {
       ...notification,
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       // 确保duration有默认值，避免undefined

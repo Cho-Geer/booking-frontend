@@ -6,11 +6,11 @@
  */
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Notification } from '@/types';
+import { UINotification } from '@/types';
 import { useTheme } from '@/hooks/useTheme';
 
 interface NotificationItemProps {
-  notification: Notification;
+  notification: UINotification;
   onClose: (id: string) => void;
 }
 
