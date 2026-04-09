@@ -1,6 +1,6 @@
 import React from 'react';
 import type { AppProps } from 'next/app';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import AppLayout from '@/components/templates/AppLayout';
