@@ -128,13 +128,13 @@ jobs:
           ls -la node_modules/.prisma/client || echo ".prisma/client not found!"
 
       - name: Debug - Run seed with full stack trace
-        working-directory: ./backend
         run: |
+          cd backend
           npx ts-node --show-config prisma/seed.ts || true
           npx ts-node --log-error --pretty --transpile-only prisma/seed.ts
       - name: Prisma seed
-        run: npm run prisma:seed
         working-directory: ./backend
+        run:  npx prisma db seed
 
       - name: Start backend server
         run: npm run start:dev &
