@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/compat/router';
+import { useRouter } from 'next/router';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
 import Spinner from '@/components/atoms/Spinner';
