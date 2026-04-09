@@ -62,7 +62,7 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
-      NODE_ENV: production
+      NODE_ENV: development
       DATABASE_URL: postgresql://postgres:5382@localhost:5432/booking_system
       REDIS_HOST: localhost
       REDIS_PORT: 6379
@@ -136,6 +136,7 @@ jobs:
         working-directory: ./backend
         env:
           PORT: 3001
+          REDIS_URL: redis://localhost:6379
 
       - name: Wait for backend
         run: |
