@@ -111,7 +111,27 @@ jobs:
       - name: Prisma migrate deploy
         run: npm run prisma:deploy
         working-directory: ./backend
+      - name: Debug - Show environment info
+        working-directory: ./backend
+        run: |
+          echo "Node version: $(node -v)"
+          echo "NPM version: $(npm -v)"
+          echo "TypeScript version: $(npx tsc --version)"
+          echo "ts-node version: $(npx ts-node --version)"
 
+      - name: Debug - Check @prisma/client installation
+        working-directory: ./backend
+        run: |
+          echo "Checking node_modules/@prisma/client..."
+          ls -la node_modules/@prisma/client || echo "@prisma/client not found!"
+          echo "Checking node_modules/.prisma/client..."
+          ls -la node_modules/.prisma/client || echo ".prisma/client not found!"
+
+      - name: Debug - Run seed with full stack trace
+        working-directory: ./backend
+        run: |
+          npx ts-node --show-config prisma/seed.ts || true
+          npx ts-node --log-error --pretty --transpile-only prisma/seed.ts
       - name: Prisma seed
         run: npm run prisma:seed
         working-directory: ./backend
