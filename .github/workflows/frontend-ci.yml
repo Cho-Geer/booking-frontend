@@ -102,23 +102,23 @@ jobs:
 
       - name: Install backend dependencies
         run: npm ci --include=dev
-        working-directory: backend
+        working-directory: ./backend
 
       - name: Prisma generate
         run: npm run prisma:generate
-        working-directory: backend
+        working-directory: ./backend
 
       - name: Prisma migrate deploy
         run: npm run prisma:deploy
-        working-directory: backend
+        working-directory: ./backend
 
       - name: Prisma seed
         run: npm run prisma:seed
-        working-directory: backend
+        working-directory: ./backend
 
       - name: Start backend server
         run: npm run start:dev &
-        working-directory: backend
+        working-directory: ./backend
         env:
           PORT: 3001
 
