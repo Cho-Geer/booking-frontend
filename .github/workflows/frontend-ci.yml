@@ -179,7 +179,7 @@ jobs:
         working-directory: frontend
 
       - name: Start frontend server
-        run: npm run start &
+        run: npm run dev &
         working-directory: frontend
         env:
           PORT: 3000
