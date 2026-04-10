@@ -31,7 +31,7 @@ export default function PageWrapper({ Component, pageProps }: AppProps) {
   
   // Show loading screen while authentication is initializing
   // Exclude login, register, and account-disabled pages
-  if (!authInitialized && router.pathname !== '/login' && router.pathname !== '/register' && router.pathname !== '/account-disabled') {
+  if (!authInitialized && router && router.pathname !== '/login' && router.pathname !== '/register' && router.pathname !== '/account-disabled') {
     return <AuthLoading message="Initializing authentication..." />;
   }
   
