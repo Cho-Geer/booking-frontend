@@ -1,51 +1,64 @@
-import React, { useState } from 'react';
-import Card from '@/components/atoms/Card';
-import BookingForm from '@/components/molecules/BookingForm';
-import Button from '@/components/atoms/Button';
+import React from 'react';
+import BookingDetailModal from '@/components/molecules/BookingDetailModal';
+import BookingUpdateModal, { BookingUpdatePayload } from '@/components/molecules/BookingUpdateModal';
+import BookingCreateModal from '@/components/molecules/BookingCreateModal';
+import AlternativeSlotsModal from '@/components/molecules/AlternativeSlotsModal';
+import BookingLeftPanel from '@/components/organisms/BookingLeftPanel';
+import BookingRightPanel from '@/components/organisms/BookingRightPanel';
+import { useTheme } from '@/hooks/useTheme';
+import { useBookingModals } from '@/hooks/useBookingModals';
+import { useBookingUI } from '@/contexts/BookingContext';
 import { useUI } from '@/contexts/UIContext';
+import { Booking, TimeSlot, Service, AppointmentQuery, BookingStatus, Pagination as MyPagination } from '@/types';
+import { stripHtml } from '@/utils/htmlUtils';
+// import { Booking, TimeSlot, Service, AppointmentQuery } from '@/types';
 
-interface TimeSlot {
-  startTime: string;
-  endTime: string;
-  available: boolean;
-}
-
-interface Booking {
-  id: string;
-  userId: string;
-  serviceId: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
+interface TimeSlotForTable extends TimeSlot {
+  isBooked: boolean;
+  isMyBooking?: boolean;
+  isOccupied?: boolean;
+  isPast?: boolean;
 }
 
 interface BookingPageProps {
   bookings: Booking[];
-  availableSlots: TimeSlot[];
+  availableSlots: TimeSlotForTable[];
   selectedDate: string;
   selectedSlot: TimeSlot | null;
+  showBookingForm: boolean;
   loading: boolean;
+  bookingsLoading?: boolean;
   error?: string;
   creatingBooking: boolean;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
   customerWechat?: string;
+  serviceId: string;
+  serviceError?: string;
+  services: Service[];
+  pagination: MyPagination;
   onDateChange: (date: string) => void;
   onSlotSelect: (slot: TimeSlot) => void;
   onCreateBooking: () => void;
+  onCancelCreating: () => void;
   onCancelBooking: (bookingId: string) => void;
+  onUpdateBooking: (payload: BookingUpdatePayload) => Promise<boolean | void>;
   onNotesChange: (notes: string) => void;
   onCustomerNameChange: (name: string) => void;
   onCustomerPhoneChange: (phone: string) => void;
   onCustomerEmailChange: (email: string) => void;
   onCustomerWechatChange: (wechat: string) => void;
+  onServiceIdChange: (serviceId: string) => void;
+  onPageChange: (page: number) => void;
+  onSearch: (query: AppointmentQuery) => void;
   notes: string;
   resetBookingState: () => void;
+  bookingCreated: boolean;
+  setBookingCreated: (value: boolean) => void;
+  emailSent: boolean;
+  setEmailSent: (value: boolean) => void;
+  onConfirmBooking: () => void;
 }
 
 /**
@@ -75,237 +88,251 @@ const BookingPage: React.FC<BookingPageProps> = ({
   availableSlots,
   selectedDate,
   selectedSlot,
+  showBookingForm,
   loading,
+  bookingsLoading,
   error,
   creatingBooking,
   customerName,
   customerPhone,
   customerEmail,
   customerWechat,
+  serviceId,
+  serviceError,
+  services,
+  notes,
   onDateChange,
   onSlotSelect,
-  onCreateBooking,
   onCancelBooking,
+  onUpdateBooking,
   onNotesChange,
   onCustomerNameChange,
   onCustomerPhoneChange,
   onCustomerEmailChange,
   onCustomerWechatChange,
-  notes,
-  resetBookingState
+  onServiceIdChange,
+  onCreateBooking,
+  onCancelCreating,
+  resetBookingState,
+  pagination,
+  onPageChange,
+  onSearch,
+  bookingCreated,
+  emailSent,
+  onConfirmBooking
 }) => {
-  const { uiState } = useUI();
-  const [showBookingForm, setShowBookingForm] = useState(false);
+  const { isDark: isDarkTheme, isMobile } = useTheme();
+  const startDateInputRef = React.useRef<HTMLInputElement | null>(null);
+  const endDateInputRef = React.useRef<HTMLInputElement | null>(null);
+  
+  // 使用BookingContext管理UI状态
+  const { 
+    uiState: { searchTerm, statusFilter, dateRange },
+    setSearchTerm,
+    setStatusFilter,
+    setDateRange,
+    isEndDateInvalid
+  } = useBookingUI();
 
-  /**
-   * 处理日期选择
-   */
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value;
-    onDateChange(newDate);
-    setShowBookingForm(false);
-    resetBookingState();
+  const {
+    showDetailModal,
+    detailBooking,
+    handleOpenDetail,
+    handleCloseDetailModal,
+    showUpdateModal,
+    updateBookingTarget,
+    updatingBooking,
+    handleOpenUpdate,
+    handleCloseUpdateModal,
+    setUpdatingBooking,
+    showAlternativeModal,
+    alternativeSlots,
+    conflictSlot,
+    handleOpenAlternativeModal,
+    handleCloseAlternativeModal,
+    handleAlternativeSelect
+  } = useBookingModals(availableSlots, onSlotSelect);
+
+  const handleConfirmBooking = () => {
+    onConfirmBooking();
   };
 
-  /**
-   * 处理时间段选择
-   */
-  const handleSlotSelect = (slot: TimeSlot) => {
-    onSlotSelect(slot);
-    setShowBookingForm(true);
+  // 搜索防抖
+  React.useEffect(() => {
+    if (isEndDateInvalid) return;
+    const timer = setTimeout(() => {
+      onSearch({ 
+        keyword: searchTerm,
+        status: statusFilter || undefined,
+        startDate: dateRange.startDate || undefined,
+        endDate: dateRange.endDate || undefined
+      });
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, statusFilter, dateRange, isEndDateInvalid, onSearch]);
+
+  const handleStartDateInputClick = () => {
+    const input = startDateInputRef.current;
+    if (!input) return;
+    if (input.disabled || input.readOnly) return;
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+      }
+    }
+    input.focus();
   };
 
-  /**
-   * 格式化日期显示
-   */
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
+  const handleEndDateInputClick = () => {
+    const input = endDateInputRef.current;
+    if (!input) return;
+    if (input.disabled || input.readOnly) return;
+    if (typeof input.showPicker === 'function') {
+      try {
+        input.showPicker();
+        return;
+      } catch {
+      }
+    }
+    input.focus();
   };
 
-  /**
-   * 格式化时间显示
-   */
-  const formatTime = (timeString: string) => {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  };
-
-  /**
-   * 获取状态显示样式
-   */
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return uiState.theme === 'dark' 
-          ? 'bg-success-dark text-success-light' 
-          : 'bg-green-100 text-green-800';
-      case 'PENDING':
-        return uiState.theme === 'dark' 
-          ? 'bg-warning-dark text-warning-light' 
-          : 'bg-yellow-100 text-yellow-800';
-      case 'CANCELLED':
-        return uiState.theme === 'dark' 
-          ? 'bg-error-dark text-error-light' 
-          : 'bg-red-100 text-red-800';
-      case 'COMPLETED':
-        return uiState.theme === 'dark' 
-          ? 'bg-info-dark text-info-light' 
-          : 'bg-blue-100 text-blue-800';
-      default:
-        return uiState.theme === 'dark' 
-          ? 'bg-background-dark-200 text-text-dark-secondary' 
-          : 'bg-gray-100 text-gray-800';
+  // Handle slot click with alternative slots logic
+  const handleSlotClick = (slot: TimeSlotForTable) => {
+    if (slot.isOccupied) {
+      const alternatives = availableSlots
+        .filter(s => !s.isBooked && s.id !== slot.id && !s.isPast)
+        .slice(0, 3);
+      handleOpenAlternativeModal(slot, alternatives);
+    } else {
+      onSlotSelect(slot);
     }
   };
 
-  /**
-   * 获取状态中文名称
-   */
-  const getStatusName = (status: string) => {
-    switch (status) {
-      case 'CONFIRMED':
-        return '已确认';
-      case 'PENDING':
-        return '待确认';
-      case 'CANCELLED':
-        return '已取消';
-      case 'COMPLETED':
-        return '已完成';
-      default:
-        return status;
+  // 使用UIContext的openModal统一管理弹窗
+  const { openModal } = useUI();
+
+  const handleConfirmUpdate = async (payload: BookingUpdatePayload) => {
+    setUpdatingBooking(true);
+    try {
+      // onUpdateBooking 返回 false 表示更新失败，错误信息已通过 showError 全局通知展示
+      const success = await onUpdateBooking(payload);
+      if (success === false) return;
+      handleCloseUpdateModal();
+      handleCloseDetailModal();
+      openModal({
+        title: '更新成功',
+        content: '预约更新成功，已为您保存最新预约信息。已发送邮件请确认。',
+        width: 400
+      });
+    } catch (error) {
+      console.error('更新预约失败:', error);
+    } finally {
+      setUpdatingBooking(false);
     }
   };
-
-  // 根据主题设置背景色类名
-  const bgColorClass = uiState.theme === 'dark' ? 'bg-background-dark' : 'bg-gray-50';
-  const textColorClass = uiState.theme === 'dark' ? 'text-text-dark-primary' : 'text-gray-900';
-  const borderColorClass = uiState.theme === 'dark' ? 'border-border-dark' : 'border-gray-200';
-  const cardBgClass = uiState.theme === 'dark' ? 'bg-background-dark-200' : 'bg-white';
 
   return (
-    <div id="booking-page-container" className={`min-h-screen ${bgColorClass} py-8`}>
-      <div id="booking-page-content" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className={`text-3xl font-bold ${textColorClass} mb-8`}>预约服务</h1>
+    <div id="booking-page-container" className={`h-[calc(100vh-16px)] py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
+      <div id="booking-content-container" className="max-w-7xl mx-auto">
+        <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-2xl' : ''}`}>预约服务</h1>
         
         {error && (
-          <div id="booking-page-error" className={`${uiState.theme === 'dark' ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-4 mb-6`}>
-            <p className={uiState.theme === 'dark' ? 'text-error-light' : 'text-red-800'}>{error}</p>
+          <div id="booking-page-error" className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-4 mb-6`}>
+            <p className={`${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
           </div>
         )}
 
-        {/* 日期选择 */}
-        <Card className={`p-6 mb-6 ${cardBgClass}`}>
-          <h2 className={`text-lg font-medium ${textColorClass} mb-4`}>选择日期</h2>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={handleDateChange}
-            min={new Date().toISOString().split('T')[0]}
-            className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary ${
-              uiState.theme === 'dark' 
-                ? 'border-border-dark bg-background-dark text-text-dark-primary' 
-                : 'border-gray-300'
-            }`}
-          />
-        </Card>
-
-        {/* 可用时间段 */}
-        <Card className={`p-6 mb-6 ${cardBgClass}`}>
-          <h2 className={`text-lg font-medium ${textColorClass} mb-4`}>
-            {formatDate(selectedDate)} 可用时间段
-          </h2>
-          
-          {loading ? (
-            <div id="booking-page-loading" className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <p className={uiState.theme === 'dark' ? 'text-text-dark-disabled' : 'text-gray-500'}>加载中...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {availableSlots.map((slot, index) => (
-                <Button
-                  key={index}
-                  onClick={() => handleSlotSelect(slot)}
-                  disabled={!slot.available}
-                  variant={selectedSlot?.startTime === slot.startTime ? 'primary' : slot.available ? 'secondary' : 'ghost'}
-                  fullWidth
-                >
-                  {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                </Button>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        {/* 预约表单 */}
-        {showBookingForm && selectedSlot && (
-          <BookingForm
-            selectedDate={selectedDate}
-            selectedSlot={selectedSlot}
-            notes={notes}
-            customerName={customerName}
-            customerPhone={customerPhone}
-            customerEmail={customerEmail}
-            customerWechat={customerWechat}
-            onNotesChange={onNotesChange}
-            onCustomerNameChange={onCustomerNameChange}
-            onCustomerPhoneChange={onCustomerPhoneChange}
-            onCustomerEmailChange={onCustomerEmailChange}
-            onCustomerWechatChange={onCustomerWechatChange}
-            onSubmit={onCreateBooking}
-            onCancel={() => {
-              setShowBookingForm(false);
-              resetBookingState();
-            }}
-            creatingBooking={creatingBooking}
-          />
-        )}
-
-        {/* 我的预约 */}
-        <Card className={`p-6 ${cardBgClass}`}>
-          <h2 className={`text-lg font-medium ${textColorClass} mb-4`}>我的预约</h2>
-          
-          {bookings.length === 0 ? (
-            <p className={uiState.theme === 'dark' ? 'dark:text-gray-400' : 'text-gray-500'}>暂无预约记录</p>
-          ) : (
-            <div className="space-y-4">
-              {bookings.map((booking) => (
-                <div id={`booking-item-${booking.id}`} key={booking.id} className={`${borderColorClass} rounded-md p-4 ${uiState.theme === 'dark' ? 'dark:border' : 'border'}`}>
-                  <div className="flex justify-between items-start">
-                  <div>
-                  <p className={`font-medium ${uiState.theme === 'dark' ? 'text-text-dark-primary' : 'text-gray-900'}`}>
-                  {formatDate(booking.date)} {formatTime(booking.startTime)} - {formatTime(booking.endTime)}
-                  </p>
-                  {booking.notes && (
-                  <p className={`text-sm mt-1 ${uiState.theme === 'dark' ? 'text-text-dark-secondary' : 'text-gray-600'}`}>备注: {booking.notes}</p>
-                  )}
-                  </div>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusStyle(booking.status)}`}>
-                      {getStatusName(booking.status)}
-                    </span>
-                  </div>
-                  {booking.status === 'CONFIRMED' && (
-                    <div className="mt-3">
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => onCancelBooking(booking.id)}
-                      >
-                        取消预约
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
+        {/* 左右分栏布局 */}
+        <div id="booking-layout" className={`${isMobile ? 'space-y-6' : 'grid grid-cols-1 lg:grid-cols-2 gap-6'}`}>
+          {/* 左侧：日期、时间段和我的预约 */}
+          <div id="booking-left-panel">
+            <BookingLeftPanel
+              selectedDate={selectedDate}
+              onDateChange={onDateChange}
+              resetBookingState={resetBookingState}
+              services={services}
+              serviceId={serviceId}
+              onServiceIdChange={onServiceIdChange}
+              serviceError={serviceError}
+              availableSlots={availableSlots}
+              selectedSlot={selectedSlot}
+              loading={loading}
+              onSlotClick={handleSlotClick}
+            />
+          </div>
+          {/* 右侧：我的预约 */}
+          <div id="booking-right-panel">
+            <BookingRightPanel
+              bookings={bookings}
+              bookingsLoading={bookingsLoading}
+              searchTerm={searchTerm}
+              onSearchTermChange={setSearchTerm}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              isEndDateInvalid={isEndDateInvalid}
+              startDateInputRef={startDateInputRef}
+              endDateInputRef={endDateInputRef}
+              onStartDateInputClick={handleStartDateInputClick}
+              onEndDateInputClick={handleEndDateInputClick}
+              pagination={pagination as MyPagination}
+              onPageChange={onPageChange}
+              onOpenDetail={handleOpenDetail}
+              onOpenUpdate={handleOpenUpdate}
+              onCancelBooking={onCancelBooking}
+            />
+          </div>
+        </div>
+        {/* 替代方案模态框 */}
+        <AlternativeSlotsModal
+          open={showAlternativeModal}
+          conflictSlot={conflictSlot}
+          alternativeSlots={alternativeSlots}
+          onClose={handleCloseAlternativeModal}
+          onAlternativeSelect={handleAlternativeSelect}
+        />
+        <BookingDetailModal
+          open={showDetailModal}
+          booking={detailBooking}
+          onClose={handleCloseDetailModal}
+          onUpdate={handleOpenUpdate}
+        />
+        <BookingCreateModal
+          open={showBookingForm && !!selectedSlot}
+          selectedDate={selectedDate}
+          selectedSlot={selectedSlot}
+          error={error}
+          notes={notes}
+          customerName={customerName}
+          customerPhone={customerPhone}
+          customerEmail={customerEmail}
+          customerWechat={customerWechat}
+          onNotesChange={onNotesChange}
+          onCustomerNameChange={onCustomerNameChange}
+          onCustomerPhoneChange={onCustomerPhoneChange}
+          onCustomerEmailChange={onCustomerEmailChange}
+          onCustomerWechatChange={onCustomerWechatChange}
+          onSubmit={onCreateBooking}
+          onClose={onCancelCreating}
+          creatingBooking={creatingBooking}
+          bookingCreated={bookingCreated}
+          emailSent={emailSent}
+          onConfirmBooking={handleConfirmBooking}
+        />
+        <BookingUpdateModal
+          open={showUpdateModal}
+          booking={updateBookingTarget}
+          services={services}
+          onClose={handleCloseUpdateModal}
+          onConfirm={handleConfirmUpdate}
+          submitting={updatingBooking}
+          updatingBooking={updatingBooking}
+        />
       </div>
     </div>
   );

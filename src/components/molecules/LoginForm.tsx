@@ -4,18 +4,20 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
-import { useUI } from '../../contexts/UIContext';
+import Card from '../atoms/Card';
+import { useTheme } from '@/hooks/useTheme';
 
 interface LoginFormProps {
-  onSubmit: (phone: string, code: string) => void;
-  onSendCode: (phone: string) => void;
+  onSubmit: (phoneNumber: string, code: string) => void;
+  onSendCode: (phoneNumber: string, type: 'login') => void;
   loading?: boolean;
   countdown?: number;
+  showCodeInput: boolean;
   error?: string;
 }
 
 // 使用Zod定义表单验证模式
-const phoneSchema = z.string()
+const phoneNumberSchema = z.string()
   .regex(/^1[3-9]\d{9}$/, '请输入正确的手机号码')
   .min(11, '手机号长度为11位')
   .max(11, '手机号长度为11位');
@@ -26,7 +28,7 @@ const codeSchema = z.string()
   .regex(/^\d+$/, '验证码只能包含数字');
 
 const formSchema = z.object({
-  phone: phoneSchema,
+  phoneNumber: phoneNumberSchema,
 });
 
 /**
@@ -36,8 +38,8 @@ const formSchema = z.object({
  * @component
  * @example
  * <LoginForm
- *   onSubmit={(phone, code) => handleSubmit(phone, code)}
- *   onSendCode={(phone) => handleSendCode(phone)}
+ *   onSubmit={(phoneNumber, code) => handleSubmit(phoneNumber, code)}
+ *   onSendCode={(phoneNumber) => handleSendCode(phoneNumber)}
  *   loading={loading}
  * />
  */
@@ -46,6 +48,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onSendCode,
   loading = false,
   countdown = 0,
+  showCodeInput = false,
   error = ''
 }) => {
   // 表单初始化 - 第一阶段：手机号输入
@@ -54,25 +57,23 @@ const LoginForm: React.FC<LoginFormProps> = ({
     mode: 'onBlur', // 失焦时验证
   });
 
-  const phone = watch('phone');
-  const [showCodeInput, setShowCodeInput] = React.useState(false);
+  const phoneNumber = watch('phoneNumber');
+  // const [showCodeInput, setShowCodeInput] = React.useState(false);
   const [code, setCode] = React.useState('');
   const [codeError, setCodeError] = React.useState('');
   
   // 获取主题状态
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme, isMobile } = useTheme();
 
   // 处理发送验证码
   const handleSendCode = (data: z.infer<typeof formSchema>) => {
     // 使用Zod验证手机号格式
-    const validationResult = phoneSchema.safeParse(data.phone);
+    const validationResult = phoneNumberSchema.safeParse(data.phoneNumber);
     if (!validationResult.success) {
       return;
     }
     
-    setShowCodeInput(true);
-    onSendCode(data.phone);
+    onSendCode(data.phoneNumber, 'login');
     setCode('');
     setCodeError('');
   };
@@ -87,27 +88,26 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // 处理表单提交
   const handleFinalSubmit = (): void => {
     if (!validateCode(code)) return;
-    if (!phone) return;
+    if (!phoneNumber) return;
     
-    onSubmit(phone, code);
+    onSubmit(phoneNumber, code);
   };
 
   // 重置表单当错误发生时
   useEffect(() => {
     if (error) {
-      setShowCodeInput(false);
       setCode('');
       setCodeError('');
     }
   }, [error]);
 
   return (
-    <div id="login-form-container" className="space-y-6">
-      {/* 全局错误提示 */}
+    <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
+      <h2 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>登录账号</h2>
       {error && (
-        <p className={`mt-1 text-sm ${isDarkTheme ? 'text-error-dark' : 'text-red-600'}`}>
-          {error}
-        </p>
+        <div className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-3 mb-4`}>
+          <p className={`text-sm ${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
+        </div>
       )}
 
       {/* 手机号输入部分 */}
@@ -118,10 +118,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
               label="手机号"
               type="tel"
               placeholder="请输入手机号"
-              error={errors.phone?.message}
+              error={errors.phoneNumber?.message}
               fullWidth
               disabled={loading}
-              {...register('phone')}
+              {...register('phoneNumber')}
             />
           </div>
 
@@ -130,7 +130,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             variant="primary"
             fullWidth
             isLoading={loading}
-            disabled={loading || !phone}
+            disabled={loading || !phoneNumber}
           >
             获取验证码
           </Button>
@@ -140,17 +140,17 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <div id="code-input-container" className="space-y-4">
           {/* 显示已输入的手机号 */}
           <div id="phone-display-container" className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className={`block text-sm font-medium ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-700'}`}>
               手机号
             </label>
             <p className={`px-3 py-2 rounded-md ${isDarkTheme ? 'bg-background-dark border-border-dark text-text-dark-primary' : 'bg-gray-50 border border-gray-200'}`}>
-              {phone}
+              {phoneNumber}
             </p>
           </div>
 
           {/* 验证码输入框 */}
           <div id="verification-code-container" className="space-y-2">
-            <div id="code-input-with-button" className="flex space-x-3">
+              <div id="code-input-with-button" className={`${isMobile ? 'flex flex-col items-start space-y-3' : 'flex flex-row items-end space-x-3'}`}>
               <Input
                 label="验证码"
                 type="text"
@@ -166,15 +166,15 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 }}
                 error={codeError}
                 fullWidth
-                disabled={loading || countdown > 0}
+                disabled={loading}
               />
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
-                disabled={loading || countdown > 0 || !phone}
+                disabled={loading || countdown > 0 || !phoneNumber}
                 onClick={() => {
-                  const validationResult = phoneSchema.safeParse(phone);
+                  const validationResult = phoneNumberSchema.safeParse(phoneNumber);
                   if (validationResult.success) {
-                    onSendCode(phone);
+                    onSendCode(phoneNumber, 'login');
                     setCode('');
                     setCodeError('');
                   }
@@ -194,13 +194,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
             fullWidth
             isLoading={loading}
             onClick={handleFinalSubmit}
-            disabled={loading || !phone || !code || !!codeError}
+            disabled={loading || !phoneNumber || !code || !!codeError}
           >
             登录
           </Button>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
 

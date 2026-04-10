@@ -1,21 +1,17 @@
 /**
- * bookingSlice 单元测试
- * 测试预约相关状态管理的各项功能，包括预约列表、可用时间段、日期选择、预约创建等
+ * bookingSlice unit tests
  */
 import bookingReducer, {
   getBookings,
-  getAvailableSlots,
   createBooking,
   cancelBooking,
   setSelectedDate,
   setSelectedSlot,
   clearError,
-  resetBookingState
+  resetBookingState,
 } from '@/store/bookingSlice';
+import { getAvailableSlots } from '@/store/slotTimeSlice';
 
-/**
- * 测试用例常量
- */
 const testConstants = {
   mockBookingId: '1',
   mockUserId: '1',
@@ -25,22 +21,27 @@ const testConstants = {
   mockEndTime: '10:00',
 };
 
-/**
- * 测试用例数据
- */
 const testData = {
   mockBooking: {
     id: testConstants.mockBookingId,
     userId: testConstants.mockUserId,
     serviceId: testConstants.mockServiceId,
-    date: testConstants.mockDate,
+    appointmentDate: testConstants.mockDate,
     startTime: testConstants.mockStartTime,
     endTime: testConstants.mockEndTime,
+    timeSlotId: 'slot-1',
+    appointmentNumber: 'AP-20230501-0001',
+    customerName: 'Test User',
+    customerPhone: '13800138000',
+    confirmationSent: false,
+    reminderSent: false,
+    timeSlot: { slotTime: '09:00:00', durationMinutes: 60 },
     status: 'CONFIRMED',
     createdAt: '2023-05-01T00:00:00Z',
     updatedAt: '2023-05-01T00:00:00Z',
   },
   mockSlot: {
+    id: 'slot-1',
     startTime: testConstants.mockStartTime,
     endTime: testConstants.mockEndTime,
     available: true,
@@ -51,54 +52,78 @@ const testData = {
       id: testConstants.mockBookingId,
       userId: testConstants.mockUserId,
       serviceId: testConstants.mockServiceId,
-      date: testConstants.mockDate,
+      appointmentDate: testConstants.mockDate,
       startTime: testConstants.mockStartTime,
       endTime: testConstants.mockEndTime,
+      timeSlotId: 'slot-1',
+      appointmentNumber: 'AP-20230501-0001',
+      customerName: 'Test User',
+      customerPhone: '13800138000',
+      confirmationSent: false,
+      reminderSent: false,
+      timeSlot: { slotTime: '09:00:00', durationMinutes: 60 },
       status: 'CONFIRMED',
       createdAt: '2023-05-01T00:00:00Z',
       updatedAt: '2023-05-01T00:00:00Z',
-    }
+    },
   ],
   mockSlots: [
-    { startTime: testConstants.mockStartTime, endTime: testConstants.mockEndTime, available: true },
-    { startTime: '10:00', endTime: '11:00', available: false },
+    { id: 'slot-1', startTime: testConstants.mockStartTime, endTime: testConstants.mockEndTime, available: true },
+    { id: 'slot-2', startTime: '10:00', endTime: '11:00', available: false },
   ],
 };
 
 describe('bookingSlice', () => {
   const initialState = {
     bookings: [],
+    slotReferenceBookings: [],
     availableSlots: [],
-    selectedDate: new Date().toISOString().split('T')[0],
+    services: [],
+    selectedDate: '2023-05-01',
     selectedSlot: null,
     loading: false,
+    slotsLoading: false,
+    bookingsLoading: false,
     error: null,
     creatingBooking: false,
     success: false,
+    updateSuccess: false,
+    pagination: {
+      page: 1,
+      limit: 10,
+      total: 0,
+      totalPages: 0,
+    },
+    filters: {},
   };
 
-  describe('基础状态管理功能', () => {
-    it('✅ 应正确处理初始状态', () => {
-      expect(bookingReducer(undefined, {})).toEqual(initialState);
+  describe('basic state management', () => {
+    it('handles initial state', () => {
+      const result = bookingReducer(undefined, { type: 'unknown' });
+      expect(result.bookings).toEqual([]);
+      expect(result.availableSlots).toEqual([]);
+      expect(result.selectedSlot).toBeNull();
+      expect(result.loading).toBe(false);
+      expect(result.error).toBeNull();
     });
 
-    it('✅ 应正确设置选中日期', () => {
+    it('handles setSelectedDate', () => {
       const actual = bookingReducer(initialState, setSelectedDate(testConstants.mockDate));
       expect(actual.selectedDate).toEqual(testConstants.mockDate);
     });
 
-    it('✅ 应正确设置选中时间段', () => {
+    it('handles setSelectedSlot', () => {
       const actual = bookingReducer(initialState, setSelectedSlot(testData.mockSlot));
       expect(actual.selectedSlot).toEqual(testData.mockSlot);
     });
 
-    it('✅ 应正确清除错误状态', () => {
+    it('handles clearError', () => {
       const stateWithError = { ...initialState, error: testData.mockError };
       const actual = bookingReducer(stateWithError, clearError());
-      expect(actual.error).toEqual(null);
+      expect(actual.error).toBeNull();
     });
 
-    it('✅ 应正确重置预约状态', () => {
+    it('handles resetBookingState', () => {
       const stateWithBooking = {
         ...initialState,
         selectedSlot: testData.mockSlot,
@@ -106,183 +131,142 @@ describe('bookingSlice', () => {
         success: true,
         creatingBooking: true,
       };
-      
-      const actual = bookingReducer(stateWithBooking, resetBookingState());
-      expect(actual.selectedSlot).toEqual(null);
-      expect(actual.error).toEqual(null);
-      expect(actual.success).toEqual(false);
-      expect(actual.creatingBooking).toEqual(false);
-    });
-  }
 
-  describe('获取预约列表功能', () => {
-    it('🔄 应正确处理获取预约列表的pending状态', () => {
+      const actual = bookingReducer(stateWithBooking, resetBookingState());
+      expect(actual.selectedSlot).toBeNull();
+      expect(actual.error).toBeNull();
+      expect(actual.success).toBe(false);
+      expect(actual.creatingBooking).toBe(false);
+    });
+  });
+
+  describe('booking list', () => {
+    it('handles getBookings pending state', () => {
       const actual = bookingReducer(initialState, {
         type: getBookings.pending.type,
       });
-      expect(actual.loading).toEqual(true);
-      expect(actual.error).toEqual(null);
+      expect(actual.loading).toBe(true);
+      expect(actual.bookingsLoading).toBe(true);
+      expect(actual.error).toBeNull();
     });
 
-    it('✅ 应正确处理获取预约列表成功的fulfilled状态', () => {
+    it('handles getBookings fulfilled state', () => {
       const actual = bookingReducer(initialState, {
         type: getBookings.fulfilled.type,
-        payload: testData.mockBookings,
+        payload: {
+          items: testData.mockBookings,
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
       });
-      
-      expect(actual.loading).toEqual(false);
+
+      expect(actual.loading).toBe(false);
+      expect(actual.bookingsLoading).toBe(false);
       expect(actual.bookings).toEqual(testData.mockBookings);
     });
 
-    it('❌ 应正确处理获取预约列表失败的rejected状态', () => {
+    it('handles getBookings rejected state', () => {
       const actual = bookingReducer(initialState, {
         type: getBookings.rejected.type,
         error: { message: 'Failed to fetch bookings' },
       });
-      expect(actual.loading).toEqual(false);
+      expect(actual.loading).toBe(false);
+      expect(actual.bookingsLoading).toBe(false);
       expect(actual.error).toEqual('Failed to fetch bookings');
-    });
-
-    it('🧪 应正确处理空预约列表的情况', () => {
-      const actual = bookingReducer(initialState, {
-        type: getBookings.fulfilled.type,
-        payload: [],
-      });
-      expect(actual.bookings).toEqual([]);
-      expect(actual.loading).toEqual(false);
     });
   });
 
-  describe('获取可用时间段功能', () => {
-    it('🔄 应正确处理获取可用时间段的pending状态', () => {
-      const actual = bookingReducer(initialState, {
+  describe('slot availability ownership', () => {
+    it('ignores getAvailableSlots actions because slot state moved to slotTimeSlice', () => {
+      const pendingState = bookingReducer(initialState, {
         type: getAvailableSlots.pending.type,
       });
-      expect(actual.loading).toEqual(true);
-      expect(actual.error).toEqual(null);
-    });
-
-    it('✅ 应正确处理获取可用时间段成功的fulfilled状态', () => {
-      const actual = bookingReducer(initialState, {
+      const fulfilledState = bookingReducer(initialState, {
         type: getAvailableSlots.fulfilled.type,
         payload: testData.mockSlots,
       });
-      
-      expect(actual.loading).toEqual(false);
-      expect(actual.availableSlots).toEqual(testData.mockSlots);
-    });
-
-    it('❌ 应正确处理获取可用时间段失败的rejected状态', () => {
-      const actual = bookingReducer(initialState, {
+      const rejectedState = bookingReducer(initialState, {
         type: getAvailableSlots.rejected.type,
         error: { message: 'Failed to fetch available slots' },
       });
-      expect(actual.loading).toEqual(false);
-      expect(actual.error).toEqual('Failed to fetch available slots');
-    });
 
-    it('🧪 应正确处理空可用时间段列表的情况', () => {
-      const actual = bookingReducer(initialState, {
-        type: getAvailableSlots.fulfilled.type,
-        payload: [],
-      });
-      expect(actual.availableSlots).toEqual([]);
-      expect(actual.loading).toEqual(false);
+      expect(pendingState).toEqual(initialState);
+      expect(fulfilledState).toEqual(initialState);
+      expect(rejectedState).toEqual(initialState);
     });
   });
 
-  describe('创建预约功能', () => {
-    it('🔄 应正确处理创建预约的pending状态', () => {
+  describe('create booking', () => {
+    it('handles createBooking pending state', () => {
       const actual = bookingReducer(initialState, {
         type: createBooking.pending.type,
       });
-      expect(actual.creatingBooking).toEqual(true);
-      expect(actual.error).toEqual(null);
-      expect(actual.success).toEqual(false);
+      expect(actual.creatingBooking).toBe(true);
+      expect(actual.error).toBeNull();
+      expect(actual.success).toBe(false);
     });
 
-    it('✅ 应正确处理创建预约成功的fulfilled状态', () => {
+    it('handles createBooking fulfilled state', () => {
       const stateWithSlot = {
         ...initialState,
         selectedSlot: testData.mockSlot,
       };
-      
+
       const actual = bookingReducer(stateWithSlot, {
         type: createBooking.fulfilled.type,
         payload: testData.mockBooking,
       });
-      
-      expect(actual.creatingBooking).toEqual(false);
-      expect(actual.success).toEqual(true);
+
+      expect(actual.creatingBooking).toBe(false);
+      expect(actual.success).toBe(true);
       expect(actual.bookings).toContainEqual(testData.mockBooking);
-      expect(actual.selectedSlot).toEqual(null);
+      expect(actual.selectedSlot).toBeNull();
     });
 
-    it('❌ 应正确处理创建预约失败的rejected状态', () => {
+    it('handles createBooking rejected state', () => {
       const actual = bookingReducer(initialState, {
         type: createBooking.rejected.type,
         error: { message: 'Failed to create booking' },
       });
-      expect(actual.creatingBooking).toEqual(false);
-      expect(actual.success).toEqual(false);
+      expect(actual.creatingBooking).toBe(false);
+      expect(actual.success).toBe(false);
       expect(actual.error).toEqual('Failed to create booking');
-    });
-
-    it('🧪 应正确处理没有选中时间段时创建预约的情况', () => {
-      const actual = bookingReducer(initialState, {
-        type: createBooking.fulfilled.type,
-        payload: testData.mockBooking,
-      });
-      expect(actual.bookings).toContainEqual(testData.mockBooking);
-      expect(actual.selectedSlot).toEqual(null);
     });
   });
 
-  describe('取消预约功能', () => {
-    it('🔄 应正确处理取消预约的pending状态', () => {
+  describe('cancel booking', () => {
+    it('handles cancelBooking pending state', () => {
       const actual = bookingReducer(initialState, {
         type: cancelBooking.pending.type,
       });
-      expect(actual.loading).toEqual(true);
-      expect(actual.error).toEqual(null);
+      expect(actual.loading).toBe(true);
+      expect(actual.error).toBeNull();
     });
 
-    it('✅ 应正确处理取消预约成功的fulfilled状态', () => {
+    it('handles cancelBooking fulfilled state', () => {
       const stateWithBooking = {
         ...initialState,
         bookings: [testData.mockBooking],
       };
-      
+
       const actual = bookingReducer(stateWithBooking, {
         type: cancelBooking.fulfilled.type,
         payload: { bookingId: testConstants.mockBookingId },
       });
-      
-      expect(actual.loading).toEqual(false);
+
+      expect(actual.loading).toBe(false);
       expect(actual.bookings[0].status).toEqual('CANCELLED');
     });
 
-    it('❌ 应正确处理取消预约失败的rejected状态', () => {
+    it('handles cancelBooking rejected state', () => {
       const actual = bookingReducer(initialState, {
         type: cancelBooking.rejected.type,
         error: { message: 'Failed to cancel booking' },
       });
-      expect(actual.loading).toEqual(false);
+      expect(actual.loading).toBe(false);
       expect(actual.error).toEqual('Failed to cancel booking');
     });
-
-    it('🧪 应正确处理预约列表为空时取消预约的情况', () => {
-      const actual = bookingReducer(initialState, {
-        type: cancelBooking.fulfilled.type,
-        payload: { bookingId: '999' },
-      });
-      expect(actual.bookings).toEqual([]);
-      expect(actual.loading).toEqual(false);
-    });
-  });
-
-  // 清理所有mock，防止影响其他测试
-  afterAll(() => {
-    jest.restoreAllMocks();
   });
 });

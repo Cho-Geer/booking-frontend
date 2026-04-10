@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -31,7 +31,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ) => {
     // 使用useState和useEffect解决hydration不匹配问题
     const [clientId, setClientId] = useState(propId);
-    const { uiState } = useUI();
+    const { theme } = useTheme();
     
     // 在客户端渲染后生成ID，避免SSR和客户端ID不匹配
     useEffect(() => {
@@ -42,13 +42,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     }, [propId]);
     
     const inputId = propId || clientId || `input-fallback`;
+
+    // 根据主题选择基础样式
+    const baseClasses = theme === 'dark'
+      ? 'block w-full rounded-md border-border-dark bg-background-dark text-text-dark-primary shadow-sm focus:border-primary focus:ring-primary sm:text-sm'
+      : 'block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-primary focus:ring-primary sm:text-sm';
     
-    // 基础样式 - 充分利用global.css中定义的CSS变量
-    const baseClasses = 'block w-full rounded-md border-border bg-input-background text-foreground shadow-sm focus:border-primary focus:ring-ring sm:text-sm';
-    
-    // 错误状态样式 - 使用global.css中的语义化变量
+    // 错误状态样式
     const errorClasses = error 
-      ? 'border-error text-error placeholder-error/50 focus:border-error focus:ring-error'
+      ? theme === 'dark'
+        ? 'border-red-500 text-red-400 placeholder-red-400 focus:border-red-500 focus:ring-red-500'
+        : 'border-red-300 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500'
       : '';
     
     // 宽度样式

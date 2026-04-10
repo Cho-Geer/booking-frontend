@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import LoginPage from '@/components/pages/LoginPage';
 import { RootState } from '@/store';
-import { useUI } from '@/contexts/UIContext';
+import { useTheme } from '@/hooks/useTheme';
 import { useEffect } from 'react';
 
 /**
@@ -17,13 +17,22 @@ import { useEffect } from 'react';
  */
 function HomeRoute() {
   const { currentUser } = useSelector((state: RootState) => state.user);
-  const { uiState } = useUI();
+  const { isDark } = useTheme();
 
   // 已登录用户重定向到预约页面
   useEffect(() => {
     if (currentUser) {
-      // 使用window.location进行完全重定向，避免Next.js路由状态问题
-      window.location.href = '/bookings';
+      // 检查是否有 role_changed 标志，如果有则不重定向，让用户看到登录页
+      const urlParams = new URLSearchParams(window.location.search);
+      const isRoleChanged = urlParams.get('role_changed') === 'true';
+        
+      if (isRoleChanged) {
+        // 角色变更，不清除认证数据，让用户重新登录
+        return;
+      }
+        
+      // 使用 window.location 进行完全重定向，避免 Next.js 路由状态问题
+      window.location.href = currentUser?.userType === 'admin' ? '/admin/bookings' : '/bookings';
     }
   }, [currentUser]);
 
@@ -34,10 +43,10 @@ function HomeRoute() {
 
   // 登录状态检查中显示加载状态
   return (
-    <div id="home-loading-container" className={`min-h-screen flex items-center justify-center ${uiState.theme === 'dark' ? 'bg-background-dark' : 'bg-gray-50'}`}>
+    <div id="home-loading-container" className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-background-dark' : 'bg-gray-50'}`}>
       <div id="loading-content" className="text-center">
-        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 ${uiState.theme === 'dark' ? 'border-primary' : 'border-primary'} mx-auto`}></div>
-        <p className={`mt-4 ${uiState.theme === 'dark' ? 'text-text-dark-secondary' : 'text-gray-600'}`}>加载中...</p>
+        <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto`}></div>
+        <p className={`mt-4 ${isDark ? 'text-text-dark-secondary' : 'text-gray-600'}`}>加载中...</p>
       </div>
     </div>
   );

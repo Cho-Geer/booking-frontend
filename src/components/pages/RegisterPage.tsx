@@ -1,26 +1,44 @@
-import React from 'react';
-import { useRouter } from 'next/router';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/compat/router';
 import { useDispatch, useSelector } from 'react-redux';
 import RegisterPageOrganism from '@/components/organisms/RegisterPage';
-import { registerUser, sendCode } from '@/store/userSlice';
+import { registerUser, sendCode, clearError, setShowCodeInput } from '@/store/userSlice';
 import { AppDispatch, RootState } from '@/store';
 import { RegisterFormData } from '@/components/molecules/RegisterForm';
+import { useUI } from '@/contexts/UIContext';
 
 /**
  * 页面组件：注册页面
- * 集成注册功能的页面组件，处理注册逻辑和状态管理
- * 
- * @component
  */
 const RegisterPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, currentUser, countdown } = useSelector((state: RootState) => state.user);
+  const { setLoading } = useUI();
+  
+  // 清除错误信息当组件卸载或跳转时
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+      dispatch(setShowCodeInput(false));
+    };
+  }, [dispatch]);
+
+  const { loading, error, currentUser, showCodeInput } = useSelector((state: RootState) => state.user);
+  const [countdown, setCountdown] = useState(0);
+  
+    // 倒计时效果
+    useEffect(() => {
+      let timer: NodeJS.Timeout;
+      if (countdown > 0) {
+        timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      }
+      return () => clearTimeout(timer);
+    }, [countdown]);
 
   // 注册成功后跳转
   React.useEffect(() => {
     if (currentUser) {
-      router.push('/bookings');
+      router?.push('/bookings');
     }
   }, [currentUser, router]);
 
@@ -28,14 +46,18 @@ const RegisterPage: React.FC = () => {
    * 处理用户注册
    */
   const handleRegister = (data: RegisterFormData) => {
-    dispatch(registerUser(data));
+    setLoading(true);
+    dispatch(registerUser(data)).finally(() => {
+      setLoading(false);
+    });
   };
 
   /**
    * 处理发送验证码
    */
-  const handleSendCode = (phone: string) => {
-    dispatch(sendCode(phone));
+  const handleSendCode = (phoneNumber: string) => {
+    dispatch(sendCode({ phoneNumber, type: 'register' }));
+    setCountdown(60);
   };
 
   return (
@@ -44,6 +66,7 @@ const RegisterPage: React.FC = () => {
       onSendCode={handleSendCode}
       loading={loading}
       countdown={countdown}
+      showCodeInput={showCodeInput}
       error={error || undefined}
     />
   );
