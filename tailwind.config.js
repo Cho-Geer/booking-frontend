@@ -1,7 +1,5 @@
 // Tailwind配置文件 - 符合UI设计系统说明
 module.exports = {
-  // 启用JIT模式以减少CSS文件大小
-  mode: 'jit',
   // 配置深色模式使用class类名切换
   darkMode: 'class',
   // 配置内容扫描范围
@@ -69,6 +67,10 @@ module.exports = {
           dark: '#0F172A',
           'dark-100': '#1E293B',
           'dark-200': '#334155',
+        },
+        'input-background': {
+          DEFAULT: '#ffffff',
+          dark: '#1E293B',
         },
         // 文本颜色 - 在dark模式下保持原有的高对比度
         text: {

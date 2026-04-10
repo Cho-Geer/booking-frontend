@@ -5,8 +5,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import Input from '../atoms/Input';
-import Textarea from '../atoms/Textarea';
-import { useUI } from '../../contexts/UIContext';
+import RichTextEditor from '../atoms/RichTextEditor';
+import { formatDate, formatTime } from '@/utils/dateUtils';
+import { useTheme } from '@/hooks/useTheme';
 
 interface TimeSlot {
   startTime: string;
@@ -17,6 +18,7 @@ interface TimeSlot {
 interface BookingFormProps {
   selectedDate: string;
   selectedSlot: TimeSlot | null;
+  error?: string;
   notes: string;
   customerName: string;
   customerPhone: string;
@@ -38,7 +40,7 @@ const formSchema = z.object({
   customerPhone: z.string().regex(/^1[3-9]\d{9}$/, '请输入正确的手机号'),
   customerEmail: z.string().email('请输入正确的邮箱').optional().or(z.literal('')),
   customerWechat: z.string().max(50, '微信号不能超过50个字符').optional(),
-  notes: z.string().max(200, '备注信息不能超过200个字符').optional(),
+  notes: z.string().max(2000, '备注信息不能超过2000个字符').optional(),
 });
 
 /**
@@ -60,6 +62,7 @@ const formSchema = z.object({
 const BookingForm: React.FC<BookingFormProps> = ({
   selectedDate,
   selectedSlot,
+  error,
   notes,
   customerName,
   customerPhone,
@@ -75,8 +78,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
   creatingBooking
 }) => {
   // 获取主题状态
-  const { uiState } = useUI();
-  const isDarkTheme = uiState.theme === 'dark';
+  const { isDark: isDarkTheme } = useTheme();
 
   // 表单初始化
   const { 
@@ -105,27 +107,6 @@ const BookingForm: React.FC<BookingFormProps> = ({
     setValue('notes', notes || '', { shouldValidate: false });
   }, [customerName, customerPhone, customerEmail, customerWechat, notes, setValue]);
 
-  /**
-   * 格式化日期显示
-   */
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'long'
-    });
-  };
-
-  /**
-   * 格式化时间显示
-   */
-  const formatTime = (timeString: string): string => {
-    const [hours, minutes] = timeString.split(':');
-    return `${hours}:${minutes}`;
-  };
-
   // 表单提交处理
   const handleFormSubmit = (data: z.infer<typeof formSchema>): void => {
     onCustomerNameChange(data.customerName);
@@ -137,8 +118,13 @@ const BookingForm: React.FC<BookingFormProps> = ({
   };
 
   return (
-    <Card className="p-6">
+    <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
       <h2 className={`text-lg font-medium mb-4 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}>确认预约</h2>
+      {error && (
+        <div className={`${isDarkTheme ? 'bg-error-dark border-error-dark' : 'bg-red-50 border-red-200'} border rounded-md p-3 mb-4`}>
+          <p className={`text-sm ${isDarkTheme ? 'text-white-600' : 'text-red-900'}`}>{error}</p>
+        </div>
+      )}
       <div id="booking-time-info" className="mb-4">
         <p className={`text-sm ${isDarkTheme ? 'text-text-dark-secondary' : 'text-gray-600'}`}>
           预约时间: {formatDate(selectedDate)} {selectedSlot ? `${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}` : ''}
@@ -150,7 +136,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <Input
           id="customerName"
           type="text"
-          label="姓名 <span className='text-red-500'>*</span>"
+          label="姓名（必填）"
           placeholder="请输入您的姓名"
           error={errors.customerName?.message}
           fullWidth
@@ -164,7 +150,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <Input
           id="customerPhone"
           type="tel"
-          label="手机号 <span className='text-red-500'>*</span>"
+          label="手机号（必填）"
           placeholder="请输入您的手机号"
           error={errors.customerPhone?.message}
           fullWidth
@@ -204,17 +190,16 @@ const BookingForm: React.FC<BookingFormProps> = ({
         />
       </div>
       
-      <Textarea
+      <RichTextEditor
         id="notes"
         label="备注（可选）"
-        rows={3}
         placeholder="请输入特殊需求或备注信息"
         error={errors.notes?.message}
         fullWidth
         value={notes}
-        onChange={(e) => {
-          onNotesChange(e.target.value);
-          setValue('notes', e.target.value);
+        onChange={(content) => {
+          onNotesChange(content);
+          setValue('notes', content);
         }}
       />
       <div id="form-spacing" className="mt-4" />

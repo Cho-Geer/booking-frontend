@@ -1,41 +1,32 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { bookingService } from '../services/bookingService';
-import { BookingStatus, TimeSlot, Booking } from '../types';
-
-/**
- * 预约状态接口
- */
-interface BookingState {
-  /** 用户的预约列表 */
-  bookings: Booking[];
-  /** 可用时间段 */
-  availableSlots: TimeSlot[];
-  /** 当前选中的日期 */
-  selectedDate: string;
-  /** 当前选中的时间段 */
-  selectedSlot: TimeSlot | null;
-  /** 加载状态 */
-  loading: boolean;
-  /** 错误信息 */
-  error: string | null;
-  /** 创建预约的加载状态 */
-  creatingBooking: boolean;
-  /** 操作成功状态 */
-  success: boolean;
-}
+import { bookingApi } from '../services/bookingApi';
+import { BookingStatus, TimeSlot, BookingState, AppointmentQuery, AppointmentListResponse } from '../types';
+import { getTodayLocalDate } from '../utils/dateUtils';
 
 /**
  * 初始状态
  */
 const initialState: BookingState = {
   bookings: [],
+  slotReferenceBookings: [],
   availableSlots: [],
-  selectedDate: new Date().toISOString().split('T')[0],
+  services: [],
+  selectedDate: getTodayLocalDate(),
   selectedSlot: null,
   loading: false,
+  slotsLoading: false,
+  bookingsLoading: false,
   error: null,
   creatingBooking: false,
-  success: false
+  success: false,
+  updateSuccess: false,
+  pagination: {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  },
+  filters: {}
 };
 
 /**
@@ -43,19 +34,20 @@ const initialState: BookingState = {
  */
 export const getBookings = createAsyncThunk(
   'booking/getBookings',
-  async () => {
-    const response = await bookingService.getBookings();
+  async (query?: AppointmentQuery) => {
+    const response = await bookingApi.getBookings(query || {});
     return response;
   }
 );
 
 /**
- * 获取可用时间段异步操作
+ * 获取指定日期所有预约（无分页）异步操作
+ * 用于时段状态映射，不受分页影响
  */
-export const getAvailableSlots = createAsyncThunk(
-  'booking/getAvailableSlots',
+export const getBookingsByDate = createAsyncThunk(
+  'booking/getBookingsByDate',
   async (date: string) => {
-    const response = await bookingService.getAvailableSlots(date);
+    const response = await bookingApi.getBookingsByDate(date);
     return response;
   }
 );
@@ -66,17 +58,18 @@ export const getAvailableSlots = createAsyncThunk(
 export const createBooking = createAsyncThunk(
   'booking/createBooking',
   async (bookingData: {
-    serviceId: string;
-    date: string;
-    startTime: string;
-    endTime: string;
+    appointmentDate: string;
+    timeSlotId: string;
+    userId: string;
     notes?: string;
     customerName: string;
     customerPhone: string;
     customerEmail?: string;
     customerWechat?: string;
+    serviceId: string;
+    serviceName: string;
   }) => {
-    const response = await bookingService.createBooking(bookingData);
+    const response = await bookingApi.createBooking(bookingData);
     return response;
   }
 );
@@ -87,7 +80,37 @@ export const createBooking = createAsyncThunk(
 export const cancelBooking = createAsyncThunk(
   'booking/cancelBooking',
   async (bookingId: string) => {
-    const response = await bookingService.cancelBooking(bookingId);
+    const response = await bookingApi.cancelBooking(bookingId);
+    return { bookingId, ...response };
+  }
+);
+
+export const updateBooking = createAsyncThunk(
+  'booking/updateBooking',
+  async (
+    payload: {
+      id: string;
+      appointmentDate?: string;
+      timeSlotId?: string;
+      serviceId?: string;
+      customerName?: string;
+      customerPhone?: string;
+      customerEmail?: string;
+      customerWechat?: string;
+      notes?: string;
+      status?: BookingStatus;
+    },
+  ) => {
+      const { id, ...bookingData } = payload;
+      const response = await bookingApi.updateBooking(id, bookingData);
+      return response;
+  }
+);
+
+export const deleteBooking = createAsyncThunk(
+  'booking/deleteBooking',
+  async (bookingId: string) => {
+    const response = await bookingApi.deleteBooking(bookingId);
     return { bookingId, ...response };
   }
 );
@@ -124,36 +147,69 @@ const bookingSlice = createSlice({
       state.selectedSlot = null;
       state.error = null;
       state.success = false;
+      state.updateSuccess = false;
       state.creatingBooking = false;
     },
+    /**
+     * 清除更新成功状态
+     */
+    clearUpdateSuccess: (state) => {
+      state.updateSuccess = false;
+    },
+    /**
+     * 设置分页
+     */
+    setPage: (state, action: PayloadAction<number>) => {
+      state.pagination.page = action.payload;
+    },
+    /**
+     * 设置筛选条件
+     */
+    setFilters: (state, action: PayloadAction<AppointmentQuery>) => {
+      state.filters = action.payload;
+      state.pagination.page = 1; // 重置页码
+    }
   },
   extraReducers: (builder) => {
     builder
-      // 获取预约列表
+      // 获取预约列表（带分页）
       .addCase(getBookings.pending, (state) => {
         state.loading = true;
+        state.bookingsLoading = true;
         state.error = null;
       })
       .addCase(getBookings.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = action.payload;
+        state.bookingsLoading = false;
+        state.bookings = action.payload.items;
+        state.pagination = {
+          page: action.payload.page,
+          limit: action.payload.limit,
+          total: action.payload.total,
+          totalPages: action.payload.totalPages
+        };
       })
       .addCase(getBookings.rejected, (state, action) => {
         state.loading = false;
+        state.bookingsLoading = false;
         state.error = action.error.message || '获取预约列表失败';
       })
-      // 获取可用时间段
-      .addCase(getAvailableSlots.pending, (state) => {
+      // 获取指定日期所有预约（无分页，用于时段映射）
+      .addCase(getBookingsByDate.pending, (state) => {
         state.loading = true;
+        state.bookingsLoading = true;
         state.error = null;
       })
-      .addCase(getAvailableSlots.fulfilled, (state, action) => {
+      .addCase(getBookingsByDate.fulfilled, (state, action) => {
         state.loading = false;
-        state.availableSlots = action.payload;
+        state.bookingsLoading = false;
+        // 写入独立的 slotReferenceBookings 字段，不影响分页数据
+        state.slotReferenceBookings = action.payload.items;
       })
-      .addCase(getAvailableSlots.rejected, (state, action) => {
+      .addCase(getBookingsByDate.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || '获取可用时间段失败';
+        state.bookingsLoading = false;
+        state.error = action.error.message || '获取日期预约失败';
       })
       // 创建预约
       .addCase(createBooking.pending, (state) => {
@@ -187,9 +243,37 @@ const bookingSlice = createSlice({
       .addCase(cancelBooking.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || '取消预约失败';
+      })
+      .addCase(updateBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateBooking.fulfilled, (state, action) => {
+        state.loading = false;
+        state.updateSuccess = true; // 设置更新成功标志
+        const index = state.bookings.findIndex(b => b.id === action.payload.id);
+        if (index !== -1) {
+          state.bookings[index] = action.payload;
+        }
+      })
+      .addCase(updateBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || '更新预约失败';
+      })
+      .addCase(deleteBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteBooking.fulfilled, (state, action) => {
+        state.loading = false;
+        state.bookings = state.bookings.filter(b => b.id !== action.payload.bookingId);
+      })
+      .addCase(deleteBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || '删除预约失败';
       });
   },
 });
 
-export const { setSelectedDate, setSelectedSlot, clearError, resetBookingState } = bookingSlice.actions;
+export const { setSelectedDate, setSelectedSlot, clearError, resetBookingState, setPage, setFilters, clearUpdateSuccess } = bookingSlice.actions;
 export default bookingSlice.reducer;

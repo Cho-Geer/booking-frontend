@@ -5,16 +5,16 @@ import '../../public/global.css';
 import { Provider } from 'react-redux';
 import { store } from '../store';
 import { UIProvider } from '../contexts/UIContext';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '../services/reactQuery';
 import dynamic from 'next/dynamic';
+import { useAuthInitialization } from '@/hooks/useAuthInitialization';
 
 // 动态导入PageWrapper以避免SSR问题
 const PageWrapper = dynamic(
   () => import('../components/wrappers/PageWrapper'),
   { ssr: false }
 );
+
+import { useRouter } from 'next/compat/router';
 
 /**
  * 自定义 App 组件
@@ -27,6 +27,42 @@ const PageWrapper = dynamic(
  * @param {Router} props.router - Next.js 路由对象
  * @returns {JSX.Element} 包装后的应用组件
  */
+// 创建一个包装组件来处理认证初始化
+const AppWithProviders = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
+  
+  // 在登录、注册和账户禁用页面不执行认证初始化
+  const isAuthPage = router && (router.pathname === '/login' || router.pathname === '/register' || router.pathname === '/account-disabled');
+  
+  // 检查是否有强制跳转到登录的标志（用于海外用户被禁用时的处理）
+  const hasForceRedirectFlag = typeof window !== 'undefined' 
+    ? sessionStorage.getItem('forceRedirectToLogin') === 'true' 
+    : false;
+  
+  // CSRF 验证失败标志（防止登录后立即重新初始化）
+  const hasCsrfValidationFailed = typeof window !== 'undefined' 
+    ? sessionStorage.getItem('csrfValidationFailed') === 'true' 
+    : false;
+  
+  // フラグがある場合は削除（一度きりの使用）
+  if (hasForceRedirectFlag && typeof window !== 'undefined') {
+    sessionStorage.removeItem('forceRedirectToLogin');
+  }
+  
+  // CSRF 验证失败标志也删除（一次性的）
+  if (hasCsrfValidationFailed && typeof window !== 'undefined') {
+    sessionStorage.removeItem('csrfValidationFailed');
+  }
+  
+  // 如果是认证页面或有强制跳转标志，则不执行认证初始化
+  const shouldInitializeAuth = !isAuthPage && !hasForceRedirectFlag && !hasCsrfValidationFailed;
+  
+  // 始终调用 hook，但在 hook 内部根据条件决定是否执行实际初始化
+  useAuthInitialization(shouldInitializeAuth);
+  
+  return <>{children}</>;
+};
+
 export default function MyApp({ Component, pageProps, router }: AppProps) {
   // 性能监控配置 - 根据迁移文档阶段四的要求实现
   useReportWebVitals((metric) => {
@@ -47,7 +83,7 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
           delta: metric.delta,
           entries: metric.entries,
           navigationType: metric.navigationType,
-          route: router.pathname
+          route: router?.pathname
         };
         
         // 这里只是一个示例，不实际发送请求
@@ -61,20 +97,14 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
   return (
     <UIProvider>
       <Provider store={store}>
-        <QueryClientProvider client={queryClient}>
           <Head>
             <meta name="viewport" content="width=device-width, initial-scale=1" />
             <meta name="description" content="预约系统 - 高效管理您的预约" />
             <title>预约系统</title>
           </Head>
-          <PageWrapper Component={Component} pageProps={pageProps} router={router} />
-          {/* 在开发环境下显示React Query DevTools */}
-          {process.env.NODE_ENV === 'development' && (
-            <ReactQueryDevtools
-              initialIsOpen={false}
-            />
-          )}
-        </QueryClientProvider>
+          <AppWithProviders>
+            <PageWrapper Component={Component} pageProps={pageProps} router={router} />
+          </AppWithProviders>
       </Provider>
     </UIProvider>
   );

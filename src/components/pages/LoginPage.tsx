@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { useDispatch, useSelector } from 'react-redux';
 import LoginPageOrganism from '@/components/organisms/LoginPage';
-import { sendCode, verifyCode } from '@/store/userSlice';
+import { sendCode, verifyCode, clearError, setShowCodeInput } from '@/store/userSlice';
 import { AppDispatch, RootState } from '@/store';
+import { useUI } from '@/contexts/UIContext';
 
 /**
  * 页面组件：登录页面
@@ -14,9 +15,18 @@ import { AppDispatch, RootState } from '@/store';
 const LoginPage: React.FC = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { loading, error, currentUser } = useSelector((state: RootState) => state.user);
+  const { loading, error, currentUser, showCodeInput } = useSelector((state: RootState) => state.user);
+  const { setLoading } = useUI();
   
   const [countdown, setCountdown] = useState(0);
+
+  // 清除错误信息当组件卸载或跳转时
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+      dispatch(setShowCodeInput(false));
+    };
+  }, [dispatch]);
 
   // 倒计时效果
   useEffect(() => {
@@ -30,23 +40,26 @@ const LoginPage: React.FC = () => {
   // 登录成功后跳转
   useEffect(() => {
     if (currentUser) {
-      router.push('/bookings');
+      router?.push(currentUser.userType === 'admin' ? '/admin/bookings' : '/bookings');
     }
   }, [currentUser, router]);
 
   /**
    * 发送验证码
    */
-  const handleSendCode = (phone: string) => {
-    dispatch(sendCode(phone));
+  const handleSendCode = (phoneNumber: string, type: 'login') => {
+    dispatch(sendCode({ phoneNumber, type }));
     setCountdown(60);
   };
 
   /**
    * 验证验证码
    */
-  const handleVerifyCode = (phone: string, code: string) => {
-    dispatch(verifyCode({ phone, code }));
+  const handleVerifyCode = (phoneNumber: string, code: string) => {
+    setLoading(true);
+    dispatch(verifyCode({ phoneNumber, code })).finally(() => {
+      setLoading(false);
+    });
   };
 
   return (
@@ -55,6 +68,7 @@ const LoginPage: React.FC = () => {
       onVerifyCode={handleVerifyCode}
       loading={loading}
       countdown={countdown}
+      showCodeInput={showCodeInput}
       error={error || undefined}
     />
   );

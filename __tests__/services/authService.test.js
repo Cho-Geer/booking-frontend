@@ -1,16 +1,12 @@
 /**
- * authService 单元测试
+ * userApi 单元测试
  * 测试认证服务的各项功能，包括发送验证码、验证验证码、获取当前用户信息和登出操作
  */
-import { authService } from '@/services/authService';
+import { userApi } from '@/services/userApi';
 import api from '@/services/api';
 
-// Mock the api module
 jest.mock('@/services/api');
 
-/**
- * 模拟的API响应数据
- */
 const mockResponses = {
   sendCodeSuccess: { success: true },
   verifyCodeSuccess: { token: 'token123', user: { id: '1', name: 'John' } },
@@ -18,9 +14,6 @@ const mockResponses = {
   logoutSuccess: { success: true },
 };
 
-/**
- * 测试用例数据
- */
 const testData = {
   validPhone: '13800138000',
   validCode: '123456',
@@ -30,158 +23,156 @@ const testData = {
   networkError: new Error('Network Error'),
 };
 
-describe('authService', () => {
+describe('userApi', () => {
   beforeEach(() => {
-    // Clear all mocks before each test
     jest.clearAllMocks();
   });
 
   describe('发送验证码功能', () => {
-    it('✅ 正常情况下应使用正确参数调用api.post', async () => {
+    it('should call api.post with correct parameters for sending code', async () => {
       api.post.mockResolvedValue({ data: mockResponses.sendCodeSuccess });
 
-      const result = await authService.sendCode(testData.validPhone);
+      const result = await userApi.sendCode(testData.validPhone, 'login');
 
       expect(api.post).toHaveBeenCalledTimes(1);
-      expect(api.post).toHaveBeenCalledWith('/auth/send-code', { phone: testData.validPhone });
+      expect(api.post).toHaveBeenCalledWith('/auth/send-verification-code', { phoneNumber: testData.validPhone, type: 'login' });
       expect(result).toEqual(mockResponses.sendCodeSuccess);
     });
 
-    it('❌ 应正确处理API错误情况', async () => {
+    it('should handle API error when sending code', async () => {
       api.post.mockRejectedValue(testData.apiError);
 
-      await expect(authService.sendCode(testData.validPhone)).rejects.toThrow('API Error');
+      await expect(userApi.sendCode(testData.validPhone, 'login')).rejects.toThrow('API Error');
       expect(api.post).toHaveBeenCalledTimes(1);
     });
 
-    it('❌ 应正确处理网络错误情况', async () => {
+    it('should handle network error when sending code', async () => {
       api.post.mockRejectedValue(testData.networkError);
 
-      await expect(authService.sendCode(testData.validPhone)).rejects.toThrow('Network Error');
+      await expect(userApi.sendCode(testData.validPhone, 'login')).rejects.toThrow('Network Error');
     });
 
-    it('🔄 应正确处理多次调用的情况', async () => {
+    it('should handle multiple send code calls', async () => {
       api.post.mockResolvedValue({ data: mockResponses.sendCodeSuccess });
 
-      await authService.sendCode(testData.validPhone);
-      await authService.sendCode(testData.validPhone);
+      await userApi.sendCode(testData.validPhone, 'login');
+      await userApi.sendCode(testData.validPhone, 'login');
 
       expect(api.post).toHaveBeenCalledTimes(2);
     });
 
-    it('🧪 应正确处理不同电话号码参数', async () => {
+    it('should handle different phone parameters', async () => {
       api.post.mockResolvedValue({ data: mockResponses.sendCodeSuccess });
       const anotherPhone = '13900139000';
 
-      const result = await authService.sendCode(anotherPhone);
+      const result = await userApi.sendCode(anotherPhone, 'register');
 
-      expect(api.post).toHaveBeenCalledWith('/auth/send-code', { phone: anotherPhone });
+      expect(api.post).toHaveBeenCalledWith('/auth/send-verification-code', { phoneNumber: anotherPhone, type: 'register' });
       expect(result).toEqual(mockResponses.sendCodeSuccess);
     });
   });
 
   describe('验证验证码功能', () => {
-    it('✅ 正常情况下应使用正确参数调用api.post并返回token和用户信息', async () => {
+    it('should call api.post with correct parameters for verifying code', async () => {
       api.post.mockResolvedValue({ data: mockResponses.verifyCodeSuccess });
 
-      const result = await authService.verifyCode(testData.validPhone, testData.validCode);
+      const result = await userApi.verifyCode(testData.validPhone, testData.validCode);
 
       expect(api.post).toHaveBeenCalledTimes(1);
-      expect(api.post).toHaveBeenCalledWith('/auth/verify-code', {
-        phone: testData.validPhone,
-        code: testData.validCode
+      expect(api.post).toHaveBeenCalledWith('/auth/login', {
+        phoneNumber: testData.validPhone,
+        verificationCode: testData.validCode
       });
       expect(result).toEqual(mockResponses.verifyCodeSuccess);
     });
 
-    it('❌ 应正确处理验证失败的API错误', async () => {
+    it('should handle verification API error', async () => {
       api.post.mockRejectedValue(testData.apiError);
 
-      await expect(authService.verifyCode(testData.validPhone, testData.validCode))
+      await expect(userApi.verifyCode(testData.validPhone, testData.validCode))
         .rejects.toThrow('API Error');
       expect(api.post).toHaveBeenCalledTimes(1);
     });
 
-    it('🔄 应正确处理多次验证调用', async () => {
+    it('should handle multiple verification calls', async () => {
       api.post.mockResolvedValue({ data: mockResponses.verifyCodeSuccess });
 
-      await authService.verifyCode(testData.validPhone, testData.validCode);
-      await authService.verifyCode(testData.validPhone, testData.invalidCode);
+      await userApi.verifyCode(testData.validPhone, testData.validCode);
+      await userApi.verifyCode(testData.validPhone, testData.invalidCode);
 
       expect(api.post).toHaveBeenCalledTimes(2);
     });
 
-    it('🧪 应正确处理不同的验证码参数', async () => {
+    it('should handle different verification code parameters', async () => {
       api.post.mockResolvedValue({ data: mockResponses.verifyCodeSuccess });
       const anotherCode = '654321';
 
-      const result = await authService.verifyCode(testData.validPhone, anotherCode);
+      const result = await userApi.verifyCode(testData.validPhone, anotherCode);
 
-      expect(api.post).toHaveBeenCalledWith('/auth/verify-code', {
-        phone: testData.validPhone,
-        code: anotherCode
+      expect(api.post).toHaveBeenCalledWith('/auth/login', {
+        phoneNumber: testData.validPhone,
+        verificationCode: anotherCode
       });
       expect(result).toEqual(mockResponses.verifyCodeSuccess);
     });
   });
 
   describe('获取当前用户功能', () => {
-    it('✅ 正常情况下应调用正确的API端点并返回用户信息', async () => {
+    it('should call correct API endpoint and return user info', async () => {
       api.get.mockResolvedValue({ data: mockResponses.getUserSuccess });
 
-      const result = await authService.getCurrentUser();
+      const result = await userApi.getCurrentUser();
 
       expect(api.get).toHaveBeenCalledTimes(1);
-      expect(api.get).toHaveBeenCalledWith('/auth/me');
+      expect(api.get).toHaveBeenCalledWith('/auth/profile', {});
       expect(result).toEqual(mockResponses.getUserSuccess);
     });
 
-    it('❌ 应正确处理获取用户失败的API错误', async () => {
+    it('should handle get user API error', async () => {
       api.get.mockRejectedValue(testData.apiError);
 
-      await expect(authService.getCurrentUser()).rejects.toThrow('API Error');
+      await expect(userApi.getCurrentUser()).rejects.toThrow('API Error');
       expect(api.get).toHaveBeenCalledTimes(1);
     });
 
-    it('🔄 应正确处理多次获取用户信息调用', async () => {
+    it('should handle multiple get user calls', async () => {
       api.get.mockResolvedValue({ data: mockResponses.getUserSuccess });
 
-      await authService.getCurrentUser();
-      await authService.getCurrentUser();
+      await userApi.getCurrentUser();
+      await userApi.getCurrentUser();
 
       expect(api.get).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('登出功能', () => {
-    it('✅ 正常情况下应调用正确的API端点并返回成功结果', async () => {
+    it('should call correct API endpoint for logout', async () => {
       api.post.mockResolvedValue({ data: mockResponses.logoutSuccess });
 
-      const result = await authService.logout();
+      const result = await userApi.logout();
 
       expect(api.post).toHaveBeenCalledTimes(1);
       expect(api.post).toHaveBeenCalledWith('/auth/logout');
       expect(result).toEqual(mockResponses.logoutSuccess);
     });
 
-    it('❌ 应正确处理登出失败的API错误', async () => {
+    it('should handle logout API error', async () => {
       api.post.mockRejectedValue(testData.apiError);
 
-      await expect(authService.logout()).rejects.toThrow('API Error');
+      await expect(userApi.logout()).rejects.toThrow('API Error');
       expect(api.post).toHaveBeenCalledTimes(1);
     });
 
-    it('🔄 应正确处理多次登出调用', async () => {
+    it('should handle multiple logout calls', async () => {
       api.post.mockResolvedValue({ data: mockResponses.logoutSuccess });
 
-      await authService.logout();
-      await authService.logout();
+      await userApi.logout();
+      await userApi.logout();
 
       expect(api.post).toHaveBeenCalledTimes(2);
     });
   });
 
-  // 清理所有mock，防止影响其他测试
   afterAll(() => {
     jest.restoreAllMocks();
   });

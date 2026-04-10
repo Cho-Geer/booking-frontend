@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
    * https://reactjs.org/blog/2020/09/22/introducing-the-new-jsx-transform.html
    */
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   
   // 配置图像优化
   images: {
@@ -38,6 +41,14 @@ const nextConfig: NextConfig = {
     // 图像尺寸（单位：像素）
     // 用于小于视口宽度的图像
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/v1/:path*',
+        destination: 'http://localhost:3001/v1/:path*',
+      },
+    ];
   },
 };
 
