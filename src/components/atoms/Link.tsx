@@ -66,7 +66,7 @@ const Link: React.FC<NavLinkProps> = ({
       return router && router.pathname === pathname;
     }
     return false;
-  }, [href, router.pathname]);
+  }, [href, router?.pathname || '']);
 
   // 处理点击事件
   const handleClick = (e: React.MouseEvent) => {
