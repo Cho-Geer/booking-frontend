@@ -1,6 +1,6 @@
 import React from 'react';
 import NextLink, { LinkProps } from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 
 /**
  * 导航链接组件，封装了 Next.js Link 组件
@@ -59,11 +59,11 @@ const Link: React.FC<NavLinkProps> = ({
   const isActive = React.useMemo(() => {
     if (typeof href === 'string') {
       // 精确匹配或路径前缀匹配
-      return router.pathname === href || router.pathname.startsWith(`${href}/`);
+      return router && (router.pathname === href || router.pathname.startsWith(`${href}/`));
     } else if (href && typeof href === 'object') {
       // 对于对象类型的href，需要比较路径名和查询参数
       const pathname = typeof href.pathname === 'string' ? href.pathname : '';
-      return router.pathname === pathname;
+      return router && router.pathname === pathname;
     }
     return false;
   }, [href, router.pathname]);

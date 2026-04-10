@@ -3,7 +3,7 @@
  * 根据前端架构设计说明，UI状态（如主题、侧边栏状态）应使用React Context管理
  */
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { ThemeType, LanguageType, Notification, ModalConfig, BreadcrumbItem, UIState, UIContextType } from '@/types';
 
 /**
@@ -311,7 +311,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
       console.warn('Failed to save language to localStorage:', error);
     }
     // 可以在这里添加路由语言切换逻辑
-    if (language !== 'auto' && language !== router.locale) {
+    if (language !== 'auto' && router && language !== router.locale) {
       // 注意：这里只是示例，实际应用中需要考虑路由结构
       // router.push(router.asPath, router.asPath, { locale: language });
     }

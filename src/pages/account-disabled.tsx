@@ -3,7 +3,7 @@
  * 用于显示 INACTIVE 和 BLOCKED 状态用户的错误信息
  */
 import React from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { AlertCircle, Home, LogIn } from 'lucide-react';
 
 /**
@@ -14,7 +14,7 @@ import { AlertCircle, Home, LogIn } from 'lucide-react';
  */
 const AccountDisabledPage: React.FC = () => {
   const router = useRouter();
-  const { reason } = router.query;
+  const { reason = undefined } = router.query || {};
 
   /**
    * 获取错误信息的标题和描述
@@ -97,7 +97,7 @@ const AccountDisabledPage: React.FC = () => {
     if (typeof window !== 'undefined') {
       window.location.href = '/?cleared_from_disabled_page=true';
     } else {
-      router.push('/');
+      router?.push('/');
     }
   }, [clearAuthData, router]);
 
@@ -110,7 +110,7 @@ const AccountDisabledPage: React.FC = () => {
     if (typeof window !== 'undefined') {
       window.location.href = '/login?cleared_from_disabled_page=true&role_changed=true';
     } else {
-      router.push('/login');
+      router?.push('/login');
     }
   }, [clearAuthData, router]);
 

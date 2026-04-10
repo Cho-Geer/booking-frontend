@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { useDispatch, useSelector } from 'react-redux';
 import LoginPageOrganism from '@/components/organisms/LoginPage';
 import { sendCode, verifyCode, clearError, setShowCodeInput } from '@/store/userSlice';
@@ -40,7 +40,7 @@ const LoginPage: React.FC = () => {
   // 登录成功后跳转
   useEffect(() => {
     if (currentUser) {
-      router.push(currentUser.userType === 'admin' ? '/admin/bookings' : '/bookings');
+      router?.push(currentUser.userType === 'admin' ? '/admin/bookings' : '/bookings');
     }
   }, [currentUser, router]);
 

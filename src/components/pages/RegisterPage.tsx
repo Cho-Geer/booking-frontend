@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { useDispatch, useSelector } from 'react-redux';
 import RegisterPageOrganism from '@/components/organisms/RegisterPage';
 import { registerUser, sendCode, clearError, setShowCodeInput } from '@/store/userSlice';

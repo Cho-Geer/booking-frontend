@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 
 /**
  * 管理员权限验证高阶组件
@@ -18,7 +18,7 @@ export function withAdmin<P extends object>(WrappedComponent: React.ComponentTyp
     useEffect(() => {
       // 如果用户不是管理员，重定向到首页
       if (currentUser && currentUser.userType !== 'admin') {
-        router.push('/');
+        router?.push('/');
       }
     }, [currentUser, router]);
 

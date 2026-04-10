@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import { RootState } from '@/store';
 
 /**
@@ -17,7 +17,7 @@ export function withAuth<P extends object>(WrappedComponent: React.ComponentType
 
     useEffect(() => {
       if (authInitialized && !currentUser) {
-        router.push('/login');
+        router?.push('/login');
       }
     }, [authInitialized, currentUser, router]);
 

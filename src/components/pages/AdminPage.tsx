@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { getBookings, updateBooking, clearError } from '@/store/bookingSlice';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
 import { useUI } from '@/contexts/UIContext';

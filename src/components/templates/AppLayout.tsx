@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
 import Spinner from '@/components/atoms/Spinner';
@@ -74,13 +74,13 @@ const AppLayout: React.FC<AppLayoutProps> = ({
                     key={item.path} 
                     href={item.path}
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      router.pathname === item.path
+                      router && (router.pathname === item.path
                         ? uiState.theme === 'dark' 
                           ? 'border-primary text-text-dark-primary' 
                           : 'border-primary text-gray-900'
                         : uiState.theme === 'dark'
                           ? 'border-transparent text-text-dark-secondary hover:border-primary/50 hover:text-text-dark-primary'
-                          : 'border-transparent text-gray-500 hover:border-primary/50 hover:text-gray-700'
+                          : 'border-transparent text-gray-500 hover:border-primary/50 hover:text-gray-700')
                     }`}
                   >
                     {item.name}
