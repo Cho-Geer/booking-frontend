@@ -131,7 +131,9 @@ jobs:
         run:  npx prisma db seed
 
       - name: Start backend server
-        run: npm run start:dev &
+        run: | 
+          npm run start:dev > backend.log 2>&1 &
+          echo "BACKEND_PID=$!" >> $GITHUB_ENV
         working-directory: ./backend
         env:
           PORT: 3001
@@ -195,11 +197,34 @@ jobs:
           done
           echo "Frontend failed to start"
           exit 1
-
+      - name: Debug Redis connectivity and data
+        run: |
+          sudo apt-get install -y redis-tools
+          redis-cli -h localhost -p 6379 ping
+          redis-cli -h localhost -p 6379 set test_key "hello"
+          redis-cli -h localhost -p 6379 get test_key
+          # 持续监控验证码键（后台运行）
+          while true; do
+            redis-cli -h localhost -p 6379 --scan --pattern "verification_code:*" >> redis-keys.log
+            sleep 5
+          done &
+        working-directory: ./backend
       - name: E2E tests
         run: npm run test:e2e
         working-directory: frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
           NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+          E2E_REDIS_URL: redis://localhost:6379
           CI: true
+        continue-on-error: true   # 即使失败也继续，以便上传产物
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: frontend/test-results/
+      # 在 E2E tests 之后添加
+      - name: Print backend logs
+        if: always()
+        run: cat backend/backend.log

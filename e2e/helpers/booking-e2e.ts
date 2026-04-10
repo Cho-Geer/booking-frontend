@@ -59,6 +59,13 @@ export async function clearBrowserSession(page: Page): Promise<void> {
 }
 
 export async function registerUser(page: Page, user: TestUser): Promise<void> {
+  // 在 registerUser 函数开头添加
+  page.on('response', response => {
+    if (response.url().includes('/auth/send-verification-code')) {
+      console.log(`[API Response] ${response.status()} ${response.url()}`);
+      response.text().then(body => console.log(`[API Body] ${body}`));
+    }
+  });
   await page.goto('/register');
   await page.getByLabel('姓名').fill(user.name);
   await page.getByLabel('手机号').fill(user.phoneNumber);
