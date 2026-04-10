@@ -81,6 +81,7 @@ jobs:
           context: .
           push: false
           tags: booking-frontend:test
+          load: true  # 将镜像加载到 Docker 守护进程
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
