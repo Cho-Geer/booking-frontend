@@ -14,7 +14,7 @@ const PageWrapper = dynamic(
   { ssr: false }
 );
 
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/compat/router';
 
 /**
  * 自定义 App 组件
@@ -32,7 +32,7 @@ const AppWithProviders = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   
   // 在登录、注册和账户禁用页面不执行认证初始化
-  const isAuthPage = router.pathname === '/login' || router.pathname === '/register' || router.pathname === '/account-disabled';
+  const isAuthPage = router && (router.pathname === '/login' || router.pathname === '/register' || router.pathname === '/account-disabled');
   
   // 检查是否有强制跳转到登录的标志（用于海外用户被禁用时的处理）
   const hasForceRedirectFlag = typeof window !== 'undefined' 
@@ -83,7 +83,7 @@ export default function MyApp({ Component, pageProps, router }: AppProps) {
           delta: metric.delta,
           entries: metric.entries,
           navigationType: metric.navigationType,
-          route: router.pathname
+          route: router?.pathname
         };
         
         // 这里只是一个示例，不实际发送请求
