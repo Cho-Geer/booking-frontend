@@ -14,7 +14,7 @@ import { AlertCircle, Home, LogIn } from 'lucide-react';
  */
 const AccountDisabledPage: React.FC = () => {
   const router = useRouter();
-  const { reason = undefined } = router.query || {};
+  const { reason = undefined } = router?.query || {};
 
   /**
    * 获取错误信息的标题和描述

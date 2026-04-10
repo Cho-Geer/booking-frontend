@@ -38,7 +38,7 @@ const RegisterPage: React.FC = () => {
   // 注册成功后跳转
   React.useEffect(() => {
     if (currentUser) {
-      router.push('/bookings');
+      router?.push('/bookings');
     }
   }, [currentUser, router]);
 
