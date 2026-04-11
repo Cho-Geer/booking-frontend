@@ -236,7 +236,7 @@ const BookingPage: React.FC<BookingPageProps> = ({
   };
 
   return (
-    <div id="booking-page-container" className={`h-[calc(100vh-16px)] py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
+    <div id="booking-page-container" className={`h-full py-8 px-4 sm:px-6 lg:px-8 overflow-y-auto scrollbar-hide ${isDarkTheme ? 'bg-background-dark' : 'bg-gray-50'}`}>
       <div id="booking-content-container" className="max-w-7xl mx-auto">
         <h1 className={`text-4xl font-bold text-center mb-12 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'} ${isMobile ? 'text-2xl' : ''}`}>预约服务</h1>
         

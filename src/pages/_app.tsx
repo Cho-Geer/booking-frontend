@@ -7,6 +7,7 @@ import { store } from '../store';
 import { UIProvider } from '../contexts/UIContext';
 import dynamic from 'next/dynamic';
 import { useAuthInitialization } from '@/hooks/useAuthInitialization';
+import { AuthGuard } from '@/components/providers/AuthGuard';
 
 // 动态导入PageWrapper以避免SSR问题
 const PageWrapper = dynamic(
@@ -60,7 +61,7 @@ const AppWithProviders = ({ children }: { children: React.ReactNode }) => {
   // 始终调用 hook，但在 hook 内部根据条件决定是否执行实际初始化
   useAuthInitialization(shouldInitializeAuth);
   
-  return <>{children}</>;
+  return <AuthGuard>{children}</AuthGuard>;
 };
 
 export default function MyApp({ Component, pageProps, router }: AppProps) {
