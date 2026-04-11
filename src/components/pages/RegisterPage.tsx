@@ -35,13 +35,6 @@ const RegisterPage: React.FC = () => {
       return () => clearTimeout(timer);
     }, [countdown]);
 
-  // 注册成功后跳转
-  React.useEffect(() => {
-    if (currentUser) {
-      router?.push('/bookings');
-    }
-  }, [currentUser, router]);
-
   /**
    * 处理用户注册
    */

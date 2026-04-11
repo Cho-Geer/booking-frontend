@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import LoginPage from '@/components/pages/LoginPage';
 import { RootState } from '@/store';
 import { useTheme } from '@/hooks/useTheme';
-import { useEffect } from 'react';
 
 /**
  * 首页路由
@@ -18,23 +17,6 @@ import { useEffect } from 'react';
 function HomeRoute() {
   const { currentUser } = useSelector((state: RootState) => state.user);
   const { isDark } = useTheme();
-
-  // 已登录用户重定向到预约页面
-  useEffect(() => {
-    if (currentUser) {
-      // 检查是否有 role_changed 标志，如果有则不重定向，让用户看到登录页
-      const urlParams = new URLSearchParams(window.location.search);
-      const isRoleChanged = urlParams.get('role_changed') === 'true';
-        
-      if (isRoleChanged) {
-        // 角色变更，不清除认证数据，让用户重新登录
-        return;
-      }
-        
-      // 使用 window.location 进行完全重定向，避免 Next.js 路由状态问题
-      window.location.href = currentUser?.userType === 'admin' ? '/admin/bookings' : '/bookings';
-    }
-  }, [currentUser]);
 
   // 未登录用户显示登录表单
   if (!currentUser) {

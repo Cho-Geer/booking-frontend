@@ -312,8 +312,6 @@ export function UIProvider({ children }: { children: ReactNode }) {
     }
     // 可以在这里添加路由语言切换逻辑
     if (language !== 'auto' && router && language !== router.locale) {
-      // 注意：这里只是示例，实际应用中需要考虑路由结构
-      // router.push(router.asPath, router.asPath, { locale: language });
     }
   }, [router]);
 
