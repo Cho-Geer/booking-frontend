@@ -40,7 +40,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   
   // 导航项配置
   const navItems = [
-    { name: '首页', path: '/' },
     { name: '预约', path: '/bookings' },
   ];
 
@@ -48,7 +47,6 @@ const AppLayout: React.FC<AppLayoutProps> = ({
    * 管理员导航项配置
    */
   const adminNavItems = [
-    { name: '首页', path: '/' },
     { name: '管理控制台', path: '/admin/bookings' },
   ];
 
@@ -116,9 +114,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({
       </nav>
 
       {/* 主要内容区域 */}
-      <main>
-        <div id="main-content-wrapper" className="py-6 pt-16">
-          <div id="main-content-container" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="h-full">
+        <div id="main-content-wrapper" className="h-full py-6 pt-16">
+          <div id="main-content-container" className="h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {children}
           </div>
         </div>

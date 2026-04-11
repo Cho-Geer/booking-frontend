@@ -37,13 +37,6 @@ const LoginPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // 登录成功后跳转
-  useEffect(() => {
-    if (currentUser) {
-      router?.push(currentUser.userType === 'admin' ? '/admin/bookings' : '/bookings');
-    }
-  }, [currentUser, router]);
-
   /**
    * 发送验证码
    */

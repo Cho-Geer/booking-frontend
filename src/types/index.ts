@@ -77,6 +77,7 @@ export type {
 // ==================== 通用类型 ====================
 export type { ReactNode };
 export type { Pagination } from './pagination';
+export type { RouteRule, RoutePermissionsConfig } from './routePermissions';
 
 /**
  * API响应通用接口

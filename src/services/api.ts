@@ -1,4 +1,6 @@
 import axios, {AxiosRequestHeaders} from 'axios';
+import { emitAuthEvent } from '@/utils/authEvents';
+import { navigate } from '@/utils/navigation';
 
 /**
  * API基础配置
@@ -126,7 +128,9 @@ api.interceptors.response.use(
             // 设置标志，防止登录后立即重新初始化认证
             sessionStorage.setItem('csrfValidationFailed', 'true');
             // 添加 csrf_error 参数，用于 middleware 识别并允许访问登录页
-            window.location.href = '/login?csrf_error=true';
+
+            emitAuthEvent('CSRF_VALIDATION_FAILED');
+            navigate('/login?csrf_error=true'); // 带参数时使用 navigate
             throw new Error('CSRF validation failed, redirecting to login');
         }
         return Promise.reject(customError);
@@ -149,7 +153,7 @@ api.interceptors.response.use(
             sessionStorage.setItem('accountDisabledReason', userStatus);
             
             // 跳转到专门的错误页面
-            window.location.href = '/account-disabled';
+            emitAuthEvent('ACCOUNT_DISABLED', { reason: userStatus });
             
             // 抛出错误以终止后续处理
             throw new Error(`Account disabled: ${userStatus}`);
@@ -163,7 +167,7 @@ api.interceptors.response.use(
         clearAuthData();
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('accountDisabledReason', 'ROLE_CHANGED_FROM_ADMIN');
-            window.location.href = '/account-disabled?reason=ROLE_CHANGED_FROM_ADMIN';
+            emitAuthEvent('ROLE_CHANGED_FROM_ADMIN');
             throw new Error('Role downgraded: redirecting to account-disabled');
         }
         return Promise.reject(customError);
@@ -175,7 +179,7 @@ api.interceptors.response.use(
         clearAuthData();
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('accountDisabledReason', 'ROLE_UPGRADED_TO_ADMIN');
-            window.location.href = '/account-disabled?reason=ROLE_UPGRADED_TO_ADMIN';
+            emitAuthEvent('ROLE_UPGRADED_TO_ADMIN');
             throw new Error('Role upgraded: redirecting to account-disabled');
         }
         return Promise.reject(customError);
@@ -192,7 +196,7 @@ api.interceptors.response.use(
             sessionStorage.setItem('accountDisabledReason', 'ROLE_CHANGED_FROM_ADMIN');
             
             // 跳转到账户禁用页面
-            window.location.href = '/account-disabled?reason=ROLE_CHANGED_FROM_ADMIN';
+            emitAuthEvent('ROLE_CHANGED_FROM_ADMIN');
             
             // 抛出错误以终止后续处理
             throw new Error('Access denied: Admin privileges required');
@@ -203,7 +207,7 @@ api.interceptors.response.use(
     // 2. 如果是刷新token请求本身失败，直接跳转登录，避免死循环
     if (originalRequest.url?.includes('/auth/refresh')) {
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        emitAuthEvent('UNAUTHORIZED'); navigate('/login');
       }
       return Promise.reject(customError);
     }
@@ -257,7 +261,7 @@ api.interceptors.response.use(
         
         // 跳转登录页
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          emitAuthEvent('UNAUTHORIZED'); navigate('/login');
         }
         return Promise.reject(refreshError);
       } finally {
@@ -268,7 +272,7 @@ api.interceptors.response.use(
     // 5. 对于非401错误或已重试过的401错误，如果需要跳转登录
     if ((customError as any)?.status === 401 && !skipAuthRedirect && originalRequest._retry) {
        if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        emitAuthEvent('UNAUTHORIZED'); navigate('/login');
       }
     }
     
