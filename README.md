@@ -1,14 +1,14 @@
-# CRM Booking Platform Frontend
+# CRM 予約プラットフォーム フロントエンド
 
-Next.js frontend for the CRM booking platform.
+CRM 予約プラットフォームの Next.js フロントエンドです。
 
-This application provides the user and admin interfaces for login, registration, booking management, service browsing, and account state handling. It integrates with the NestJS backend over `/v1` APIs and uses Redux Toolkit for client state management.
+このアプリケーションは、ログイン、登録、予約管理、サービス閲覧、アカウント状態処理のユーザーおよび管理画面を提供します。NestJS バックエンドと `/v1` API で連携し、クライアント状態管理には Redux Toolkit を使用しています。
 
-Detailed endpoint contract: [docs/api-contract.md](./docs/api-contract.md)
+詳細なエンドポイント仕様: [docs/api-contract.md](./docs/api-contract.md)
 
-## Tech Stack
+## 技術スタック
 
-- Next.js 15 using the Pages Router
+- Next.js 15 (Pages Router)
 - React 19
 - TypeScript
 - Redux Toolkit
@@ -20,22 +20,22 @@ Detailed endpoint contract: [docs/api-contract.md](./docs/api-contract.md)
 - Jest
 - React Testing Library
 
-## Current App Structure
+## 現在のアプリ構成
 
-Main folders in `src`:
+`src` 配下の主要フォルダ:
 
-- `pages/` for route entry points
-- `components/` for UI composition
-- `services/` for API clients
-- `store/` for Redux slices and store setup
-- `contexts/` for UI and booking related context
-- `hooks/` for shared client hooks
-- `types/` for shared TypeScript models
-- `utils/` for helper functions
+- `pages/` — ルートエントリポイント
+- `components/` — UI コンポーネントの組み立て
+- `services/` — API クライアント
+- `store/` — Redux スライスとストア設定
+- `contexts/` — UI / 予約関連のコンテキスト
+- `hooks/` — 共通クライアントフック
+- `types/` — 共通 TypeScript モデル
+- `utils/` — ヘルパー関数
 
-## Implemented Routes
+## 実装済みルート
 
-The current page files define these routes:
+現在のページファイルが定義するルート:
 
 - `/`
 - `/login`
@@ -44,71 +44,71 @@ The current page files define these routes:
 - `/admin/bookings`
 - `/account-disabled`
 
-Notes:
+補足:
 
-- `/` renders the login page for unauthenticated users and redirects authenticated users into the app.
-- `/bookings` is protected.
-- `/admin/bookings` is the current admin entry page.
-- Middleware also contains logic for `/my-bookings`, but there is no page file for that route in the current codebase.
+- `/` は未認証ユーザーにはログインページを表示し、認証済みユーザーをアプリ内へリダイレクトします。
+- `/bookings` は保護されています。
+- `/admin/bookings` が現在の管理画面エントリーページです。
+- ミドルウェアには `/my-bookings` のロジックも含まれていますが、現在のコードベースには該当ページファイルがありません。
 
-## Runtime Features
+## ランタイム機能
 
-- Login and registration flows
-- JWT and refresh-token based auth using HttpOnly cookies
-- CSRF token forwarding on mutating requests
-- Auth aware route protection
-- Role based admin routing behavior
-- Booking creation and update UI
-- Service and slot fetching through API clients
-- Admin booking management page
-- Account disabled / role changed handling
-- Global Redux store for app state
-- UI notifications through app state and UI context
+- ログイン・登録フロー
+- HttpOnly Cookie ベースの JWT + リフレッシュトークン認証
+- 変更リクエストに対する CSRF トークン転送
+- 認証状態に基づくルート保護
+- ロールベースの管理者ルーティング
+- 予約の作成・更新 UI
+- API クライアント経由のサービス・スロット取得
+- 管理者用予約管理ページ
+- アカウント無効化 / ロール変更のハンドリング
+- アプリ全体の Redux ストア
+- アプリ状態と UI コンテキストによる通知表示
 
-## API Integration
+## API 連携
 
-API requests are sent through [src/services/api.ts](./src/services/api.ts).
+API リクエストは [src/services/api.ts](./src/services/api.ts) を通じて送信されます。
 
-The backend API runs locally at:
+バックエンド API はローカルで次のアドレスで動作します:
 
 ```text
 http://localhost:3001
 ```
 
-Current default API base URL:
+現在のデフォルト API ベース URL:
 
 ```text
 http://localhost:3001/v1
 ```
 
-`next.config.ts` also rewrites `/v1/:path*` to `http://localhost:3001/v1/:path*` during development, so local frontend work stays aligned with the same `/v1` contract used by the backend README.
+`next.config.ts` では開発時に `/v1/:path*` を `http://localhost:3001/v1/:path*` へリライトするため、ローカルのフロントエンド開発はバックエンド README と同じ `/v1` 規約に沿って行えます。
 
-### Main Contract For This Branch
+### このブランチの主要契約
 
-The frontend should treat these backend endpoints as the main booking flow contract:
+フロントエンドは以下のバックエンドエンドポイントを予約フローの主要契約として扱います:
 
 - `/v1/bookings/all`
 - `/v1/time-slots/available-slots`
-- `/v1/bookings/by-date` when date-based booking views need it
+- 日付ベースの予約ビューが必要な場面では `/v1/bookings/by-date`
 
-Important rules:
+重要なルール:
 
-- The frontend uses `/bookings/all` as the shared endpoint for both regular users and admins.
-- Filtering regular users down to their own bookings is the backend's responsibility.
-- `/bookings/me` is not assumed in this branch and should not be used as a contract dependency.
+- フロントエンドは通常ユーザーと管理者の双方で `/bookings/all` を共通エンドポイントとして使用します。
+- 通常ユーザーを本人の予約のみに絞り込むのはバックエンドの責務です。
+- このブランチでは `/bookings/me` を契約依存として想定しません。
 
-### Example API Usage In Current Code
+### 現在のコードにおける API 利用例
 
 - `GET /v1/bookings/all`
-  Main booking list endpoint used by the current booking API client.
+  現在の予約 API クライアントが使用する主要な予約一覧エンドポイント。
 
 - `GET /v1/bookings/by-date?date=YYYY-MM-DD`
-  Used for date-specific booking lookups.
+  日付指定の予約検索に使用。
 
 - `GET /v1/time-slots/available-slots?date=YYYY-MM-DD`
-  Used for slot availability queries.
+  スロット空き状況のクエリに使用。
 
-Frontend service modules currently include:
+現在のフロントエンドサービスモジュール:
 
 - `adminApi.ts`
 - `bookingApi.ts`
@@ -118,11 +118,11 @@ Frontend service modules currently include:
 - `systemApi.ts`
 - `userApi.ts`
 
-These files represent the frontend client layer. Some endpoints referenced there may depend on backend work that is not currently wired in the backend app, so treat them as the frontend contract rather than guaranteed live backend coverage.
+これらはフロントエンドのクライアント層を表します。ここで参照されるエンドポイントの一部は、現時点でバックエンドアプリに配線されていない機能に依存している可能性があるため、保証されたバックエンド実装ではなくフロントエンド契約として扱ってください。
 
-## State Management
+## 状態管理
 
-The app currently sets up these Redux slices in [src/store/index.ts](./src/store/index.ts):
+現在のアプリは [src/store/index.ts](./src/store/index.ts) で以下の Redux スライスを設定しています:
 
 - `user`
 - `booking`
@@ -131,40 +131,40 @@ The app currently sets up these Redux slices in [src/store/index.ts](./src/store
 - `notification`
 - `admin`
 
-The app is wrapped with Redux `Provider` and `UIProvider` in [src/pages/_app.tsx](./src/pages/_app.tsx).
+アプリは [src/pages/_app.tsx](./src/pages/_app.tsx) で Redux の `Provider` と `UIProvider` でラップされています。
 
-## Forms and Validation
+## フォームとバリデーション
 
-The codebase actively uses:
+現在のコードベースで実際に使用されているもの:
 
 - `react-hook-form`
 - `zod`
 
-Examples include:
+例:
 
 - `src/components/molecules/LoginForm.tsx`
 - `src/components/molecules/RegisterForm.tsx`
 - `src/components/molecules/BookingCreateModal.tsx`
 - `src/components/molecules/BookingUpdateModal.tsx`
 
-## Styling
+## スタイリング
 
-The current implementation uses:
+現在の実装で使用しているもの:
 
-- Tailwind CSS utilities
-- Custom components under `src/components`
-- Framer Motion for some animated UI behavior
+- Tailwind CSS ユーティリティ
+- `src/components` 配下のカスタムコンポーネント
+- 一部のアニメーション UI に対する Framer Motion
 
-Although `antd` and `@tanstack/react-query` are present in dependencies, they are not part of the main documented runtime flow here because the current codebase does not clearly use them in the primary app wiring.
+依存関係には `antd` と `@tanstack/react-query` も含まれていますが、現在のコードベースでは主要なアプリの配線に明確に使われていないため、ここでの主なランタイムフローには含めていません。
 
-## Environment
+## 環境
 
-Example env files are included:
+サンプル env ファイルが用意されています:
 
 - `.env.development.example`
 - `.env.production.example`
 
-Create `.env.development` in the project root with:
+プロジェクトのルートに `.env.development` を作成してください:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:3001/v1
@@ -172,139 +172,139 @@ NEXT_PUBLIC_WS_URL=ws://localhost:3001/ws
 NEXT_PUBLIC_INSTANCE_NAME=dev
 ```
 
-This keeps local frontend requests aligned with the backend contract at `http://localhost:3001/v1`.
+これにより、ローカルフロントエンドのリクエストは `http://localhost:3001/v1` のバックエンド契約と整合します。
 
-**Environment Variable Standardization**
+**環境変数の標準化**
 
-The frontend and backend use standardized environment variables for consistency:
+フロントエンドとバックエンドは一貫性のために標準化された環境変数を使用しています。
 
-| Variable | Purpose | Default Value |
+| 変数 | 用途 | デフォルト値 |
 |----------|---------|---------------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:3001/v1` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL for real-time updates | `ws://localhost:3001/ws` |
-| `NEXT_PUBLIC_INSTANCE_NAME` | Instance identifier for multi-tenant setups | `dev` |
+| `NEXT_PUBLIC_API_URL` | バックエンド API のベース URL | `http://localhost:3001/v1` |
+| `NEXT_PUBLIC_WS_URL` | リアルタイム更新用 WebSocket URL | `ws://localhost:3001/ws` |
+| `NEXT_PUBLIC_INSTANCE_NAME` | マルチテナント構成向けインスタンス識別子 | `dev` |
 
-**CI/CD Integration**
-The frontend CI workflow (`frontend-ci.yml`) uses the same environment variable values as the backend CI, ensuring consistent testing across repositories. The E2E tests verify the full integration flow between frontend and backend services.
+**CI/CD 連携**
+フロントエンド CI ワークフロー (`frontend-ci.yml`) はバックエンド CI と同じ環境変数値を使用しており、リポジトリ間で一貫したテストを保証します。E2E テストはフロントエンドとバックエンドサービス間の統合フローを検証します。
 
-## Frontend Development Environment Configuration
+## フロントエンド開発環境設定
 
-### Configuration Files
+### 設定ファイル
 
-The frontend now uses template-based configuration for local development:
+フロントエンドはローカル開発向けにテンプレートベースの設定を採用しています。
 
-1. **Template File**: `.env.development.example`
-   - Contains all frontend environment variables with detailed comments
-   - Safe to commit to version control
-   - Includes API endpoint guidance for different environments (local, Docker, production)
+1. **テンプレートファイル**: `.env.development.example`
+   - コメント付きで全フロントエンド環境変数を記載
+   - バージョン管理に含めても安全
+   - 各環境 (ローカル、Docker、本番) の API エンドポイント指針を含む
 
-2. **Personal Configuration**: `.env.development`
-   - Created by copying from the template
-   - Contains your actual development values
-   - **Never commit this file** (it's in `.gitignore`)
+2. **個人設定**: `.env.development`
+   - テンプレートからコピーして作成
+   - 実際の開発値を記載
+   - **絶対にコミットしない** (`.gitignore` に含まれる)
 
-3. **Initialization Script**: `scripts/init-local-env.sh`
-   - Automates the configuration setup process
-   - Provides interactive guidance and environment selection
-   - Supports backup of existing configurations
+3. **初期化スクリプト**: `scripts/init-local-env.sh`
+   - 設定セットアップ処理を自動化
+   - 対話的な案内と環境選択を提供
+   - 既存設定のバックアップをサポート
 
-### Quick Setup
+### クイックセットアップ
 
 ```bash
-# 1. Run the initialization script
+# 1. 初期化スクリプトを実行
 ./scripts/init-local-env.sh
 
-# 2. The script will create .env.development from the template
-#    You can adjust API endpoints based on your development environment
+# 2. スクリプトがテンプレートから .env.development を作成します
+#    開発環境に応じて API エンドポイントを調整してください
 
-# 3. Start development server
+# 3. 開発サーバーを起動
 npm run dev
 ```
 
-### Environment-Specific Configuration
+### 環境別設定
 
-The frontend configuration supports different development environments:
+フロントエンド設定は複数の開発環境をサポートします。
 
-| Environment | NEXT_PUBLIC_API_URL | NEXT_PUBLIC_WS_URL | Description |
+| 環境 | NEXT_PUBLIC_API_URL | NEXT_PUBLIC_WS_URL | 説明 |
 |-------------|---------------------|-------------------|-------------|
-| Local Development | `http://localhost:3001/v1` | `ws://localhost:3001/ws` | Backend and frontend running locally |
-| Docker Compose | `http://booking-backend:3001/v1` | `ws://booking-backend:3001/ws` | Both services in Docker containers |
-| Production | `https://api.yourdomain.com/v1` | `wss://api.yourdomain.com/ws` | Live production environment |
+| ローカル開発 | `http://localhost:3001/v1` | `ws://localhost:3001/ws` | バックエンドとフロントエンドをローカルで起動 |
+| Docker Compose | `http://booking-backend:3001/v1` | `ws://booking-backend:3001/ws` | 両サービスを Docker コンテナで起動 |
+| 本番 | `https://api.yourdomain.com/v1` | `wss://api.yourdomain.com/ws` | ライブの本番環境 |
 
-### Configuration Variables
+### 設定変数
 
-| Variable | Description | Default Value |
+| 変数 | 説明 | デフォルト値 |
 |----------|-------------|---------------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://localhost:3001/v1` |
-| `NEXT_PUBLIC_WS_URL` | WebSocket URL for real-time updates | `ws://localhost:3001/ws` |
-| `NEXT_PUBLIC_INSTANCE_NAME` | Instance identifier | `dev` |
+| `NEXT_PUBLIC_API_URL` | バックエンド API のベース URL | `http://localhost:3001/v1` |
+| `NEXT_PUBLIC_WS_URL` | リアルタイム更新用 WebSocket URL | `ws://localhost:3001/ws` |
+| `NEXT_PUBLIC_INSTANCE_NAME` | インスタンス識別子 | `dev` |
 
-### Security Notes
+### セキュリティ上の注意
 
-- Frontend environment variables are exposed in the browser
-- **Never** put sensitive information (API keys, passwords) in frontend configuration
-- All sensitive operations should be performed through backend APIs
-- Use HTTPS/WSS in production environments
+- フロントエンドの環境変数はブラウザに公開されます
+- 機密情報 (API キー、パスワード など) は**絶対に**フロントエンド設定に置かないでください
+- 機密操作はすべてバックエンド API 経由で行ってください
+- 本番環境では HTTPS/WSS を使用してください
 
-### Troubleshooting
+### トラブルシューティング
 
-- **Missing configuration**: Run `./scripts/init-local-env.sh` to create it
-- **Permission denied**: Make the script executable: `chmod +x scripts/init-local-env.sh`
-- **Template not found**: Ensure `.env.development.example` exists in project root
-- **API connection issues**: Verify backend is running and accessible
+- **設定が見つからない**: `./scripts/init-local-env.sh` を実行して作成してください
+- **権限拒否**: スクリプトに実行権限を付与: `chmod +x scripts/init-local-env.sh`
+- **テンプレートが見つからない**: `.env.development.example` がプロジェクトルートに存在することを確認してください
+- **API 接続の問題**: バックエンドが起動していてアクセス可能か確認してください
 
-## Local Development
+## ローカル開発
 
-**Development with Rewrite Configuration (Recommended)**
+**リライト設定を使った開発 (推奨)**
 
-For local development, the frontend is configured to use Next.js rewrite rules that proxy API requests to the backend. This approach:
+ローカル開発では、API リクエストをバックエンドへプロキシする Next.js リライトルールを使用するように構成されています。このアプローチは次の利点があります。
 
-1. **Eliminates CORS issues** - All requests go through the same origin (`localhost:3000`)
-2. **Simplifies environment configuration** - No need to configure CORS on the backend
-3. **Matches production routing** - Similar to how a reverse proxy would work in production
+1. **CORS 問題の解消** — すべて同一オリジン (`localhost:3000`) 経由のリクエストとなるため
+2. **環境設定の簡素化** — バックエンド側で CORS を設定する必要なし
+3. **本番ルーティングと一致** — 本番でリバースプロキシが動作するのと同様
 
-The rewrite configuration in `next.config.ts` automatically routes `/v1/*` requests to `http://localhost:3001/v1/*`. This means you can use relative URLs (`/v1/health`) in your frontend code without worrying about cross-origin requests.
+`next.config.ts` のリライト設定により、`/v1/*` へのリクエストは自動的に `http://localhost:3001/v1/*` へルーティングされます。これにより、フロントエンドコードでは相対 URL (`/v1/health`) をクロスオリジンを気にせずに使えます。
 
-**Alternative: Direct API calls**
-If you need to make direct API calls (e.g., testing with curl or Postman), you can access the backend directly at `http://localhost:3001/v1/*`. However, for normal development, the rewrite approach is recommended.
+**代替: 直接 API 呼び出し**
+直接 API 呼び出しが必要な場合 (curl や Postman など) は、`http://localhost:3001/v1/*` でバックエンドに直接アクセスできます。ただし、通常の開発ではリライト方式を推奨します。
 
-**Note on Multi-Instance Scripts**: The repository contains historical multi-instance deployment scripts (`start-frontend-instances.sh`) that were used for previous deployment strategies. These scripts are maintained for historical reference but are not part of the primary development or deployment workflow. New development should use the single-instance approach with rewrite configuration.
+**複数インスタンススクリプトに関する注記**: リポジトリには旧来の複数インスタンスデプロイ用スクリプト (`start-frontend-instances.sh`) が含まれていますが、これらは過去のデプロイ戦略で使われていたもので、現在は歴史的参照用に保持されています。新規開発ではリライト設定によるシングルインスタンス方式を使用してください。
 
-Install dependencies:
+依存関係をインストール:
 
 ```bash
 npm install
 ```
 
-Start the dev server:
+開発サーバーを起動:
 
 ```bash
 npm run dev
 ```
 
-The Next.js app runs locally at `http://localhost:3000` and talks to the backend API at `http://localhost:3001`.
+Next.js アプリは `http://localhost:3000` でローカル起動し、`http://localhost:3001` のバックエンド API と通信します。
 
-Then open:
+ブラウザで次を開いてください:
 
 ```text
 http://localhost:3000
 ```
 
-## Build and Start
+## ビルドと起動
 
-Build:
+ビルド:
 
 ```bash
 npm run build
 ```
 
-Start production server:
+本番サーバーを起動:
 
 ```bash
 npm start
 ```
 
-## Quality and Tests
+## 品質とテスト
 
 Lint:
 
@@ -312,49 +312,56 @@ Lint:
 npm run lint
 ```
 
-Auto-fix lint issues:
+Lint の自動修正:
 
 ```bash
 npm run lint:fix
 ```
 
-Type check:
+型チェック:
 
 ```bash
 npm run check
 ```
 
-Run tests:
+テスト実行:
 
 ```bash
 npm run test
 ```
 
-Run coverage:
+カバレッジ:
 
 ```bash
 npm run test:coverage
 ```
 
-## Cross-Repository E2E Testing
+## リポジトリ横断 E2E テスト
 
-The frontend CI includes a cross-repository E2E testing workflow that:
+フロントエンド CI にはリポジトリ横断の E2E テストワークフローが含まれており、次のことを行います。
 
-1. **Checks out both repositories** - Frontend and backend are cloned in the same CI runner
-2. **Sets up standardized infrastructure** - Uses PostgreSQL 16 and Redis 7-alpine (same versions as backend CI)
-3. **Executes full integration tests** - Tests the three main user flows:
-   - User login with verification code
-   - Querying available time slots for future dates
-   - Creating bookings from the booking page
+1. **両リポジトリをチェックアウト** — フロントエンドとバックエンドを同じ CI ランナーにクローン
+2. **標準化されたインフラをセットアップ** — PostgreSQL 16 と Redis 7-alpine (バックエンド CI と同じバージョン) を使用
+3. **統合テストをフル実行** — 3 つの主要ユーザーフローを検証
+   - 認証コードによるユーザーログイン
+   - 未来日時の予約可能スロット照会
+   - 予約ページからの予約作成
 
-**E2E Test Flow:**
-1. Backend services start with database migrations and seeding
-2. Frontend builds and starts
-3. Health checks verify both services are ready (`/v1/health` endpoint)
-4. Playwright tests execute user scenarios
+**E2E テストフロー:**
+1. バックエンドサービスを DB マイグレーションとシードデータとともに起動
+2. フロントエンドをビルドして起動
+3. ヘルスチェックで両サービスの readiness を確認 (`/v1/health` エンドポイント)
+4. Playwright がユーザーシナリオを実行
 
-This ensures that changes in either repository don't break the integrated booking flow.
+これにより、どちらのリポジトリの変更も統合された予約フローを壊さないことが保証されます。
 
-## Related Backend
+## 関連バックエンド
 
-This frontend is designed to work with the backend in the sibling `booking-backend` project.
+このフロントエンドは兄弟プロジェクト `booking-backend` のバックエンドと連携するように設計されています。
+
+---
+
+## 🇬🇧 English | 🇨🇳 中文
+
+- [English version](./README.en.md)
+- [中文版本](./README.zh.md)
