@@ -39,6 +39,7 @@ yarn-error.log*
 # 个人本地配置文件（不应提交）
 .env.local
 .env.*.local
+.env
 # 注意：.env.development.example 是模板文件，应该提交到版本控制
 
 # vercel
