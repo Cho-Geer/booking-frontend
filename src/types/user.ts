@@ -46,6 +46,8 @@ export interface User {
   userAgent?: string;
   /** 角色 */
   role: UserRole;
+  /** 是否启用 Salesforce 静态操作员映射（P0-4・RULE-12・来自 /v1/auth/profile） */
+  mappingActive: boolean;
   /** 创建时间 */
   createdAt: string;
   /** 更新时间 */

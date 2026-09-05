@@ -16,6 +16,7 @@ import {
 import { Service, User } from '@/types';
 import { ADMIN_TABS, DEFAULT_SERVICE_FORM, DEFAULT_USER_QUERY } from '@/constants';
 import BookingDetailModal from '@/components/molecules/BookingDetailModal';
+import SalesforceWorkbenchEntry from '@/components/molecules/SalesforceWorkbenchEntry';
 import { Booking, BookingStatus, AdminTab, ServiceRow } from '@/types';
 import { setActiveTab, setEditingServiceId, setServiceForm, resetServiceForm, setBookingActionLoading, setGlobalRefreshLoading, setGlobalErrorMessage, clearGlobalErrorMessage } from '@/store/adminSlice';
 import { fetchServices, createService, updateService, toggleServiceStatus } from '@/store/serviceSlice';
@@ -493,13 +494,19 @@ const AdminBookingsPage: React.FC = () => {
       <div id="admin-bookings-header" className="flex-shrink-0 px-4 sm:px-6 lg:px-8 py-6 bg-opacity-95" style={{ backgroundColor: uiState.theme === 'dark' ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)' }}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className={`text-3xl font-bold ${textColorClass}`}>管理控制台</h1>
-          <Button
-            variant="primary"
-            onClick={refreshAll}
-            isLoading={globalRefreshLoading}
-          >
-            刷新全部
-          </Button>
+          <div className="flex items-center gap-3">
+            <SalesforceWorkbenchEntry
+              userType={currentUser?.userType}
+              mappingActive={currentUser?.mappingActive}
+            />
+            <Button
+              variant="primary"
+              onClick={refreshAll}
+              isLoading={globalRefreshLoading}
+            >
+              刷新全部
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -16,6 +16,8 @@ interface UserState {
     avatar?: string;
     userType: 'customer' | 'admin';
     status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
+    /** 是否启用 Salesforce 静态操作员映射（P0-4・RULE-12・仅 profile 响应携带，登录响应无此字段） */
+    mappingActive?: boolean;
     isVerified: boolean;
     lastLoginAt?: string;
   } | null;
