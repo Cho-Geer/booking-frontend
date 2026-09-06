@@ -4,7 +4,7 @@ Next.js frontend for the CRM booking platform.
 
 This application provides the user and admin interfaces for login, registration, booking management, service browsing, and account state handling. It integrates with the NestJS backend over `/v1` APIs and uses Redux Toolkit for client state management.
 
-Detailed endpoint contract: [docs/api-contract.md](./docs/api-contract.md)
+Detailed endpoint contract: [docs/assets/api-contract.md](./docs/assets/api-contract.md)
 
 ## Tech Stack
 
