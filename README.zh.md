@@ -4,7 +4,7 @@
 
 本应用提供用户与管理员界面,涵盖登录、注册、预约管理、服务浏览以及账号状态处理。它通过 `/v1` API 与 NestJS 后端集成,并使用 Redux Toolkit 进行客户端状态管理。
 
-详细的接口契约请参见: [docs/api-contract.md](./docs/api-contract.md)
+详细的接口契约请参见: [docs/assets/api-contract.md](./docs/assets/api-contract.md)
 
 ## 技术栈
 

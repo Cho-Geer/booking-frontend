@@ -50,7 +50,7 @@ yarn-error.log*
 next-env.d.ts
 
 /docs/*
-!/docs/api-contract.md
+!/docs/assets/
 /.trae
 /.trae-aicc
 /.sfdx
