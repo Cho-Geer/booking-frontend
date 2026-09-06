@@ -57,6 +57,8 @@ next-env.d.ts
 /.qoder
 /.clinerules
 /.mimosa
+/.v2c
+/.video_agent
 /figma-disabled
 
 # ide
