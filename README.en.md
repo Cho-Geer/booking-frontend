@@ -268,8 +268,6 @@ The rewrite configuration in `next.config.ts` automatically routes `/v1/*` reque
 **Alternative: Direct API calls**
 If you need to make direct API calls (e.g., testing with curl or Postman), you can access the backend directly at `http://localhost:3001/v1/*`. However, for normal development, the rewrite approach is recommended.
 
-**Note on Multi-Instance Scripts**: The repository contains historical multi-instance deployment scripts (`start-frontend-instances.sh`) that were used for previous deployment strategies. These scripts are maintained for historical reference but are not part of the primary development or deployment workflow. New development should use the single-instance approach with rewrite configuration.
-
 Install dependencies:
 
 ```bash
