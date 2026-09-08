@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
-import { getBookings, updateBooking, clearError } from '@/store/bookingSlice';
+import { getBookings, updateBooking, cancelBooking, clearError } from '@/store/bookingSlice';
 import { useRouter } from 'next/compat/router';
 import Card from '@/components/atoms/Card';
 import Button from '@/components/atoms/Button';
@@ -320,8 +320,14 @@ const AdminBookingsPage: React.FC = () => {
           dispatch(setBookingActionLoading(false));
           return;
         }
-        // 更新预约状态
-        await dispatch(updateBooking({ id: bookingId, status })).unwrap();
+        // 取消预约：走专门的取消接口（触发「预约已取消」邮件）
+        if (status === BookingStatus.CANCELLED) {
+          await dispatch(cancelBooking(bookingId)).unwrap();
+          showSuccess('取消成功', '预约已取消，已发送通知邮件');
+        } else {
+          // 更新预约状态
+          await dispatch(updateBooking({ id: bookingId, status })).unwrap();
+        }
         // 刷新预约列表，传递当前的分页参数
         dispatch(getBookings({ page: pagination.page, limit: pagination.limit }));
       }
