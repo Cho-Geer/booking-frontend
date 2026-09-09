@@ -32,6 +32,16 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 - Jest
 - React Testing Library
 
+## 画面デモ
+
+> 動画（mp4）はリンクをクリックすると GitHub 上で再生できます。
+
+| デモ | 動画 |
+|---|---|
+| ユーザーログイン | [▶ ログインフロー（約2分26秒）](docs/images/booking-login-flow.mp4) |
+| ユーザー登録 | [▶ 登録フロー（約1分32秒）](docs/images/booking-register-flow.mp4) |
+| 管理者コンソール | [▶ 管理者ログインと管理操作（約2分）](docs/images/booking-admin-login-flow.mp4) |
+
 ## 現在のアプリ構成
 
 `src` 配下の主要フォルダ:

@@ -20,6 +20,16 @@ Detailed endpoint contract: [docs/assets/api-contract.md](./docs/assets/api-cont
 - Jest
 - React Testing Library
 
+## Screen Demos
+
+> Click a video (mp4) link to play it directly on GitHub.
+
+| Demo | Video |
+|---|---|
+| User login | [▶ Login flow (~2 min 26 s)](docs/images/booking-login-flow.mp4) |
+| User registration | [▶ Registration flow (~1 min 32 s)](docs/images/booking-register-flow.mp4) |
+| Admin console | [▶ Admin login and management actions (~2 min)](docs/images/booking-admin-login-flow.mp4) |
+
 ## Current App Structure
 
 Main folders in `src`:

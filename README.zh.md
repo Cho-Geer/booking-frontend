@@ -20,6 +20,16 @@
 - Jest
 - React Testing Library
 
+## 画面演示
+
+> 点击视频（mp4）链接即可在 GitHub 上直接播放。
+
+| 演示 | 视频 |
+|---|---|
+| 用户登录 | [▶ 登录流程（约 2 分 26 秒）](docs/images/booking-login-flow.mp4) |
+| 用户注册 | [▶ 注册流程（约 1 分 32 秒）](docs/images/booking-register-flow.mp4) |
+| 管理员控制台 | [▶ 管理员登录与管理操作（约 2 分）](docs/images/booking-admin-login-flow.mp4) |
+
 ## 当前应用结构
 
 `src` 下的主要目录:
