@@ -20,6 +20,22 @@
 - Jest
 - React Testing Library
 
+## 画面演示
+
+> 视频可直接在本页面内播放。原始文件存放在 `docs/images/`。
+
+### 用户登录
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### 用户注册
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### 管理员控制台
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
+
 ## 当前应用结构
 
 `src` 下的主要目录:

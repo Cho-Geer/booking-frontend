@@ -32,6 +32,22 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 - Jest
 - React Testing Library
 
+## 画面デモ
+
+> 動画はこのページ内でそのまま再生できます。元ファイルは `docs/images/` にあります。
+
+### ユーザーログイン
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### ユーザー登録
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### 管理者コンソール
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
+
 ## 現在のアプリ構成
 
 `src` 配下の主要フォルダ:
@@ -39,6 +55,7 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 - `pages/` — ルートエントリポイント
 - `components/` — UI コンポーネントの組み立て
 - `services/` — API クライアント
+
 - `store/` — Redux スライスとストア設定
 - `contexts/` — UI / 予約関連のコンテキスト
 - `hooks/` — 共通クライアントフック

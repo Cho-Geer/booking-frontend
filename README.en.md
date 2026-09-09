@@ -20,6 +20,22 @@ Detailed endpoint contract: [docs/assets/api-contract.md](./docs/assets/api-cont
 - Jest
 - React Testing Library
 
+## Screen Demos
+
+> The videos play right on this page. The original files are stored in `docs/images/`.
+
+### User login
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### User registration
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### Admin console
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
+
 ## Current App Structure
 
 Main folders in `src`:

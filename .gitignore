@@ -51,6 +51,7 @@ next-env.d.ts
 
 /docs/*
 !/docs/assets/
+!/docs/images/
 /.trae
 /.trae-aicc
 /.sfdx
