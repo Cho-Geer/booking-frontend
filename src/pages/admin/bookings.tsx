@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import FullScreenLoading from '@/components/atoms/FullScreenLoading';
 
 const AdminBookingsPage = dynamic(
   () => import('@/components/pages/AdminPage'),
@@ -18,7 +19,8 @@ function AdminBookingsRoute() {
   }, []);
 
   if (!mounted) {
-    return null; // 构建时不渲染任何内容
+    // 挂载前渲染全屏加载占位，避免出现空白主区域
+    return <FullScreenLoading message="加载中..." />;
   }
 
   return <AdminBookingsPage />;

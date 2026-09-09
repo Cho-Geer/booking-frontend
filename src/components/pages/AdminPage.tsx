@@ -24,6 +24,8 @@ import { fetchAdminUsers, toggleUserStatus as toggleUserStatusAction, updateUser
 import { clearUpdateSuccess } from '@/store/bookingSlice';
 import { isBookingExpired } from '@/utils/timeUtils';
 import Spinner from '@/components/atoms/Spinner';
+import FullScreenLoading from '@/components/atoms/FullScreenLoading';
+import { useInitialLoadGate } from '@/hooks/useInitialLoadGate';
 
 /**
  * 管理控制台状态类型定义
@@ -267,6 +269,8 @@ const AdminBookingsPage: React.FC = () => {
   const memoBookings = useMemo(() => bookings, [bookings.map((booking) => booking.id)]);
   const memoPagination = useMemo(() => pagination, [pagination]);
 
+  const isInitialAdminLoading = useInitialLoadGate([loading, usersLoading]);
+
   /**
    * 刷新全部数据（ページネーション初期化）
    */
@@ -493,6 +497,10 @@ const AdminBookingsPage: React.FC = () => {
   // 非管理员用户不显示任何内容，useEffect 会处理重定向
   if (!isAdmin) {
     return null; // 不渲染任何内容，等待重定向
+  }
+
+  if (isInitialAdminLoading) {
+    return <FullScreenLoading message="加载中..." />;
   }
 
   return (

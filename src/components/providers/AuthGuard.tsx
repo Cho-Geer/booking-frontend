@@ -6,6 +6,7 @@ import { setAuthEventHandler } from '@/utils/authEvents';
 import { setNavigate } from '@/utils/navigation';
 import { findRouteRule, hasRoutePermission } from '@/config/routePermissions';
 import { logoutUser } from '@/store/userSlice';
+import FullScreenLoading from '@/components/atoms/FullScreenLoading';
 
 const PUBLIC_PATHS = ['/login', '/register', '/account-disabled'];
 
@@ -64,7 +65,7 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
       return;
     }
 
-    if (userRole && PUBLIC_PATHS.includes(pathname) && pathname !== '/account-disabled') {
+    if (userRole && (PUBLIC_PATHS.includes(pathname) || pathname === '/') && pathname !== '/account-disabled') {
       const target = userRole === 'admin' ? '/admin/bookings' : '/bookings';
       router.replace(target);
     }
@@ -95,11 +96,17 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
   const isPublic = PUBLIC_PATHS.includes(pathname);
   const isRoot = pathname === '/';
 
+  const isRedirectPending =
+    !!currentUser && PUBLIC_PATHS.includes(pathname) && pathname !== '/account-disabled';
+  if (isRedirectPending) {
+    return <FullScreenLoading message="正在进入系统..." />;
+  }
+
   if (currentUser && isRoot) {
-    return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+    return <FullScreenLoading message="正在验证身份..." />;
   }
   if (!authInitialized && !isPublic && !isRoot) {
-    return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>;
+    return <FullScreenLoading message="初始化中..." />;
   }
   if (!currentUser && !isPublic && !isRoot) {
     return null;
