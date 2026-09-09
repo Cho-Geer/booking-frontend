@@ -18,6 +18,8 @@ import { AppDispatch, RootState } from '@/store';
 import { TimeSlot, Booking, AppointmentQuery } from '@/types';
 import BookingPageOrganism from '@/components/organisms/BookingPage';
 import ConfirmModal from '@/components/atoms/ConfirmModal';
+import FullScreenLoading from '@/components/atoms/FullScreenLoading';
+import { useInitialLoadGate } from '@/hooks/useInitialLoadGate';
 import { useUI } from '@/contexts/UIContext';
 import { BookingUIProvider } from '@/contexts/BookingContext';
 import { getTodayLocalDate } from '@/utils';
@@ -70,7 +72,7 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     pagination,
     filters,
   } = useSelector((state: RootState) => state.booking);
-  const { availableSlots } = useSelector((state: RootState) => state.slotTime);
+  const { availableSlots, loading: slotTimeLoading } = useSelector((state: RootState) => state.slotTime);
   const { services, loading: serviceLoading } = useSelector((state: RootState) => state.service); 
 
   // 本地状态
@@ -513,6 +515,11 @@ const BookingPage: React.FC<BookingPageProps> = ({ initialData = [], isSSR = fal
     dispatch(resetBookingState());
   }
   
+  const isInitialLoading = useInitialLoadGate([bookingsLoading, serviceLoading, slotTimeLoading]);
+  if (isInitialLoading) {
+    return <FullScreenLoading message="加载中..." />;
+  }
+
   return (
     <BookingUIProvider>
       <BookingPageOrganism 

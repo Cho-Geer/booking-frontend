@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/compat/router';
 import Button from '@/components/atoms/Button';
 import Modal from '@/components/atoms/Modal';
-import Spinner from '@/components/atoms/Spinner';
+import FullScreenLoading from '@/components/atoms/FullScreenLoading';
 import ThemeToggle from '@/components/atoms/ThemeToggle';
 import NotificationContainer from '@/components/molecules/NotificationContainer';
 import { useUI } from '@/contexts/UIContext';
@@ -135,7 +135,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* 全局加载指示器 */}
       {uiState.loading && (
-        <Spinner text="正在处理，请稍候..." global size="lg" />
+        <FullScreenLoading message="正在处理，请稍候..." />
       )}
 
       {/* 全局通知容器 - 显示所有通知消息 */}

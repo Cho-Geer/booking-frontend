@@ -43,7 +43,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
       containerId="login-page-container"
       containerClassName={`min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${isDarkTheme ? 'bg-background-dark text-text-dark-primary' : 'bg-gray-50 text-gray-900'}`}
       innerId="login-page-card"
-      innerClassName={`max-w-md w-full space-y-8 ${isDarkTheme ? 'text-gray-900' : 'text-text-dark-primary'}`}
+      innerClassName={`max-w-md w-full space-y-8 ${isDarkTheme ? 'text-text-dark-primary' : 'text-gray-900'}`}
     >
       <AnimatedHeader
         className="text-center"
