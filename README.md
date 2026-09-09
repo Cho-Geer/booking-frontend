@@ -38,9 +38,9 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 
 | デモ | 動画 |
 |---|---|
-| ユーザーログイン | [▶ ログインフロー（約2分26秒）](docs/images/booking-login-flow.mp4) |
-| ユーザー登録 | [▶ 登録フロー（約1分32秒）](docs/images/booking-register-flow.mp4) |
-| 管理者コンソール | [▶ 管理者ログインと管理操作（約2分）](docs/images/booking-admin-login-flow.mp4) |
+| ユーザーログイン | [▶ ログインフロー（約2分26秒）](https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474) |
+| ユーザー登録 | [▶ 登録フロー（約1分32秒）](https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7) |
+| 管理者コンソール | [▶ 管理者ログインと管理操作（約2分）](https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af) |
 
 ## 現在のアプリ構成
 
@@ -49,6 +49,7 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 - `pages/` — ルートエントリポイント
 - `components/` — UI コンポーネントの組み立て
 - `services/` — API クライアント
+
 - `store/` — Redux スライスとストア設定
 - `contexts/` — UI / 予約関連のコンテキスト
 - `hooks/` — 共通クライアントフック
