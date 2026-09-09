@@ -22,13 +22,19 @@ Detailed endpoint contract: [docs/assets/api-contract.md](./docs/assets/api-cont
 
 ## Screen Demos
 
-> Click a video (mp4) link to play it directly on GitHub.
+> The videos play right on this page. The original files are stored in `docs/images/`.
 
-| Demo | Video |
-|---|---|
-| User login | [▶ Login flow (~2 min 26 s)](docs/images/booking-login-flow.mp4) |
-| User registration | [▶ Registration flow (~1 min 32 s)](docs/images/booking-register-flow.mp4) |
-| Admin console | [▶ Admin login and management actions (~2 min)](docs/images/booking-admin-login-flow.mp4) |
+### User login
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### User registration
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### Admin console
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
 
 ## Current App Structure
 

@@ -34,13 +34,19 @@ CRM 予約プラットフォームの Next.js フロントエンドです。
 
 ## 画面デモ
 
-> 動画（mp4）はリンクをクリックすると GitHub 上で再生できます。
+> 動画はこのページ内でそのまま再生できます。元ファイルは `docs/images/` にあります。
 
-| デモ | 動画 |
-|---|---|
-| ユーザーログイン | ![▶ ログインフロー（約2分26秒）](https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474) |
-| ユーザー登録 | ![▶ 登録フロー（約1分32秒）](https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7) |
-| 管理者コンソール | ![▶ 管理者ログインと管理操作（約2分）](https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af) |
+### ユーザーログイン
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### ユーザー登録
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### 管理者コンソール
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
 
 ## 現在のアプリ構成
 

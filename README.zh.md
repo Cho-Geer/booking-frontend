@@ -22,13 +22,19 @@
 
 ## 画面演示
 
-> 点击视频（mp4）链接即可在 GitHub 上直接播放。
+> 视频可直接在本页面内播放。原始文件存放在 `docs/images/`。
 
-| 演示 | 视频 |
-|---|---|
-| 用户登录 | [▶ 登录流程（约 2 分 26 秒）](docs/images/booking-login-flow.mp4) |
-| 用户注册 | [▶ 注册流程（约 1 分 32 秒）](docs/images/booking-register-flow.mp4) |
-| 管理员控制台 | [▶ 管理员登录与管理操作（约 2 分）](docs/images/booking-admin-login-flow.mp4) |
+### 用户登录
+
+https://github.com/user-attachments/assets/b4bf13e4-73c0-4a87-aecc-f9abe44a3474
+
+### 用户注册
+
+https://github.com/user-attachments/assets/54d1e127-d857-41c0-9aa6-c15ee3609db7
+
+### 管理员控制台
+
+https://github.com/user-attachments/assets/22566f42-beb9-4164-93fa-fa686c3d42af
 
 ## 当前应用结构
 
