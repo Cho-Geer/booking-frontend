@@ -83,7 +83,9 @@ jobs:
           repository: Cho-Geer/booking-backend
           token: ${{ secrets.GITHUB_TOKEN }}
           path: backend
-          ref: ${{ github.ref_name == 'develop' && 'develop' || 'master' }}  # 根据前端分支选择对应后端分支
+          # PR では base（マージ先）ブランチを、push ではそのブランチ自身を取得する。
+          # master ブランチは廃止済みのため、存在しない ref を参照して e2e が失敗していた。
+          ref: ${{ github.base_ref || github.ref_name }}
 
       - name: Debug backend checkout
         run: |
