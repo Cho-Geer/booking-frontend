@@ -41,6 +41,22 @@ export async function fetchVerificationCode(phoneNumber: string): Promise<string
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = await redis.get(key);
     if (code) {
+      // バックエンドは Keyv 経由で保存するため、生の Redis では
+      // {"value":"123456","expires":...} という JSON エンベロープになる。
+      // 素の値が入る実装に戻った場合にも耐えるよう両形式を扱う。
+      try {
+        const parsed: unknown = JSON.parse(code);
+        if (
+          parsed !== null &&
+          typeof parsed === 'object' &&
+          'value' in parsed &&
+          typeof (parsed as { value: unknown }).value === 'string'
+        ) {
+          return (parsed as { value: string }).value;
+        }
+      } catch {
+        // JSON でなければ素の値をそのまま返す
+      }
       return code;
     }
     await sleep(500);
