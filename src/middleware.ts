@@ -1,29 +1,6 @@
 // src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtDecode } from 'jwt-decode';
-
-// 定义 JWT payload 类型
-interface JwtPayload {
-  sub: string;
-  email?: string;
-  phoneNumber?: string;
-  role: string;
-  exp?: number;
-  iat?: number;
-}
-
-/**
- * 解析 JWT token 并提取用户角色
- */
-function decodeToken(token: string): JwtPayload | null {
-  try {
-    return jwtDecode<JwtPayload>(token);
-  } catch (error) {
-    console.error('Failed to decode JWT token:', error);
-    return null;
-  }
-}
 
 /**
  * 清除认证相关的 cookies
