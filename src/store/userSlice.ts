@@ -223,6 +223,12 @@ const userSlice = createSlice({
         state.isAuthenticated = false;
         state.authInitialized = true;
       })
+      // 登出
+      .addCase(logoutUser.rejected, (state) => {
+        state.currentUser = null;
+        state.isAuthenticated = false;
+        state.authInitialized = true;
+      })
       .addCase(initializeAuth.pending, (state) => {
         state.authInitialized = false;
         state.loading = true;

@@ -64,12 +64,12 @@ export const userApi = {
   async logout() {
     try {
       const response = await api.post('/auth/logout');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('user');
+      localStorage.removeItem('user_info');
+      sessionStorage.removeItem('user_info');
       return resolvePayload(response);
     } catch (error) {
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('user');
+      localStorage.removeItem('user_info');
+      sessionStorage.removeItem('user_info');
       throw error;
     }
   },
