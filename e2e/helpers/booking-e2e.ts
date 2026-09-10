@@ -76,7 +76,8 @@ export async function registerUser(page: Page, user: TestUser): Promise<void> {
 
   const verificationCode = await fetchVerificationCode(user.phoneNumber);
   await page.getByLabel('验证码').fill(verificationCode);
-  await page.getByRole('button', { name: '注册' }).click();
+  // ナビバーにも「注册」ボタン（#register-button）があるため、フォーム内に限定して一意にする
+  await page.locator('form').getByRole('button', { name: '注册' }).click();
 
   await expect(page).toHaveURL(/\/bookings$/);
   await expect(page.locator('#booking-page-container')).toBeVisible();
@@ -91,7 +92,8 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 
   const verificationCode = await fetchVerificationCode(user.phoneNumber);
   await page.getByLabel('验证码').fill(verificationCode);
-  await page.getByRole('button', { name: '登录' }).click();
+  // ナビバーにも「登录」ボタン（#login-button）があるため、フォーム内に限定して一意にする
+  await page.locator('form').getByRole('button', { name: '登录' }).click();
 
   await expect(page).toHaveURL(/\/bookings$/);
   await expect(page.locator('#booking-page-container')).toBeVisible();
