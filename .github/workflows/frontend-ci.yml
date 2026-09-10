@@ -166,16 +166,15 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-
+      # Playwright ブラウザは毎回インストールする。
+      # 以前は actions/cache を使っていたが、キーの hashFiles('package-lock.json') が
+      # CI ワークスペース直下（frontend/ と backend/ の親）に該当ファイルが無いため空文字になり、
+      # "Linux-playwright-" という空ハッシュのキーでキャッシュヒットしてしまい、
+      # ブラウザ未インストールのままテストが起動して全件失敗していた。
+      # Chromium は約 130MB で、誤ヒットによる全滅より毎回導入のほうが確実に安い。
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+        working-directory: frontend
 
       - name: Build frontend
         run: npm run build
