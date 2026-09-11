@@ -62,14 +62,14 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
-      DATABASE_URL: postgresql://postgres:5382@localhost:5432/booking_system
-      REDIS_HOST: localhost
+      DATABASE_URL: postgresql://postgres:5382@127.0.0.1:5432/booking_system
+      REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       JWT_SECRET: ci-only-secret
       JWT_EXPIRES_IN: 3600
-      FRONTEND_URL: http://localhost:3000
-      FRONTEND_URLS: http://localhost:3000,http://127.0.0.1:3000
-      NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+      FRONTEND_URL: http://127.0.0.1:3000
+      FRONTEND_URLS: http://127.0.0.1:3000,http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:3001/v1
       E2E_BASE_URL: http://127.0.0.1:3000
     steps:
       - name: Checkout frontend
@@ -83,7 +83,9 @@ jobs:
           repository: Cho-Geer/booking-backend
           token: ${{ secrets.GITHUB_TOKEN }}
           path: backend
-          ref: ${{ github.ref_name == 'develop' && 'develop' || 'master' }}  # 根据前端分支选择对应后端分支
+          # PR では base（マージ先）ブランチを、push ではそのブランチ自身を取得する。
+          # master ブランチは廃止済みのため、存在しない ref を参照して e2e が失敗していた。
+          ref: ${{ github.base_ref || github.ref_name }}
 
       - name: Debug backend checkout
         run: |
@@ -137,7 +139,7 @@ jobs:
         working-directory: ./backend
         env:
           PORT: 3001
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: redis://127.0.0.1:6379
 
       - name: Wait for backend
         run: |
@@ -164,16 +166,15 @@ jobs:
         run: npm ci
         working-directory: frontend
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
-
+      # Playwright ブラウザは毎回インストールする。
+      # 以前は actions/cache を使っていたが、キーの hashFiles('package-lock.json') が
+      # CI ワークスペース直下（frontend/ と backend/ の親）に該当ファイルが無いため空文字になり、
+      # "Linux-playwright-" という空ハッシュのキーでキャッシュヒットしてしまい、
+      # ブラウザ未インストールのままテストが起動して全件失敗していた。
+      # Chromium は約 130MB で、誤ヒットによる全滅より毎回導入のほうが確実に安い。
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+        working-directory: frontend
 
       - name: Build frontend
         run: npm run build
@@ -200,12 +201,12 @@ jobs:
       - name: Debug Redis connectivity and data
         run: |
           sudo apt-get install -y redis-tools
-          redis-cli -h localhost -p 6379 ping
-          redis-cli -h localhost -p 6379 set test_key "hello"
-          redis-cli -h localhost -p 6379 get test_key
+          redis-cli -h 127.0.0.1 -p 6379 ping
+          redis-cli -h 127.0.0.1 -p 6379 set test_key "hello"
+          redis-cli -h 127.0.0.1 -p 6379 get test_key
           # 持续监控验证码键（后台运行）
           while true; do
-            redis-cli -h localhost -p 6379 --scan --pattern "verification_code:*" >> redis-keys.log
+            redis-cli -h 127.0.0.1 -p 6379 --scan --pattern "verification_code:*" >> redis-keys.log
             sleep 5
           done &
         working-directory: ./backend
@@ -214,10 +215,11 @@ jobs:
         working-directory: frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
-          NEXT_PUBLIC_API_URL: http://localhost:3001/v1
-          E2E_REDIS_URL: redis://localhost:6379
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:3001/v1
+          E2E_REDIS_URL: redis://127.0.0.1:6379
           CI: true
-        continue-on-error: true   # 即使失败也继续，以便上传产物
+      # E2E が失敗しても artifact は if: always() でアップロードされるため、
+      # continue-on-error は不要（以前はこれがテスト失敗を隠していた）
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4

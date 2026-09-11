@@ -41,6 +41,22 @@ export async function fetchVerificationCode(phoneNumber: string): Promise<string
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = await redis.get(key);
     if (code) {
+      // バックエンドは Keyv 経由で保存するため、生の Redis では
+      // {"value":"123456","expires":...} という JSON エンベロープになる。
+      // 素の値が入る実装に戻った場合にも耐えるよう両形式を扱う。
+      try {
+        const parsed: unknown = JSON.parse(code);
+        if (
+          parsed !== null &&
+          typeof parsed === 'object' &&
+          'value' in parsed &&
+          typeof (parsed as { value: unknown }).value === 'string'
+        ) {
+          return (parsed as { value: string }).value;
+        }
+      } catch {
+        // JSON でなければ素の値をそのまま返す
+      }
       return code;
     }
     await sleep(500);
@@ -76,7 +92,8 @@ export async function registerUser(page: Page, user: TestUser): Promise<void> {
 
   const verificationCode = await fetchVerificationCode(user.phoneNumber);
   await page.getByLabel('验证码').fill(verificationCode);
-  await page.getByRole('button', { name: '注册' }).click();
+  // ナビバーにも「注册」ボタン（#register-button）があるため、フォーム内に限定して一意にする
+  await page.locator('form').getByRole('button', { name: '注册' }).click();
 
   await expect(page).toHaveURL(/\/bookings$/);
   await expect(page.locator('#booking-page-container')).toBeVisible();
@@ -91,7 +108,9 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 
   const verificationCode = await fetchVerificationCode(user.phoneNumber);
   await page.getByLabel('验证码').fill(verificationCode);
-  await page.getByRole('button', { name: '登录' }).click();
+  // LoginForm の検証コード段階（#code-input-container）は <form> の外にあるため、
+  // そこにスコープする。ナビバーの #login-button とも別要素。
+  await page.locator('#code-input-container').getByRole('button', { name: '登录' }).click();
 
   await expect(page).toHaveURL(/\/bookings$/);
   await expect(page.locator('#booking-page-container')).toBeVisible();
@@ -104,7 +123,8 @@ export async function selectBookingDateAndService(
 ): Promise<void> {
   await page.getByTestId('booking-date-input').fill(bookingDate);
   await page.getByTestId('booking-service-selector').click();
-  await page.getByRole('button', { name: serviceName }).click();
+  // Dropdown は Headless UI の Menu を使うため、選択肢のロールは button ではなく menuitem
+  await page.getByRole('menuitem', { name: serviceName }).click();
 
   await expect
     .poll(async () => await page.getByTestId('time-slot-grid').locator('button:not([disabled])').count())
