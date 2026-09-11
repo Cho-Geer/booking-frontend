@@ -62,14 +62,14 @@ jobs:
           --health-timeout=5s
           --health-retries=5
     env:
-      DATABASE_URL: postgresql://postgres:5382@localhost:5432/booking_system
-      REDIS_HOST: localhost
+      DATABASE_URL: postgresql://postgres:5382@127.0.0.1:5432/booking_system
+      REDIS_HOST: 127.0.0.1
       REDIS_PORT: 6379
       JWT_SECRET: ci-only-secret
       JWT_EXPIRES_IN: 3600
-      FRONTEND_URL: http://localhost:3000
-      FRONTEND_URLS: http://localhost:3000,http://127.0.0.1:3000
-      NEXT_PUBLIC_API_URL: http://localhost:3001/v1
+      FRONTEND_URL: http://127.0.0.1:3000
+      FRONTEND_URLS: http://127.0.0.1:3000,http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:3001/v1
       E2E_BASE_URL: http://127.0.0.1:3000
     steps:
       - name: Checkout frontend
@@ -139,7 +139,7 @@ jobs:
         working-directory: ./backend
         env:
           PORT: 3001
-          REDIS_URL: redis://localhost:6379
+          REDIS_URL: redis://127.0.0.1:6379
 
       - name: Wait for backend
         run: |
@@ -201,12 +201,12 @@ jobs:
       - name: Debug Redis connectivity and data
         run: |
           sudo apt-get install -y redis-tools
-          redis-cli -h localhost -p 6379 ping
-          redis-cli -h localhost -p 6379 set test_key "hello"
-          redis-cli -h localhost -p 6379 get test_key
+          redis-cli -h 127.0.0.1 -p 6379 ping
+          redis-cli -h 127.0.0.1 -p 6379 set test_key "hello"
+          redis-cli -h 127.0.0.1 -p 6379 get test_key
           # 持续监控验证码键（后台运行）
           while true; do
-            redis-cli -h localhost -p 6379 --scan --pattern "verification_code:*" >> redis-keys.log
+            redis-cli -h 127.0.0.1 -p 6379 --scan --pattern "verification_code:*" >> redis-keys.log
             sleep 5
           done &
         working-directory: ./backend
@@ -215,8 +215,8 @@ jobs:
         working-directory: frontend
         env:
           E2E_BASE_URL: http://127.0.0.1:3000
-          NEXT_PUBLIC_API_URL: http://localhost:3001/v1
-          E2E_REDIS_URL: redis://localhost:6379
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:3001/v1
+          E2E_REDIS_URL: redis://127.0.0.1:6379
           CI: true
         continue-on-error: true   # 即使失败也继续，以便上传产物
       - name: Upload Playwright artifacts

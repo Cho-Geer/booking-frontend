@@ -43,10 +43,14 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   async rewrites() {
+    // プロキシ先は NEXT_PUBLIC_API_URL から導出する。
+    // 'localhost' を固定で書くと、環境によって IPv6(::1) と IPv4(127.0.0.1) の
+    // どちらに解決されるかが変わり、バックエンドが接続する Redis/DB とずれることがある。
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:3001/v1';
     return [
       {
         source: '/v1/:path*',
-        destination: 'http://localhost:3001/v1/:path*',
+        destination: `${apiBase.replace(/\/$/, '')}/:path*`,
       },
     ];
   },
