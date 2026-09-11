@@ -17,7 +17,9 @@ test.describe('Booking Frontend E2E', () => {
     await loginUser(page, user);
 
     await expect(page.getByText('预约服务')).toBeVisible();
-    await expect(page.getByTestId('booking-list')).toContainText('暂无预约记录');
+    // 新規ユーザーの予約は 0 件。booking-list は予約があるときしか描画されず、
+    // 空のときは「暂无预约记录」が代わりに出るため、そちらで検証する。
+    await expect(page.getByText('暂无预约记录')).toBeVisible();
   });
 
   test('user can query available slots for a future date', async ({ page }) => {

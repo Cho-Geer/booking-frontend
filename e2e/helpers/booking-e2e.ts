@@ -108,8 +108,9 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 
   const verificationCode = await fetchVerificationCode(user.phoneNumber);
   await page.getByLabel('验证码').fill(verificationCode);
-  // ナビバーにも「登录」ボタン（#login-button）があるため、フォーム内に限定して一意にする
-  await page.locator('form').getByRole('button', { name: '登录' }).click();
+  // LoginForm の検証コード段階（#code-input-container）は <form> の外にあるため、
+  // そこにスコープする。ナビバーの #login-button とも別要素。
+  await page.locator('#code-input-container').getByRole('button', { name: '登录' }).click();
 
   await expect(page).toHaveURL(/\/bookings$/);
   await expect(page.locator('#booking-page-container')).toBeVisible();
@@ -122,7 +123,8 @@ export async function selectBookingDateAndService(
 ): Promise<void> {
   await page.getByTestId('booking-date-input').fill(bookingDate);
   await page.getByTestId('booking-service-selector').click();
-  await page.getByRole('button', { name: serviceName }).click();
+  // Dropdown は Headless UI の Menu を使うため、選択肢のロールは button ではなく menuitem
+  await page.getByRole('menuitem', { name: serviceName }).click();
 
   await expect
     .poll(async () => await page.getByTestId('time-slot-grid').locator('button:not([disabled])').count())
