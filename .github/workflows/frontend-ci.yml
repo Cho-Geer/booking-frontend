@@ -218,7 +218,8 @@ jobs:
           NEXT_PUBLIC_API_URL: http://127.0.0.1:3001/v1
           E2E_REDIS_URL: redis://127.0.0.1:6379
           CI: true
-        continue-on-error: true   # 即使失败也继续，以便上传产物
+      # E2E が失敗しても artifact は if: always() でアップロードされるため、
+      # continue-on-error は不要（以前はこれがテスト失敗を隠していた）
       - name: Upload Playwright artifacts
         if: always()
         uses: actions/upload-artifact@v4
