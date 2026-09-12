@@ -52,13 +52,15 @@ export function middleware(request: NextRequest) {
   );
 
   // 1. 保护管理后台路由：未认证则拒绝
+  //    携带 error=invalid_token 标记：AuthGuard 检测到该标记会清除本地会话，
+  //    防止"客户端自认已登录、服务器判定未认证"时形成 /login⇄受保护页 的乒乓循环
   if (pathname.startsWith('/admin') && !isAuthenticated) {
-    return createLoginRedirect(request, undefined, pathname);
+    return createLoginRedirect(request, 'invalid_token', pathname);
   }
 
-  // 2. 保护其他非公开路由：未认证则跳转登录
+  // 2. 保护其他非公开路由：未认证则跳转登录（同样携带标记，理由同上）
   if (!isPublicPath && !isAuthenticated) {
-    return createLoginRedirect(request, undefined, pathname);
+    return createLoginRedirect(request, 'invalid_token', pathname);
   }
 
   // 3. 特殊处理：已登录用户访问 /login、/register、/account-disabled 时
