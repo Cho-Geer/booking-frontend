@@ -5,7 +5,7 @@ import { RootState, AppDispatch } from '@/store';
 import { setAuthEventHandler } from '@/utils/authEvents';
 import { setNavigate } from '@/utils/navigation';
 import { findRouteRule, hasRoutePermission } from '@/config/routePermissions';
-import { logoutUser } from '@/store/userSlice';
+import { logoutUser, logout } from '@/store/userSlice';
 import FullScreenLoading from '@/components/atoms/FullScreenLoading';
 
 const PUBLIC_PATHS = ['/login', '/register', '/account-disabled'];
@@ -16,6 +16,26 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
   const { currentUser, authInitialized } = useSelector((state: RootState) => state.user);
   const pathname = router?.pathname || '';
   const userRole = currentUser?.userType ?? null;
+
+  // middleware 重定向标记（error=invalid_token）＝服务器已判定未认证。
+  // 以服务器判定为准清除本地 redux 会话（cookie 为 HttpOnly，客户端无法直接感知其丢失），
+  // 防止已失效的本地会话与守卫自动跳转形成 /login⇄受保护页 的乒乓循环。
+  const serverRejected = router?.query?.error === 'invalid_token';
+  const markerHandled = React.useRef(false);
+
+  useEffect(() => {
+    if (!serverRejected) {
+      markerHandled.current = false;
+      return;
+    }
+    if (markerHandled.current) return;
+    markerHandled.current = true;
+    if (currentUser) {
+      dispatch(logout());
+    }
+    // 剥离 URL 中的标记，避免误清紧随其后的重新登录
+    router?.replace({ pathname: '/login', query: {} });
+  }, [serverRejected, currentUser, dispatch, router]);
 
   // 注册导航函数
   React.useEffect(() => {
@@ -65,11 +85,11 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
       return;
     }
 
-    if (userRole && (PUBLIC_PATHS.includes(pathname) || pathname === '/') && pathname !== '/account-disabled') {
+    if (userRole && !serverRejected && (PUBLIC_PATHS.includes(pathname) || pathname === '/') && pathname !== '/account-disabled') {
       const target = userRole === 'admin' ? '/admin/bookings' : '/bookings';
       router.replace(target);
     }
-  }, [authInitialized, userRole, pathname, router]);
+  }, [authInitialized, userRole, pathname, router, serverRejected]);
 
   // 认证事件处理（API 拦截器驱动）
   useEffect(() => {
@@ -97,7 +117,7 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
   const isRoot = pathname === '/';
 
   const isRedirectPending =
-    !!currentUser && PUBLIC_PATHS.includes(pathname) && pathname !== '/account-disabled';
+    !!currentUser && !serverRejected && PUBLIC_PATHS.includes(pathname) && pathname !== '/account-disabled';
   if (isRedirectPending) {
     return <FullScreenLoading message="正在进入系统..." />;
   }
