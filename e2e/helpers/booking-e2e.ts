@@ -40,8 +40,8 @@ export async function fetchVerificationCode(
     await redis.connect();
   }
 
-  // バックエンドは type ごとに検証コードをスコープして保存する
-  // （register は email 送信、login は SMS 送信でコード体系が別）
+  // バックエンドは検証コードを type ごとにスコープして保存する
+  // （login と register で別の Redis キーになるため、type を指定して取得する）
   const key = `verification_code:${type}:${phoneNumber}`;
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = await redis.get(key);
