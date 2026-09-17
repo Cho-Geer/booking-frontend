@@ -39,8 +39,9 @@ export const userApi = {
       type,
     };
 
-    // 仅当指定了 email 时才加入 payload（login 流程不携带 email）
-    if (email !== undefined) {
+    // 仅在 email 为非空值时才加入 payload
+    // （login 流程不携带 email；空字符串同样属于无效值，交由后端 400 拒绝）
+    if (email) {
       payload.email = email;
     }
 
