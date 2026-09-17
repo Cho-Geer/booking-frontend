@@ -30,10 +30,21 @@ export const userApi = {
    * 发送验证码
    * @param phoneNumber - 手机号
    * @param type - 验证码类型
+   * @param email - 邮箱（type 为 'register' 时必需，服务端会校验；为 undefined 时不发送该字段）
    * @returns 发送结果
    */
-  async sendCode(phoneNumber: string, type: 'login' | 'register') {
-    const response = await api.post('/auth/send-verification-code', { phoneNumber, type });
+  async sendCode(phoneNumber: string, type: 'login' | 'register', email?: string) {
+    const payload: { phoneNumber: string; type: 'login' | 'register'; email?: string } = {
+      phoneNumber,
+      type,
+    };
+
+    // 仅当指定了 email 时才加入 payload（login 流程不携带 email）
+    if (email !== undefined) {
+      payload.email = email;
+    }
+
+    const response = await api.post('/auth/send-verification-code', payload);
     return resolvePayload(response);
   },
 

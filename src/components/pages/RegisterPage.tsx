@@ -48,8 +48,8 @@ const RegisterPage: React.FC = () => {
   /**
    * 处理发送验证码
    */
-  const handleSendCode = (phoneNumber: string) => {
-    dispatch(sendCode({ phoneNumber, type: 'register' }));
+  const handleSendCode = (phoneNumber: string, email: string) => {
+    dispatch(sendCode({ phoneNumber, type: 'register', email }));
     setCountdown(60);
   };
 

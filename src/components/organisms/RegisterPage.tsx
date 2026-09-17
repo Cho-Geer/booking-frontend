@@ -6,7 +6,7 @@ import { AnimatedPage, AnimatedHeader, AnimatedFooter } from '@/components/atoms
 
 interface RegisterPageProps {
   onSubmit: (data: RegisterFormData) => void;
-  onSendCode: (phone: string) => void;
+  onSendCode: (phone: string, email: string) => void;
   loading: boolean;
   countdown?: number;
   showCodeInput?: boolean;

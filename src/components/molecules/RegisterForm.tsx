@@ -9,7 +9,7 @@ import { useTheme } from '@/hooks/useTheme';
 
 interface RegisterFormProps {
   onSubmit: (data: RegisterFormData) => void;
-  onSendCode: (phone: string) => void;
+  onSendCode: (phone: string, email: string) => void;
   loading?: boolean;
   countdown?: number;
   showCodeInput?: boolean;
@@ -34,9 +34,8 @@ const phoneNumberSchema = z.string()
   .max(11, '手机号长度为11位');
 
 const emailSchema = z.string()
-  .email('请输入有效的邮箱地址')
-  .or(z.literal(''))
-  .optional();
+  .min(1, '请输入邮箱')
+  .email('请输入有效的邮箱地址');
 
 const verificationCodeSchema = z.string()
   .min(4, '验证码至少为4位')
@@ -59,7 +58,7 @@ const formSchema = z.object({
  * @example
  * <RegisterForm
  *   onSubmit={(data) => handleRegister(data)}
- *   onSendCode={(phone) => handleSendCode(phone)}
+ *   onSendCode={(phone, email) => handleSendCode(phone, email)}
  *   loading={loading}
  *   countdown={countdown}
  * />
@@ -91,6 +90,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const phone = watch('phoneNumber');
   const name = watch('name');
+  const email = watch('email');
   const verificationCode = watch('verificationCode');
   // const [showCodeInput, setShowCodeInput] = React.useState(false);
   const [codeError, setCodeError] = React.useState('');
@@ -105,9 +105,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     if (!validationResult.success) {
       return;
     }
-    
+
+    // 邮箱为必填项，发码前同样校验格式
+    const emailValidationResult = emailSchema.safeParse(data.email);
+    if (!emailValidationResult.success) {
+      return;
+    }
+
     // setShowCodeInput(true);
-    onSendCode(data.phoneNumber);
+    onSendCode(data.phoneNumber, data.email);
     setValue('verificationCode', '');
     setCodeError('');
   };
@@ -170,10 +176,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           />
         </div>
 
-        {/* 邮箱输入（可选） */}
+        {/* 邮箱输入（必填） */}
         <div id="email-input-container" className="space-y-2">
           <Input
-            label="邮箱（选填）"
+            label="邮箱（必填）"
             type="email"
             placeholder="请输入邮箱地址"
             error={errors.email?.message}
@@ -206,11 +212,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               />
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
-                disabled={loading || countdown > 0 || !phone || !name}
+                disabled={loading || countdown > 0 || !phone || !name || !!errors.email}
                 onClick={() => {
                   const validationResult = phoneNumberSchema.safeParse(phone);
-                  if (validationResult.success) {
-                    onSendCode(phone);
+                  const emailValidationResult = emailSchema.safeParse(email);
+                  if (validationResult.success && emailValidationResult.success) {
+                    onSendCode(phone, email);
                     setValue('verificationCode', '');
                     setCodeError('');
                   }
@@ -231,7 +238,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             onClick={() => {
               const validationResult = phoneNumberSchema.safeParse(phone);
               if (validationResult.success) {
-                handleSendCode({ phoneNumber: phone, name } as z.infer<typeof formSchema>);
+                handleSendCode({ phoneNumber: phone, name, email } as z.infer<typeof formSchema>);
               }
             }}
           >

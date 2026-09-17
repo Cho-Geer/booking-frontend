@@ -32,12 +32,17 @@ export function createFutureDate(offsetDays: number): string {
   return date.toISOString().slice(0, 10);
 }
 
-export async function fetchVerificationCode(phoneNumber: string): Promise<string> {
+export async function fetchVerificationCode(
+  phoneNumber: string,
+  type: 'login' | 'register' = 'register',
+): Promise<string> {
   if (redis.status !== 'ready') {
     await redis.connect();
   }
 
-  const key = `verification_code:${phoneNumber}`;
+  // バックエンドは type ごとに検証コードをスコープして保存する
+  // （register は email 送信、login は SMS 送信でコード体系が別）
+  const key = `verification_code:${type}:${phoneNumber}`;
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = await redis.get(key);
     if (code) {
@@ -85,7 +90,7 @@ export async function registerUser(page: Page, user: TestUser): Promise<void> {
   await page.goto('/register');
   await page.getByLabel('姓名').fill(user.name);
   await page.getByLabel('手机号').fill(user.phoneNumber);
-  await page.getByLabel('邮箱（选填）').fill(user.email);
+  await page.getByLabel('邮箱（必填）').fill(user.email);
   await page.getByRole('button', { name: '获取验证码' }).click();
 
   await expect(page.locator('#verification-code-container')).toBeVisible();
@@ -106,7 +111,7 @@ export async function loginUser(page: Page, user: TestUser): Promise<void> {
 
   await expect(page.locator('#code-input-container')).toBeVisible();
 
-  const verificationCode = await fetchVerificationCode(user.phoneNumber);
+  const verificationCode = await fetchVerificationCode(user.phoneNumber, 'login');
   await page.getByLabel('验证码').fill(verificationCode);
   // LoginForm の検証コード段階（#code-input-container）は <form> の外にあるため、
   // そこにスコープする。ナビバーの #login-button とも別要素。

@@ -59,11 +59,12 @@ export const registerUser = createAsyncThunk(
 
 /**
  * 发送验证码异步操作
+ * email 为可选参数：REGISTER 流程必须传入，LOGIN 流程不传（不会出现在请求 payload 中）
  */
 export const sendCode = createAsyncThunk(
   'user/sendCode',
-  async ({ phoneNumber, type }: { phoneNumber: string; type: 'login' | 'register' }) => {
-    const response = await userApi.sendCode(phoneNumber, type);
+  async ({ phoneNumber, type, email }: { phoneNumber: string; type: 'login' | 'register'; email?: string }) => {
+    const response = await userApi.sendCode(phoneNumber, type, email);
     return response;
   }
 );
