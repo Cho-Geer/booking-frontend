@@ -40,9 +40,11 @@ const LoginPage: React.FC = () => {
   /**
    * 发送验证码
    */
-  const handleSendCode = (phoneNumber: string, type: 'login') => {
-    dispatch(sendCode({ phoneNumber, type }));
-    setCountdown(60);
+  const handleSendCode = async (phoneNumber: string, type: 'login') => {
+    const result = await dispatch(sendCode({ phoneNumber, type }));
+    if (sendCode.fulfilled.match(result)) {
+      setCountdown(60);
+    }
   };
 
   /**

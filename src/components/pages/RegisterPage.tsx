@@ -47,10 +47,14 @@ const RegisterPage: React.FC = () => {
 
   /**
    * 处理发送验证码
+   * 発码リクエストが成功した場合のみカウントダウンを開始する
+   * （邮箱重複などの失敗時はコード入力欄・カウントダウン・登録ボタンの状態を一切変えない）
    */
-  const handleSendCode = (phoneNumber: string) => {
-    dispatch(sendCode({ phoneNumber, type: 'register' }));
-    setCountdown(60);
+  const handleSendCode = async (phoneNumber: string, email: string) => {
+    const result = await dispatch(sendCode({ phoneNumber, type: 'register', email }));
+    if (sendCode.fulfilled.match(result)) {
+      setCountdown(60);
+    }
   };
 
   return (

@@ -61,6 +61,13 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      # 検証コードがメール送信型になったため、e2e では MailHog が SMTP を受け持つ。
+      # backend は送信失敗で 502 を返すため、MAIL_* が無いと発码 API が必ず失敗する。
+      mailhog:
+        image: mailhog/mailhog
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       DATABASE_URL: postgresql://postgres:5382@127.0.0.1:5432/booking_system
       REDIS_HOST: 127.0.0.1
@@ -140,6 +147,10 @@ jobs:
         env:
           PORT: 3001
           REDIS_URL: redis://127.0.0.1:6379
+          MAIL_HOST: 127.0.0.1
+          MAIL_PORT: 1025
+          MAIL_SECURE: 'false'
+          MAIL_FROM: ci@booking.local
 
       - name: Wait for backend
         run: |

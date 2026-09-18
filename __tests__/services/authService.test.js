@@ -17,6 +17,7 @@ const mockResponses = {
 const testData = {
   validPhone: '13800138000',
   validCode: '123456',
+  validEmail: 'test@example.com',
   invalidPhone: 'invalid',
   invalidCode: '000000',
   apiError: new Error('API Error'),
@@ -36,6 +37,9 @@ describe('userApi', () => {
 
       expect(api.post).toHaveBeenCalledTimes(1);
       expect(api.post).toHaveBeenCalledWith('/auth/send-verification-code', { phoneNumber: testData.validPhone, type: 'login' });
+      // toHaveBeenCalledWith は undefined のプロパティを無視するため、
+      // toStrictEqual で email キーが payload に「存在しない」ことを厳密に固定する
+      expect(api.post.mock.calls[0][1]).toStrictEqual({ phoneNumber: testData.validPhone, type: 'login' });
       expect(result).toEqual(mockResponses.sendCodeSuccess);
     });
 
@@ -61,13 +65,17 @@ describe('userApi', () => {
       expect(api.post).toHaveBeenCalledTimes(2);
     });
 
-    it('should handle different phone parameters', async () => {
+    it('should include email in payload when sending register code', async () => {
       api.post.mockResolvedValue({ data: mockResponses.sendCodeSuccess });
       const anotherPhone = '13900139000';
 
-      const result = await userApi.sendCode(anotherPhone, 'register');
+      const result = await userApi.sendCode(anotherPhone, 'register', testData.validEmail);
 
-      expect(api.post).toHaveBeenCalledWith('/auth/send-verification-code', { phoneNumber: anotherPhone, type: 'register' });
+      expect(api.post).toHaveBeenCalledWith('/auth/send-verification-code', {
+        phoneNumber: anotherPhone,
+        type: 'register',
+        email: testData.validEmail,
+      });
       expect(result).toEqual(mockResponses.sendCodeSuccess);
     });
   });

@@ -1,6 +1,7 @@
 /**
  * userSlice unit tests
  */
+import { configureStore } from '@reduxjs/toolkit';
 import userReducer, {
   sendCode,
   verifyCode,
@@ -8,6 +9,7 @@ import userReducer, {
   clearError,
   setShowCodeInput,
 } from '@/store/userSlice';
+import { userApi } from '@/services/userApi';
 
 jest.mock('@/services/userApi');
 
@@ -109,7 +111,49 @@ describe('userSlice', () => {
       });
       expect(actual.loading).toBe(false);
       expect(actual.showCodeInput).toBe(false);
+      expect(actual.codeSent).toBe(false);
       expect(actual.error).toEqual(testData.mockSendCodeError);
+    });
+  });
+
+  describe('sendCode（発码失敗時の状態遷移）', () => {
+    const makeStore = () => configureStore({ reducer: { user: userReducer } });
+    const sendCodeArgs = {
+      phoneNumber: testConstants.mockUserPhone,
+      type: 'register',
+      email: 'existing@example.com',
+    };
+
+    it('backend の業務エラーメッセージが error に入り、コード入力欄は開かない', async () => {
+      const store = makeStore();
+      const businessError = '邮箱 existing@example.com 已存在';
+      userApi.sendCode.mockRejectedValueOnce(new Error(businessError));
+
+      const result = await store.dispatch(sendCode(sendCodeArgs));
+
+      expect(sendCode.rejected.match(result)).toBe(true);
+      expect(result.error.message).toBe(businessError);
+
+      const state = store.getState().user;
+      expect(state.error).toBe(businessError);
+      expect(state.showCodeInput).toBe(false);
+      expect(state.codeSent).toBe(false);
+      expect(state.loading).toBe(false);
+    });
+
+    it('成功時のみ showCodeInput / codeSent が true になる', async () => {
+      const store = makeStore();
+      userApi.sendCode.mockResolvedValueOnce(null);
+
+      const result = await store.dispatch(sendCode(sendCodeArgs));
+
+      expect(sendCode.fulfilled.match(result)).toBe(true);
+
+      const state = store.getState().user;
+      expect(state.error).toBeNull();
+      expect(state.showCodeInput).toBe(true);
+      expect(state.codeSent).toBe(true);
+      expect(state.loading).toBe(false);
     });
   });
 
