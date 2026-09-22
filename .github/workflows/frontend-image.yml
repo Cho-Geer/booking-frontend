@@ -31,9 +31,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        platform: linux/amd64,linux/arm64
-        build-args:
-          NEXT_PUBLIC_SF_SITE_URL=${{ vars.NEXT_PUBLIC_SF_SITE_URL }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
@@ -81,6 +78,9 @@ jobs:
       - name: Build image (no push)
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_SF_SITE_URL: ${{ vars.NEXT_PUBLIC_SF_SITE_URL }}
           context: .
           push: false
           tags: booking-frontend:test
