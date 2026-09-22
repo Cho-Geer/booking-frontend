@@ -12,6 +12,8 @@ WORKDIR /app
 COPY . .
 
 ENV NODE_ENV=production
+ARG NEXT_PUBLIC_SF_SITE_URL
+ENV NEXT_PUBLIC_SF_SITE_URL=$NEXT_PUBLIC_SF_SITE_URL
 
 RUN npm run build
 RUN npm prune --omit=dev
