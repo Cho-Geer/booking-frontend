@@ -1,0 +1,15 @@
+# 统一文本文件换行符为 LF(根治 Windows autocrlf 造成的"幽灵修改": 内容零差异却显示 modified)
+* text=auto eol=lf
+
+# 二进制文件(防止被误判为文本而做换行转换)
+*.mp4 binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
