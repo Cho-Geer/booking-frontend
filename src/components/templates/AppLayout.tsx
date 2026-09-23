@@ -67,10 +67,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({
                 <h1 className={`text-xl font-bold ${uiState.theme === 'dark' ? 'text-primary/90' : 'text-primary'}`}>预约系统</h1>
               </div>
               <div id="nav-items" className="hidden sm:ml-6 sm:flex sm:space-x-8">
+                {/* 未登录时预取受保护路由(/bookings)会把 middleware 的 307 重定向留在客户端数据缓存中，登录/注册成功后的 router.replace 会回放该重定向又弹回 /login（2026-09-23 故障） */}
                 {userNavItems.map((item) => (
                   <Link 
                     key={item.path} 
                     href={item.path}
+                    prefetch={false}
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                       router && (router.pathname === item.path
                         ? uiState.theme === 'dark' 

@@ -28,6 +28,8 @@ function createLoginRedirect(request: NextRequest, errorMessage?: string, redire
   }
   
   const response = NextResponse.redirect(loginUrl);
+  // 不把 307 重定向响应留在 Next.js 客户端路由数据缓存中（缓存过的 redirect-internal 会污染登录后跳转）
+  response.headers.set('x-middleware-cache', 'no-cache');
   return clearAuthCookies(response);
 }
 
