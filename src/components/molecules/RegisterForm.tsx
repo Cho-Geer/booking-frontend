@@ -212,6 +212,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               />
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
+                isLoading={loading}
                 disabled={loading || countdown > 0 || !phone || !name || !!errors.email}
                 onClick={() => {
                   const validationResult = phoneNumberSchema.safeParse(phone);
@@ -234,7 +235,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             type="button"
             variant="primary"
             fullWidth
-            disabled={loading || !phone || !name || !!errors.phoneNumber || !!errors.name || !!errors.email}
+            isLoading={loading}
+            disabled={loading || !phone || !name || !email || !!errors.phoneNumber || !!errors.name || !!errors.email}
             onClick={() => {
               const validationResult = phoneNumberSchema.safeParse(phone);
               if (validationResult.success) {
