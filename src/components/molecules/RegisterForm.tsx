@@ -236,7 +236,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             variant="primary"
             fullWidth
             isLoading={loading}
-            disabled={loading || !phone || !name || !!errors.phoneNumber || !!errors.name || !!errors.email}
+            disabled={loading || !phone || !name || !email || !!errors.phoneNumber || !!errors.name || !!errors.email}
             onClick={() => {
               const validationResult = phoneNumberSchema.safeParse(phone);
               if (validationResult.success) {
