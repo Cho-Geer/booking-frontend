@@ -170,6 +170,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
               />
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
+                isLoading={loading}
                 disabled={loading || countdown > 0 || !phoneNumber}
                 onClick={() => {
                   const validationResult = phoneNumberSchema.safeParse(phoneNumber);
