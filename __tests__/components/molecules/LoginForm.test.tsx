@@ -179,6 +179,18 @@ describe('LoginForm (P1: 暫定ロック)', () => {
     expect(loginButton).not.toBeDisabled();
     expect(screen.queryByText(/尝试次数过多/)).not.toBeInTheDocument();
   });
+
+  it('マウント前にアクティブなロックを復元済みの場合、初期描画から残り秒案内が出て照合ボタンが disabled になる', () => {
+    act(() => {
+      store.dispatch(restoreVerifyGuardState({ verifyAttempts: 3, lockoutUntil: Date.now() + 30000 }));
+    });
+    // コード入力段階を直接描画し、インタラクション・タイマー進行より前の初期描画を検証する
+    // （lockRemaining がストアスナップショットから遅延初期化されることを保証する回帰テスト）
+    render(<LoginForm onSendCode={jest.fn()} onSubmit={jest.fn()} showCodeInput countdown={0} />);
+
+    expect(screen.getByText(/尝试次数过多/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '登录' })).toBeDisabled();
+  });
 });
 
 describe('LoginForm (P3: details.reason ガイダンス)', () => {

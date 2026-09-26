@@ -201,6 +201,21 @@ describe('RegisterForm (P1: 暫定ロック)', () => {
     expect(registerButton).not.toBeDisabled();
     expect(screen.queryByText(LOCK_GUIDANCE_PATTERN)).not.toBeInTheDocument();
   });
+
+  it('マウント前にアクティブなロックを復元済みの場合、初期描画から残り秒案内が出て登録ボタンが disabled になる', () => {
+    act(() => {
+      store.dispatch(restoreVerifyGuardState({ verifyAttempts: 3, lockoutUntil: Date.now() + 30000 }));
+    });
+    // コード入力段階を直接描画し、インタラクション・タイマー進行より前の初期描画を検証する
+    // （lockRemaining がストアスナップショットから遅延初期化されることを保証する回帰テスト）
+    render(<RegisterForm onSendCode={jest.fn()} onSubmit={jest.fn()} showCodeInput countdown={0} />);
+
+    fillBasicFields();
+    fillCode();
+
+    expect(screen.getByText(LOCK_GUIDANCE_PATTERN)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '注册' })).toBeDisabled();
+  });
 });
 
 describe('RegisterForm (P3: details.reason ガイダンス)', () => {

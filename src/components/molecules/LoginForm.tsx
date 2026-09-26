@@ -17,6 +17,14 @@ const getServerLockoutUntilSnapshot = (): number | null => null;
 const getVerifyFailReasonSnapshot = () => getStoreState().user.lastVerifyFailReason;
 const getServerVerifyFailReasonSnapshot = (): VerifyFailReason | null => null;
 
+// P1: 暫定ロックの残り秒を計算する（初回描画の遅延初期化と effect の tick の
+// 両方で同じ計算を使い、ロジックを 1 箇所にまとめる）
+const computeRemainingSeconds = (lockoutUntil: number | null): number => {
+  if (lockoutUntil === null) return 0;
+  const remainingMs = lockoutUntil - Date.now();
+  return remainingMs <= 0 ? 0 : Math.ceil(remainingMs / 1000);
+};
+
 interface LoginFormProps {
   onSubmit: (phoneNumber: string, code: string) => void;
   onSendCode: (phoneNumber: string, type: 'login') => void;
@@ -74,7 +82,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // P0: 提出冷却（再送・照合ボタンの「失敗直後の即時再試行連打」を 5 秒抑止する）
   const [submitCooldown, setSubmitCooldown] = React.useState(false);
   // P1: 暫定ロックの残り秒（表示用）
-  const [lockRemaining, setLockRemaining] = React.useState(0);
+  // ストアスナップショットから遅延初期化し、復元済みロックが初回描画から反映されるようにする
+  // （サーバー描画は window が無いため 0。クライアントのハイドレーション時はストアが
+  // まだ初期状態＝ロックなしのため 0 で一致し、ハイドレーション不一致は発生しない）
+  const [lockRemaining, setLockRemaining] = React.useState(() =>
+    typeof window !== 'undefined' ? computeRemainingSeconds(getLockoutUntilSnapshot()) : 0
+  );
 
   // P1/P3: 暫定ロック時刻・照合失敗理由をストアから購読
   const lockoutUntil = useSyncExternalStore(
@@ -146,12 +159,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
     }
     let timer: NodeJS.Timeout | undefined;
     const tick = () => {
-      const remainingMs = lockoutUntil - Date.now();
-      if (remainingMs <= 0) {
+      const remaining = computeRemainingSeconds(lockoutUntil);
+      if (remaining === 0) {
         setLockRemaining(0);
         return;
       }
-      setLockRemaining(Math.ceil(remainingMs / 1000));
+      setLockRemaining(remaining);
       timer = setTimeout(tick, 1000);
     };
     tick();
@@ -170,7 +183,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           ? '验证码不正确，请重新输入'
           : '')
     : '';
-  const codeInputError = lockGuidance || reasonGuidance || codeError;
+  // 優先順位: ロック案内 > ローカル検証エラー > 理由ガイダンス
+  // （ローカルの Zod 検証エラーが古い案内の裏に隠れないようにする）
+  const codeInputError = lockGuidance || codeError || reasonGuidance;
 
   return (
     <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>

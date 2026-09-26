@@ -330,16 +330,19 @@ const userSlice = createSlice({
         }
       })
       // 登出
+      // P3: sync の logout reducer と対称に、失敗理由ガイダンスもクリアする
       .addCase(logoutUser.fulfilled, (state) => {
         state.currentUser = null;
         state.isAuthenticated = false;
         state.authInitialized = true;
+        state.lastVerifyFailReason = null;
       })
       // 登出
       .addCase(logoutUser.rejected, (state) => {
         state.currentUser = null;
         state.isAuthenticated = false;
         state.authInitialized = true;
+        state.lastVerifyFailReason = null;
       })
       .addCase(initializeAuth.pending, (state) => {
         state.authInitialized = false;

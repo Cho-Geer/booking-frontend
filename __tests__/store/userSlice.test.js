@@ -7,6 +7,7 @@ import userReducer, {
   verifyCode,
   registerUser,
   logout,
+  logoutUser,
   clearError,
   setShowCodeInput,
   restoreVerifyGuardState,
@@ -379,6 +380,36 @@ describe('userSlice', () => {
       await store.dispatch(sendCode({ phoneNumber: testConstants.mockUserPhone, type: 'login' }));
 
       expect(store.getState().user.lastVerifyFailReason).toBeNull();
+    });
+  });
+
+  describe('P3: logoutUser でも lastVerifyFailReason をクリアする（sync logout との対称性）', () => {
+    it('logoutUser fulfilled で lastVerifyFailReason がクリアされる', () => {
+      const stateWithReason = {
+        ...initialState,
+        isAuthenticated: true,
+        lastVerifyFailReason: 'MISMATCH',
+      };
+      const actual = userReducer(stateWithReason, { type: logoutUser.fulfilled.type });
+      expect(actual.currentUser).toBeNull();
+      expect(actual.isAuthenticated).toBe(false);
+      expect(actual.authInitialized).toBe(true);
+      expect(actual.lastVerifyFailReason).toBeNull();
+    });
+
+    it('logoutUser rejected でも lastVerifyFailReason がクリアされる', () => {
+      const stateWithReason = {
+        ...initialState,
+        isAuthenticated: true,
+        lastVerifyFailReason: 'EXPIRED',
+      };
+      const actual = userReducer(stateWithReason, {
+        type: logoutUser.rejected.type,
+        error: { message: 'logout failed' },
+      });
+      expect(actual.currentUser).toBeNull();
+      expect(actual.isAuthenticated).toBe(false);
+      expect(actual.lastVerifyFailReason).toBeNull();
     });
   });
 });
