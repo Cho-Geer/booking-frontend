@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,16 @@ import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import { useTheme } from '@/hooks/useTheme';
+import { getStoreState, store } from '@/store';
+import type { VerifyFailReason } from '@/store/userSlice';
+
+// P1/P3: userSlice の暫定ロック・照合失敗理由をストアシングルトンから購読する
+// （organisms の props 契約は本対応のスコープ外のため、props 経由ではなく直接購読する）
+const subscribeToUserStore = (onStoreChange: () => void) => store.subscribe(onStoreChange);
+const getLockoutUntilSnapshot = () => getStoreState().user.lockoutUntil;
+const getServerLockoutUntilSnapshot = (): number | null => null;
+const getVerifyFailReasonSnapshot = () => getStoreState().user.lastVerifyFailReason;
+const getServerVerifyFailReasonSnapshot = (): VerifyFailReason | null => null;
 
 interface RegisterFormProps {
   onSubmit: (data: RegisterFormData) => void;
@@ -94,6 +104,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const verificationCode = watch('verificationCode');
   // const [showCodeInput, setShowCodeInput] = React.useState(false);
   const [codeError, setCodeError] = React.useState('');
+  // P0: 提出冷却（再送・登録ボタンの「失敗直後の即時再試行連打」を 5 秒抑止する）
+  const [submitCooldown, setSubmitCooldown] = React.useState(false);
+  // P1: 暫定ロックの残り秒（表示用）
+  const [lockRemaining, setLockRemaining] = React.useState(0);
+
+  // P1/P3: 暫定ロック時刻・照合失敗理由をストアから購読
+  const lockoutUntil = useSyncExternalStore(
+    subscribeToUserStore,
+    getLockoutUntilSnapshot,
+    getServerLockoutUntilSnapshot
+  );
+  const verifyFailReason = useSyncExternalStore(
+    subscribeToUserStore,
+    getVerifyFailReasonSnapshot,
+    getServerVerifyFailReasonSnapshot
+  );
   
   // 获取主题状态
   const { isDark: isDarkTheme, isMobile } = useTheme();
@@ -128,6 +154,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   // 处理表单提交
   const handleFormSubmit = (data: z.infer<typeof formSchema>) => {
     if (!validateCode(data.verificationCode)) return;
+
+    // P0: 登録リクエストの dispatch 時（submit）にクールダウンを開始する
+    setSubmitCooldown(true);
     onSubmit(data);
   };
 
@@ -139,6 +168,49 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       setCodeError('');
     }
   }, [error, setValue]);
+
+  // P0: 提出冷却は 5 秒で解除（既存 countdown と同じ useEffect + setTimeout 連鎖パターン）
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (submitCooldown) {
+      timer = setTimeout(() => setSubmitCooldown(false), 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [submitCooldown]);
+
+  // P1: 暫定ロックの残り秒を 1 秒ごとに更新する（同様に setTimeout 連鎖パターン）
+  useEffect(() => {
+    if (lockoutUntil === null) {
+      setLockRemaining(0);
+      return;
+    }
+    let timer: NodeJS.Timeout | undefined;
+    const tick = () => {
+      const remainingMs = lockoutUntil - Date.now();
+      if (remainingMs <= 0) {
+        setLockRemaining(0);
+        return;
+      }
+      setLockRemaining(Math.ceil(remainingMs / 1000));
+      timer = setTimeout(tick, 1000);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [lockoutUntil]);
+
+  // P1: ロック中の案内（残り秒付き）。codeError 表示経路（Input の error）で見せる
+  const lockGuidance = lockRemaining > 0 ? `尝试次数过多，请等待 ${lockRemaining} 秒后再试` : '';
+  // P3: 失敗理由に応じた誘導（直前の失敗エラーが表示されている間のみ）
+  // EXPIRED / EXHAUSTED は再取得（再送ボタン）へ、MISMATCH は再入力へ誘導する
+  // reason が無い旧バックエンドでは空文字＝メッセージ表示のみで後方互換を維持する
+  const reasonGuidance = error
+    ? (verifyFailReason === 'EXPIRED' || verifyFailReason === 'EXHAUSTED'
+        ? '验证码已失效，请点击「发送验证码」重新获取'
+        : verifyFailReason === 'MISMATCH'
+          ? '验证码不正确，请重新输入'
+          : '')
+    : '';
+  const codeInputError = lockGuidance || reasonGuidance || codeError;
 
   return (
     <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
@@ -197,7 +269,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 label="验证码"
                 type="text"
                 placeholder="请输入验证码"
-                error={errors.verificationCode?.message || codeError}
+                error={errors.verificationCode?.message || codeInputError}
                 fullWidth
                 disabled={loading}
                 {...register('verificationCode', {
@@ -213,11 +285,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
                 isLoading={loading}
-                disabled={loading || countdown > 0 || !phone || !name || !!errors.email}
+                disabled={loading || countdown > 0 || submitCooldown || !phone || !name || !!errors.email}
                 onClick={() => {
                   const validationResult = phoneNumberSchema.safeParse(phone);
                   const emailValidationResult = emailSchema.safeParse(email);
                   if (validationResult.success && emailValidationResult.success) {
+                    // P0: 再送リクエストの dispatch 時（onClick）にクールダウンを開始する
+                    setSubmitCooldown(true);
                     onSendCode(phone, email);
                     setValue('verificationCode', '');
                     setCodeError('');
@@ -255,7 +329,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             variant="primary"
             fullWidth
             isLoading={loading}
-            disabled={loading || !phone || !name || !verificationCode || !!codeError}
+            disabled={loading || !phone || !name || !verificationCode || !!codeError || submitCooldown || lockRemaining > 0}
           >
             注册
           </Button>
