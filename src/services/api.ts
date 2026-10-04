@@ -117,6 +117,18 @@ api.interceptors.response.use(
     // 保留原始响应对象，以便上层需要判断状态码
     (customError as any).response = error.response;
     (customError as any).status = error.response?.status;
+    // P3: 透传后端错误 envelope 中的 error.details（如验证码错误的 { reason }），供上层区分业务原因
+    (customError as any).details = error.response?.data?.error?.details;
+
+    // 0. 处理 429 Too Many Requests - 读取 Retry-After 供上层等待/倒计时
+    // P2: 429 必须在此直接 reject，保证不会落入下方 401 刷新（refresh token）或登录跳转逻辑
+    if ((customError as any).status === 429) {
+      const retryAfterHeader = (error.response?.headers?.['retry-after'] as string | undefined)
+        ?? (error.response?.headers?.['Retry-After'] as string | undefined);
+      const retryAfterSec = Number(retryAfterHeader);
+      (customError as any).retryAfter = Number.isFinite(retryAfterSec) && retryAfterSec >= 0 ? retryAfterSec : undefined;
+      return Promise.reject(customError);
+    }
 
     // 0. 处理 CSRF token 验证失败 - 这表示会话已过期，需要重新登录
     if ((customError as any).status === 403 && customError.message === 'CSRF token 验证失败') {

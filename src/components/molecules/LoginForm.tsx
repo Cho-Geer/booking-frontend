@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useSyncExternalStore } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -6,6 +6,24 @@ import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import Card from '../atoms/Card';
 import { useTheme } from '@/hooks/useTheme';
+import { getStoreState, store } from '@/store';
+import type { VerifyFailReason } from '@/store/userSlice';
+
+// P1/P3: userSlice の暫定ロック・照合失敗理由をストアシングルトンから購読する
+// （organisms の props 契約は本対応のスコープ外のため、props 経由ではなく直接購読する）
+const subscribeToUserStore = (onStoreChange: () => void) => store.subscribe(onStoreChange);
+const getLockoutUntilSnapshot = () => getStoreState().user.lockoutUntil;
+const getServerLockoutUntilSnapshot = (): number | null => null;
+const getVerifyFailReasonSnapshot = () => getStoreState().user.lastVerifyFailReason;
+const getServerVerifyFailReasonSnapshot = (): VerifyFailReason | null => null;
+
+// P1: 暫定ロックの残り秒を計算する（初回描画の遅延初期化と effect の tick の
+// 両方で同じ計算を使い、ロジックを 1 箇所にまとめる）
+const computeRemainingSeconds = (lockoutUntil: number | null): number => {
+  if (lockoutUntil === null) return 0;
+  const remainingMs = lockoutUntil - Date.now();
+  return remainingMs <= 0 ? 0 : Math.ceil(remainingMs / 1000);
+};
 
 interface LoginFormProps {
   onSubmit: (phoneNumber: string, code: string) => void;
@@ -61,6 +79,27 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // const [showCodeInput, setShowCodeInput] = React.useState(false);
   const [code, setCode] = React.useState('');
   const [codeError, setCodeError] = React.useState('');
+  // P0: 提出冷却（再送・照合ボタンの「失敗直後の即時再試行連打」を 5 秒抑止する）
+  const [submitCooldown, setSubmitCooldown] = React.useState(false);
+  // P1: 暫定ロックの残り秒（表示用）
+  // ストアスナップショットから遅延初期化し、復元済みロックが初回描画から反映されるようにする
+  // （サーバー描画は window が無いため 0。クライアントのハイドレーション時はストアが
+  // まだ初期状態＝ロックなしのため 0 で一致し、ハイドレーション不一致は発生しない）
+  const [lockRemaining, setLockRemaining] = React.useState(() =>
+    typeof window !== 'undefined' ? computeRemainingSeconds(getLockoutUntilSnapshot()) : 0
+  );
+
+  // P1/P3: 暫定ロック時刻・照合失敗理由をストアから購読
+  const lockoutUntil = useSyncExternalStore(
+    subscribeToUserStore,
+    getLockoutUntilSnapshot,
+    getServerLockoutUntilSnapshot
+  );
+  const verifyFailReason = useSyncExternalStore(
+    subscribeToUserStore,
+    getVerifyFailReasonSnapshot,
+    getServerVerifyFailReasonSnapshot
+  );
   
   // 获取主题状态
   const { isDark: isDarkTheme, isMobile } = useTheme();
@@ -89,7 +128,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const handleFinalSubmit = (): void => {
     if (!validateCode(code)) return;
     if (!phoneNumber) return;
-    
+
+    // P0: 照合リクエストの dispatch 時（onClick）にクールダウンを開始する
+    setSubmitCooldown(true);
     onSubmit(phoneNumber, code);
   };
 
@@ -100,6 +141,51 @@ const LoginForm: React.FC<LoginFormProps> = ({
       setCodeError('');
     }
   }, [error]);
+
+  // P0: 提出冷却は 5 秒で解除（既存 countdown と同じ useEffect + setTimeout 連鎖パターン）
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined;
+    if (submitCooldown) {
+      timer = setTimeout(() => setSubmitCooldown(false), 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [submitCooldown]);
+
+  // P1: 暫定ロックの残り秒を 1 秒ごとに更新する（同様に setTimeout 連鎖パターン）
+  useEffect(() => {
+    if (lockoutUntil === null) {
+      setLockRemaining(0);
+      return;
+    }
+    let timer: NodeJS.Timeout | undefined;
+    const tick = () => {
+      const remaining = computeRemainingSeconds(lockoutUntil);
+      if (remaining === 0) {
+        setLockRemaining(0);
+        return;
+      }
+      setLockRemaining(remaining);
+      timer = setTimeout(tick, 1000);
+    };
+    tick();
+    return () => clearTimeout(timer);
+  }, [lockoutUntil]);
+
+  // P1: ロック中の案内（残り秒付き）。codeError 表示経路（Input の error）で見せる
+  const lockGuidance = lockRemaining > 0 ? `尝试次数过多，请等待 ${lockRemaining} 秒后再试` : '';
+  // P3: 失敗理由に応じた誘導（直前の失敗エラーが表示されている間のみ）
+  // EXPIRED / EXHAUSTED は再取得（再送ボタン）へ、MISMATCH は再入力へ誘導する
+  // reason が無い旧バックエンドでは空文字＝メッセージ表示のみで後方互換を維持する
+  const reasonGuidance = error
+    ? (verifyFailReason === 'EXPIRED' || verifyFailReason === 'EXHAUSTED'
+        ? '验证码已失效，请点击「发送验证码」重新获取'
+        : verifyFailReason === 'MISMATCH'
+          ? '验证码不正确，请重新输入'
+          : '')
+    : '';
+  // 優先順位: ロック案内 > ローカル検証エラー > 理由ガイダンス
+  // （ローカルの Zod 検証エラーが古い案内の裏に隠れないようにする）
+  const codeInputError = lockGuidance || codeError || reasonGuidance;
 
   return (
     <Card className={`rounded-lg p-6 ${isDarkTheme ? 'bg-background-dark-100 border border-border-dark' : 'bg-white shadow'}`}>
@@ -164,17 +250,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     setCodeError('');
                   }
                 }}
-                error={codeError}
+                error={codeInputError}
                 fullWidth
                 disabled={loading}
               />
               <Button
                 variant={countdown > 0 ? 'secondary' : 'primary'}
                 isLoading={loading}
-                disabled={loading || countdown > 0 || !phoneNumber}
+                disabled={loading || countdown > 0 || submitCooldown || !phoneNumber}
                 onClick={() => {
                   const validationResult = phoneNumberSchema.safeParse(phoneNumber);
                   if (validationResult.success) {
+                    // P0: 再送リクエストの dispatch 時（onClick）にクールダウンを開始する
+                    setSubmitCooldown(true);
                     onSendCode(phoneNumber, 'login');
                     setCode('');
                     setCodeError('');
@@ -195,7 +283,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             fullWidth
             isLoading={loading}
             onClick={handleFinalSubmit}
-            disabled={loading || !phoneNumber || !code || !!codeError}
+            disabled={loading || !phoneNumber || !code || !!codeError || submitCooldown || lockRemaining > 0}
           >
             登录
           </Button>
